@@ -99,13 +99,14 @@ export async function runRound(params: {
   totalRounds: number;
   population: Persona[];
   agentOpinions: Record<string, number>;
-  agentBeliefs: Map<string, BeliefState>;  // BeliefState per agent (mutable)
+  agentBeliefs: Map<string, BeliefState>;
   memoryStore: AgentMemoryStore;
   knowledgeGraph: KnowledgeGraph;
   previousActions: AgentAction[];
   events: SimulationEvent[];
   platform: Platform;
   activeAgentRatio: number;
+  seedType?: "ad" | "topic";
   onProgress?: (done: number, total: number) => void;
 }): Promise<SimulationRound> {
   const {
@@ -120,6 +121,7 @@ export async function runRound(params: {
     events,
     platform,
     activeAgentRatio,
+    seedType,
     onProgress,
   } = params;
 
@@ -155,6 +157,7 @@ export async function runRound(params: {
         platform,
         recentFeed,
         activeEvents,
+        seedType,
       };
 
       return {

@@ -4,7 +4,7 @@
 
 import { randomUUID } from "crypto";
 import type { Persona } from "../personas/schema.js";
-import { extractKnowledgeGraph } from "./graphrag.js";
+import { extractKnowledgeGraph, extractKnowledgeGraphFromTopic } from "./graphrag.js";
 import { AgentMemoryStore } from "./agentMemory.js";
 import { runRound } from "./roundEngine.js";
 import { generateSimulationInsights } from "./reportAgent.js";
@@ -41,13 +41,19 @@ export class SimulationOrchestrator {
     this.platform = config.platform ?? "facebook";
     this.activeAgentRatio = config.activeAgentRatio ?? 0.7;
 
+    const seedLabel = config.seedType === "topic"
+      ? (config.topic?.query.slice(0, 40) ?? "scenariusz")
+      : (config.ad?.brandName ?? "reklama");
+
     this.state = {
       id: randomUUID(),
       studyName: config.studyName,
+      seedType: config.seedType,
       ad: config.ad,
+      topic: config.topic,
       population: config.population,
       knowledgeGraph: {
-        brand: config.ad.brandName ?? "nieznana",
+        brand: seedLabel,
         claims: [],
         values: [],
         competitors: [],
@@ -67,9 +73,11 @@ export class SimulationOrchestrator {
     this.memoryStore = new AgentMemoryStore();
 
     // Inicjuj opinie bazowe na 0 i BeliefState per persona
-    const topics = extractTopicsFromRequirement(
-      `${config.ad.headline} ${config.ad.body} ${config.ad.brandName ?? ""}`
-    );
+    const seedText = config.seedType === "topic"
+      ? `${config.topic?.query ?? ""} ${config.topic?.context ?? ""}`
+      : `${config.ad?.headline ?? ""} ${config.ad?.body ?? ""} ${config.ad?.brandName ?? ""}`;
+
+    const topics = extractTopicsFromRequirement(seedText);
     for (const persona of config.population) {
       this.state.agentOpinions[persona.id] = 0;
       this.agentBeliefs.set(
@@ -82,12 +90,18 @@ export class SimulationOrchestrator {
     }
   }
 
-  // Faza init: wyciągnij KnowledgeGraph z materiału reklamowego
+  // Faza init: wyciągnij KnowledgeGraph z seeda (reklama lub scenariusz)
   async initialize(): Promise<void> {
     try {
-      this.state.knowledgeGraph = await extractKnowledgeGraph(this.state.ad);
+      if (this.state.seedType === "topic") {
+        if (!this.state.topic) throw new Error("Brak topic seed w konfiguracji");
+        this.state.knowledgeGraph = await extractKnowledgeGraphFromTopic(this.state.topic);
+      } else {
+        if (!this.state.ad) throw new Error("Brak ad material w konfiguracji");
+        this.state.knowledgeGraph = await extractKnowledgeGraph(this.state.ad);
+      }
       this.state.status = "running";
-      console.log(`✓ Symulacja ${this.state.id} zainicjowana. KG: brand="${this.state.knowledgeGraph.brand}", ${this.state.knowledgeGraph.claims.length} twierdzeń`);
+      console.log(`✓ Symulacja ${this.state.id} [${this.state.seedType}] zainicjowana. KG: brand="${this.state.knowledgeGraph.brand}", ${this.state.knowledgeGraph.claims.length} twierdzeń`);
     } catch (err) {
       this.state.status = "error";
       this.state.errorMessage = (err as Error).message;
@@ -121,6 +135,7 @@ export class SimulationOrchestrator {
       events: this.state.events,
       platform: this.platform,
       activeAgentRatio: this.activeAgentRatio,
+      seedType: this.state.seedType,
       onProgress,
     });
 
@@ -180,7 +195,9 @@ export class SimulationOrchestrator {
   fork(newStudyName: string, injectedEvent?: Omit<SimulationEvent, "id">): SimulationOrchestrator {
     const forkedConfig: SimulationConfig = {
       studyName: newStudyName,
+      seedType: this.state.seedType,
       ad: this.state.ad,
+      topic: this.state.topic,
       population: this.state.population,
       totalRounds: this.state.totalRounds,
       platform: this.platform,
@@ -306,7 +323,9 @@ Rekomendacje: ${this.state.insights?.recommendations?.join("; ") ?? "brak"}`;
     const { state, platform, activeAgentRatio, agentBeliefsData } = JSON.parse(json);
     const orc = new SimulationOrchestrator({
       studyName: state.studyName,
+      seedType: state.seedType ?? "ad",
       ad: state.ad,
+      topic: state.topic,
       population: state.population,
       totalRounds: state.totalRounds,
       platform,

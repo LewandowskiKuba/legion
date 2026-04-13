@@ -156,7 +156,7 @@ export async function generateSimulationInsights(state: SimulationState): Promis
 DANE SYMULACJI:
 - Liczba rund: ${state.totalRounds}
 - Liczba agentów: ${state.population.length}
-- Reklama: "${state.ad.headline}" — ${state.ad.body.slice(0, 100)}
+- Seed: "${state.ad?.headline ?? state.topic?.query ?? "scenariusz"}" — ${(state.ad?.body ?? state.topic?.context ?? "").slice(0, 100)}
 
 TRAJEKTORIA OPINII:
 ${roundSummaries.join("\n")}

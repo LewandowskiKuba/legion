@@ -160,7 +160,9 @@ export type SimulationStatus = "initializing" | "running" | "paused" | "complete
 export interface SimulationState {
   id: string;
   studyName: string;
-  ad: AdMaterial;
+  seedType: SeedType;
+  ad?: AdMaterial;          // tylko dla seedType === "ad"
+  topic?: TopicSeed;        // tylko dla seedType === "topic"
   population: Persona[];
   knowledgeGraph: KnowledgeGraph;
   rounds: SimulationRound[];
@@ -179,13 +181,28 @@ export interface SimulationState {
   errorMessage?: string;
 }
 
+// ─── Seed type ────────────────────────────────────────────────────────────────
+
+export type SeedType = "ad" | "topic";
+
+// Topic seed – scenariusz bez reklamy (np. "Iran blokuje Hormuz, ropa drożeje o 40%")
+export interface TopicSeed {
+  query: string;            // Opis scenariusza/wydarzenia
+  context?: string;         // Dodatkowy kontekst (opcjonalny)
+  expectedImpacts?: string[]; // Przewidywane skutki (opcjonalne — pomagają LLM)
+}
+
 // ─── Config ───────────────────────────────────────────────────────────────────
 
 export interface SimulationConfig {
   studyName: string;
-  ad: AdMaterial;
+  seedType: SeedType;
+  ad?: AdMaterial;          // wymagane gdy seedType === "ad"
+  topic?: TopicSeed;        // wymagane gdy seedType === "topic"
   population: Persona[];
   totalRounds: number;
-  platform?: Platform;             // Default: "facebook"
-  activeAgentRatio?: number;       // 0–1, fraction of agents acting per round (default 0.7)
+  platform?: Platform;
+  activeAgentRatio?: number;
 }
+
+// ─── Simulation state (rozszerzony o topic seed) ──────────────────────────────

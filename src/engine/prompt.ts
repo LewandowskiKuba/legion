@@ -15,6 +15,7 @@ export interface SimulationContext {
   platform: Platform;
   recentFeed: Array<{ personaName: string; content: string; actionType: string }>;
   activeEvents: Array<{ type: string; content: string }>;
+  seedType?: "ad" | "topic";        // domyślnie "ad" dla kompatybilności wstecznej
 }
 
 const EDUCATION_LABEL: Record<string, string> = {
@@ -132,12 +133,18 @@ POGLĄDY POLITYCZNE:
 ${brandCtx}
 
 ZASADY SYMULACJI:
-Jesteś tą osobą – nie asystentem AI, nie badaczem, nie krytykiem reklam. Reagujesz tak, jak przeciętny Polak reaguje na reklamy w prawdziwym życiu: często z irytacją, obojętnością lub sceptycyzmem. Większość reklam ludzie ignorują, uważają za nachalną, nudną lub za drogą. Nie starasz się być wyważony ani pomocny.
+${simulationCtx?.seedType === "topic"
+  ? `Jesteś tą osobą – nie asystentem AI, nie ekspertem, nie komentatorem. Reagujesz na bieżące wydarzenia tak, jak prawdziwy Polak: przez pryzmat własnej sytuacji życiowej, wartości, sympatii politycznych i tego, co słyszysz od znajomych. Twoje opinie są szczere, często emocjonalne i niekoniecznie racjonalne.
+
+- Reaguj na wydarzenie z perspektywy tego, jak dotknie Cię osobiście (ceny, praca, bezpieczeństwo, itp.).
+- Nie musisz być ekspertem – mów jak człowiek z ulicy, potocznym językiem.
+- Twoje zdanie może być sprzeczne z faktami, jeśli wynika z Twojego profilu i bańki informacyjnej.`
+  : `Jesteś tą osobą – nie asystentem AI, nie badaczem, nie krytykiem reklam. Reagujesz tak, jak przeciętny Polak reaguje na reklamy w prawdziwym życiu: często z irytacją, obojętnością lub sceptycyzmem. Większość reklam ludzie ignorują, uważają za nachalną, nudną lub za drogą. Nie starasz się być wyważony ani pomocny.
 
 - Jeśli reklama jest dla Ciebie nieistotna – przyznaj to wprost (niskie attentionScore, pusty recall).
 - Jeśli coś Cię irytuje – powiedz to konkretnie, bez owijania w bawełnę.
-- womSimulation to zdanie, które naprawdę powiedziałbyś/powiedziałabyś znajomemu – potocznym językiem, szczerze. Nie „ta reklama jest interesująca", ale np. „widziałem jakąś reklamę banku, nie pamiętam nawet jakiego" albo „ta reklama mnie wkurzyła, jakieś brednie".
-- rejectionSignals: bądź konkretny. Zamiast „cena może być wysoka" napisz „35 zł to nadal dużo jak na sam internet".
+- womSimulation to zdanie, które naprawdę powiedziałbyś/powiedziałabyś znajomemu – potocznym językiem, szczerze.
+- rejectionSignals: bądź konkretny. Zamiast „cena może być wysoka" napisz „35 zł to nadal dużo jak na sam internet".`}
 - Twoje odpowiedzi muszą być wewnętrznie spójne z profilem: wiekiem, sytuacją finansową, wartościami, używanymi mediami i historią z markami.${
     simulationCtx ? buildSimulationBlock(simulationCtx) : ""
   }`;
@@ -170,13 +177,20 @@ function buildSimulationBlock(ctx: SimulationContext): string {
     ? `\nTwoja dotychczasowa historia w tej symulacji:\n${ctx.memorySummary}`
     : "";
 
+  const isTopic = ctx.seedType === "topic";
+  const subjectLabel = isTopic ? "wydarzeniu/scenariuszu" : "reklamie/produkcie";
+  const claimsLabel = isTopic
+    ? "Kluczowe fakty z tego scenariusza"
+    : "Kluczowe informacje z reklamy, które mogłeś/aś usłyszeć";
+  const controversyLabel = isTopic ? "Elementy kontrowersyjne/polaryzujące" : "Elementy kontrowersyjne w reklamie";
+
   return `
 
 KONTEKST SYMULACJI (Runda ${ctx.roundNumber}/${ctx.totalRounds}, platforma: ${ctx.platform === "facebook" ? "Facebook" : "Twitter/X"}):
-Twoja bieżąca opinia o reklamie/produkcie: ${ctx.currentOpinion.toFixed(1)}/10 (${opinionLabel})
-Kluczowe informacje z reklamy, które mogłeś/aś usłyszeć: ${ctx.knowledgeGraph.claims.slice(0, 3).join("; ")}${
+Twoja bieżąca opinia o ${subjectLabel}: ${ctx.currentOpinion.toFixed(1)}/10 (${opinionLabel})
+${claimsLabel}: ${ctx.knowledgeGraph.claims.slice(0, 3).join("; ")}${
     ctx.knowledgeGraph.controversialElements.length > 0
-      ? `\nElementy kontrowersyjne w reklamie: ${ctx.knowledgeGraph.controversialElements.join("; ")}`
+      ? `\n${controversyLabel}: ${ctx.knowledgeGraph.controversialElements.join("; ")}`
       : ""
   }${memBlock}${feedBlock}${eventsBlock}`;
 }
@@ -187,9 +201,14 @@ export function buildSimulationUserPrompt(ctx: SimulationContext): string {
       ? "Jesteś na Twitterze/X. Twój post/komentarz może mieć max 280 znaków – bądź zwięzły i dosadny."
       : "Jesteś na Facebooku. Możesz napisać dłużej, ale ludzie i tak czytają tylko nagłówki.";
 
+  const isTopic = ctx.seedType === "topic";
+  const topicLine = isTopic
+    ? `To jest runda ${ctx.roundNumber} z ${ctx.totalRounds} symulacji społecznej dotyczącej scenariusza: "${ctx.knowledgeGraph.brand}". Reagujesz na to wydarzenie jako członek społeczeństwa.`
+    : `To jest runda ${ctx.roundNumber} z ${ctx.totalRounds} symulacji społecznej dotyczącej reklamy marki "${ctx.knowledgeGraph.brand}".`;
+
   return `${platformHint}
 
-To jest runda ${ctx.roundNumber} z ${ctx.totalRounds} symulacji społecznej dotyczącej reklamy marki "${ctx.knowledgeGraph.brand}".
+${topicLine}
 
 Na podstawie swojego profilu, historii i tego, co widziałeś/aś w feedzie – zdecyduj, co robisz w tej rundzie.
 

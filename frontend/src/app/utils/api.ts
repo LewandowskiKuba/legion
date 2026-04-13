@@ -459,7 +459,10 @@ export async function fetchSummary(result: StudyResult): Promise<string> {
 
 // ─── Simulation API (v2) ──────────────────────────────────────────────────────
 
-export interface SimulationFormData {
+export type SimulationSeedType = "ad" | "topic";
+
+export interface AdSimulationFormData {
+  seedType: "ad";
   studyName: string;
   headline: string;
   body: string;
@@ -472,10 +475,24 @@ export interface SimulationFormData {
   activeAgentRatio?: number;
 }
 
+export interface TopicSimulationFormData {
+  seedType: "topic";
+  studyName: string;
+  query: string;
+  context?: string;
+  expectedImpacts?: string[];
+  totalRounds: number;
+  platform: "facebook" | "twitter";
+  activeAgentRatio?: number;
+}
+
+export type SimulationFormData = AdSimulationFormData | TopicSimulationFormData;
+
 export interface SimulationSummary {
   id: string;
   studyName: string;
   status: string;
+  seedType: SimulationSeedType;
   createdAt: string;
   totalRounds: number;
   currentRound: number;
@@ -488,23 +505,35 @@ export async function listSimulations(): Promise<SimulationSummary[]> {
 }
 
 export async function startSimulation(data: SimulationFormData): Promise<string> {
+  const body: any = {
+    studyName: data.studyName,
+    seedType: data.seedType,
+    totalRounds: data.totalRounds,
+    platform: data.platform,
+    activeAgentRatio: data.activeAgentRatio ?? 0.7,
+  };
+
+  if (data.seedType === "ad") {
+    body.ad = {
+      headline: data.headline,
+      body: data.body,
+      cta: data.cta,
+      brandName: data.brand || undefined,
+      productCategory: data.category || undefined,
+      context: data.context || undefined,
+    };
+  } else {
+    body.topic = {
+      query: data.query,
+      context: data.context || undefined,
+      expectedImpacts: data.expectedImpacts?.length ? data.expectedImpacts : undefined,
+    };
+  }
+
   const res = await fetch(`${BASE}/api/simulation`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      studyName: data.studyName,
-      totalRounds: data.totalRounds,
-      platform: data.platform,
-      activeAgentRatio: data.activeAgentRatio ?? 0.7,
-      ad: {
-        headline: data.headline,
-        body: data.body,
-        cta: data.cta,
-        brandName: data.brand || undefined,
-        productCategory: data.category || undefined,
-        context: data.context || undefined,
-      },
-    }),
+    body: JSON.stringify(body),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: "Błąd startu symulacji" }));

@@ -15,6 +15,7 @@ import { generatePDF } from "./reports/pdf.js";
 import type { AdMaterial, Persona, BotResponse } from "./personas/schema.js";
 import { simulationStore } from "./simulation/stateStore.js";
 import type { SimulationConfig, SimulationEventType, Platform } from "./simulation/schema.js";
+import { getCachedPersonas, regeneratePersonas, invalidatePersonasCache } from "./db/personas.js";
 
 const PORT = parseInt(process.env.PORT ?? "3000", 10);
 const DATA_DIR = join(process.cwd(), "data");
@@ -22,6 +23,7 @@ const POPULATION_PATH = join(DATA_DIR, "population.json");
 const RESULTS_DIR = join(DATA_DIR, "results");
 const TEMP_DIR = join(DATA_DIR, "temp");
 
+// Synchroniczny fallback dla starych endpointów (ad-testing)
 function getPopulation(): Persona[] {
   if (existsSync(POPULATION_PATH)) {
     return JSON.parse(readFileSync(POPULATION_PATH, "utf8")) as Persona[];
@@ -734,7 +736,7 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 
   // ── API: Population stats ──────────────────────────────────────────────────
   if (url.pathname === "/api/population" && req.method === "GET") {
-    const population = getPopulation();
+    const population = await getCachedPersonas();
     const stats = {
       total: population.length,
       avgAge: Math.round(population.reduce((s, p) => s + p.demographic.age, 0) / population.length),
@@ -745,6 +747,20 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
       political: population.reduce((acc, p) => { acc[p.political.affiliation] = (acc[p.political.affiliation] ?? 0) + 1; return acc; }, {} as Record<string, number>),
     };
     json(res, stats);
+    return;
+  }
+
+  // ── API: Regeneruj populację agentów ──────────────────────────────────────
+  if (url.pathname === "/api/population/regenerate" && req.method === "POST") {
+    try {
+      const body = await readBody(req).then(JSON.parse).catch(() => ({}));
+      const size = Math.min(Math.max(Number(body.size ?? process.env.POPULATION_SIZE ?? 100), 10), 500);
+      const personas = await regeneratePersonas(size);
+      invalidatePersonasCache();
+      json(res, { success: true, count: personas.length });
+    } catch (err: any) {
+      json(res, { error: String(err.message ?? err) }, 500);
+    }
     return;
   }
 
@@ -1036,16 +1052,35 @@ Napisz analizę po polsku. Wyjaśnij przyczyny wyników (np. niska świadomość
   if (url.pathname === "/api/simulation" && req.method === "POST") {
     try {
       const body = JSON.parse(await readBody(req));
-      const population = getPopulation();
+      const population = await getCachedPersonas();
+
+      const seedType = body.seedType === "topic" ? "topic" : "ad";
 
       const config: SimulationConfig = {
         studyName: body.studyName ?? "Symulacja",
-        ad: body.ad as AdMaterial,
+        seedType,
+        ad: seedType === "ad" ? (body.ad as AdMaterial) : undefined,
+        topic: seedType === "topic" ? {
+          query: String(body.topic?.query ?? ""),
+          context: body.topic?.context ? String(body.topic.context) : undefined,
+          expectedImpacts: Array.isArray(body.topic?.expectedImpacts)
+            ? body.topic.expectedImpacts.map(String)
+            : undefined,
+        } : undefined,
         population,
         totalRounds: Math.min(Math.max(Number(body.totalRounds ?? 5), 1), 20),
         platform: (body.platform ?? "facebook") as Platform,
         activeAgentRatio: Math.min(Math.max(Number(body.activeAgentRatio ?? 0.7), 0.1), 1),
       };
+
+      if (seedType === "ad" && !config.ad?.headline) {
+        json(res, { error: "Brak materiału reklamowego (ad.headline wymagany)" }, 400);
+        return;
+      }
+      if (seedType === "topic" && !config.topic?.query) {
+        json(res, { error: "Brak opisu scenariusza (topic.query wymagany)" }, 400);
+        return;
+      }
 
       const orc = await simulationStore.create(config);
       const simId = orc.getId();
