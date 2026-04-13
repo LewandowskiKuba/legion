@@ -1,0 +1,110 @@
+{
+  "_meta": {
+    "description": "Ground truth do walidacji symulacji – kampania Ariston / Media Republic 2025-2026",
+    "source": "4P dla MR Ariston – I fala (20251002) + II fala (20260115)",
+    "methodology": "Świadomość spontaniczna (unaided recall) + wspomagana. Q: 'Jakie znasz marki producentów pomp ciepła lub kotłów grzewczych?'",
+    "sample": 1005,
+    "population_target": "osoby 25–64 lat, posiadające lub planujące zakup/remont domu, cała Polska",
+    "note_target_segment": "Uwaga: badanie dotyczy węższej grupy docelowej niż ogólna populacja PL. Do walidacji symulacji użyj filtra: wiek 25-64, filterSettlement=all. Awareness odnosi się do kategorii home_appliances (ogrzewanie).",
+    "campaign_period": "2025 Q3–Q4 (banery, spoty 6s + 15s)",
+    "campaign_reach_wave1": 0.45,
+    "campaign_reach_wave2": 0.52,
+    "usage": "Uruchom symulację kampanii Ariston startując od awareness_pre (fala I). Oczekiwany wynik: awareness zbliżony do awareness_post (+1pp lift). Różnica >3pp sugeruje błąd kalibracji. Walidacja skuteczna głównie dla grupy filterCategory=home_appliances."
+  },
+  "category": "home_appliances",
+  "subcategory": "heating_systems",
+  "brand": "Ariston",
+  "campaign_brand": "Ariston",
+
+  "awareness_spontaneous_pre": 0.03,
+  "awareness_spontaneous_post": 0.04,
+  "awareness_spontaneous_lift_pp": 1,
+
+  "awareness_spontaneous_with_contact_pre": 0.04,
+  "awareness_spontaneous_with_contact_post": 0.07,
+  "awareness_spontaneous_with_contact_lift_pp": 3,
+
+  "awareness_aided_pumps_pre": 0.30,
+  "awareness_aided_pumps_post": 0.34,
+  "awareness_aided_pumps_lift_pp": 4,
+
+  "awareness_aided_boilers_pre": 0.27,
+  "awareness_aided_boilers_post": 0.28,
+  "awareness_aided_boilers_lift_pp": 1,
+
+  "top_of_mind_pre": 0.02,
+  "top_of_mind_post": 0.03,
+
+  "consideration_pumps_post": 0.19,
+  "consideration_boilers_post": 0.19,
+  "conversion_awareness_to_consideration_pumps": 0.55,
+  "conversion_awareness_to_consideration_boilers": 0.68,
+
+  "competitive_landscape_spontaneous_wave1": [
+    { "brand": "Viessmann",  "awareness": 0.20 },
+    { "brand": "Panasonic",  "awareness": 0.12 },
+    { "brand": "Bosch",      "awareness": 0.11 },
+    { "brand": "Vaillant",   "awareness": 0.11 },
+    { "brand": "Buderus",    "awareness": 0.07 },
+    { "brand": "LG",         "awareness": 0.06 },
+    { "brand": "Junkers",    "awareness": 0.05 },
+    { "brand": "Samsung",    "awareness": 0.05 },
+    { "brand": "Kaisai",     "awareness": 0.04 },
+    { "brand": "Daikin",     "awareness": 0.04 },
+    { "brand": "Haier",      "awareness": 0.04 },
+    { "brand": "Philips",    "awareness": 0.02 },
+    { "brand": "Siemens",    "awareness": 0.02 },
+    { "brand": "Mitsubishi", "awareness": 0.02 },
+    { "brand": "Ariston",    "awareness": 0.03 }
+  ],
+
+  "competitive_landscape_spontaneous_wave2": [
+    { "brand": "Viessmann",  "awareness": 0.21, "delta_pp": 1 },
+    { "brand": "Panasonic",  "awareness": 0.12, "delta_pp": 0 },
+    { "brand": "Bosch",      "awareness": 0.12, "delta_pp": 1 },
+    { "brand": "Vaillant",   "awareness": 0.11, "delta_pp": 0 },
+    { "brand": "Buderus",    "awareness": 0.07, "delta_pp": 0 },
+    { "brand": "LG",         "awareness": 0.05, "delta_pp": -1 },
+    { "brand": "Junkers",    "awareness": 0.06, "delta_pp": 1 },
+    { "brand": "Samsung",    "awareness": 0.05, "delta_pp": 0 },
+    { "brand": "Kaisai",     "awareness": 0.04, "delta_pp": 0 },
+    { "brand": "Daikin",     "awareness": 0.05, "delta_pp": 1 },
+    { "brand": "Haier",      "awareness": 0.05, "delta_pp": 1 },
+    { "brand": "Philips",    "awareness": 0.03, "delta_pp": 1 },
+    { "brand": "Siemens",    "awareness": 0.03, "delta_pp": 1 },
+    { "brand": "Mitsubishi", "awareness": 0.03, "delta_pp": 1 },
+    { "brand": "Ariston",    "awareness": 0.04, "delta_pp": 1 }
+  ],
+
+  "competitive_landscape_aided_pumps_wave2": [
+    { "brand": "Viessmann",      "awareness": 0.59, "consideration": 0.45 },
+    { "brand": "Panasonic",      "awareness": 0.48, "consideration": 0.33 },
+    { "brand": "Vaillant",       "awareness": 0.46, "consideration": 0.34 },
+    { "brand": "Ariston",        "awareness": 0.34, "consideration": 0.19 },
+    { "brand": "Daikin",         "awareness": 0.29, "consideration": 0.15 },
+    { "brand": "Kaisai",         "awareness": 0.27, "consideration": 0.13 },
+    { "brand": "Nibe",           "awareness": 0.24, "consideration": 0.07 },
+    { "brand": "Saunier Duval",  "awareness": 0.14, "consideration": 0.08 },
+    { "brand": "Atlantic",       "awareness": 0.13, "consideration": 0.05 },
+    { "brand": "York",           "awareness": 0.12, "consideration": 0.04 }
+  ],
+
+  "competitive_landscape_aided_boilers_wave2": [
+    { "brand": "Viessmann",      "awareness": 0.52, "consideration": 0.45 },
+    { "brand": "Bosch/Junkers",  "awareness": 0.49, "consideration": 0.32 },
+    { "brand": "Vaillant",       "awareness": 0.42, "consideration": 0.33 },
+    { "brand": "Buderus",        "awareness": 0.30, "consideration": 0.17 },
+    { "brand": "Ariston",        "awareness": 0.28, "consideration": 0.19 },
+    { "brand": "De Dietrich",    "awareness": 0.17, "consideration": 0.09 },
+    { "brand": "Beretta",        "awareness": 0.17, "consideration": 0.06 },
+    { "brand": "Termet",         "awareness": 0.13, "consideration": 0.08 },
+    { "brand": "Immergas",       "awareness": 0.09, "consideration": 0.07 }
+  ],
+
+  "validation_threshold": {
+    "pass":  "Symulowany awareness_post Ariston (spontaniczny) w przedziale [0.02, 0.07]",
+    "warn":  "Symulowany awareness_post Ariston poza przedziałem [0.02, 0.07] ale <0.15",
+    "fail":  "Symulowany awareness_post Ariston ≥0.15 lub ≤0.01",
+    "note":  "Walidacja wymaga filtrowania populacji do segmentu home_appliances (właściciele/planujący remont). Kategoria niszowa – expected attention score niższy niż FMCG."
+  }
+}

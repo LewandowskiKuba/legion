@@ -1,0 +1,14 @@
+services:
+  swarm:
+    build: .
+    container_name: swarm
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    volumes:
+      - swarm-results:/app/data/results
+
+volumes:
+  swarm-results:

@@ -1,0 +1,128 @@
+{
+  "_meta": {
+    "description": "Ground truth do walidacji symulacji – kampania TV Beko lodówki HarvestFresh 2021",
+    "source": "4P – Badanie skuteczności reklamy TV Beko (Lodówki), 210915",
+    "methodology": "CAWI 2-falowe. Fala 1 = PRE/mid, Fala 2 = POST. Baza: osoby, które widziały reklamę dużego AGD w ciągu ostatniego miesiąca.",
+    "sample_wave1": 520,
+    "sample_wave2": 530,
+    "population_target": "ogólna populacja PL, widzowie reklam dużego AGD",
+    "campaign": "TV spot lodówki Beko z technologią HarvestFresh (3 kolory światła), hasło 'Inspirowana naturą, zasilana światłem'",
+    "usage": "Beko ma bardzo wysoki aided awareness (~84%) – kampania nie przesuwa tego wskaźnika znacząco. Główna walidacja: spontaniczny recall reklam (#3 w kategorii) i komunikacja technologii HarvestFresh. Uruchom symulację na segment home_appliances."
+  },
+  "category": "home_appliances",
+  "subcategory": "refrigerators",
+  "brand": "Beko",
+  "campaign_brand": "Beko",
+
+  "_note_metric": "Aided awareness już saturowana (~84%) – kampania mierzy głównie ad recall i komunikację technologii, nie brand awareness",
+
+  "awareness_aided_pre": 0.835,
+  "awareness_aided_post": 0.838,
+  "awareness_aided_lift_pp": 0,
+
+  "ad_recall_beko_pre": 0.600,
+  "ad_recall_beko_post": 0.626,
+  "ad_recall_beko_lift_pp": 2.6,
+  "ad_recall_tv_share_pre": 0.801,
+  "ad_recall_tv_share_post": 0.777,
+  "ad_recall_internet_share_pre": 0.426,
+  "ad_recall_internet_share_post": 0.446,
+
+  "spontaneous_ad_recall_rank_wave1": 3,
+  "spontaneous_ad_recall_rank_wave2": 3,
+
+  "tv_message_recall_wave2": {
+    "brand_logo": 0.566,
+    "product_fridge": 0.531,
+    "technology_harvestfresh": 0.271,
+    "3_colors_technology": 0.233,
+    "tagline_inspired_by_nature": 0.267,
+    "vitamins_preservation": 0.236,
+    "longer_vitamin_preservation": 0.264,
+    "sun_cycle_lighting": 0.155,
+    "nothing_recalled": 0.050
+  },
+
+  "competitive_landscape_aided_wave1": [
+    { "brand": "Bosch",      "awareness": 0.856, "rank": 1 },
+    { "brand": "Beko",       "awareness": 0.835, "rank": 2 },
+    { "brand": "Samsung",    "awareness": 0.829, "rank": 3 },
+    { "brand": "Amica",      "awareness": 0.819, "rank": 4 },
+    { "brand": "Electrolux", "awareness": 0.792, "rank": 5 },
+    { "brand": "Whirlpool",  "awareness": 0.792, "rank": 6 },
+    { "brand": "LG",         "awareness": 0.777, "rank": 7 },
+    { "brand": "Siemens",    "awareness": 0.704, "rank": 8 },
+    { "brand": "Indesit",    "awareness": 0.646, "rank": 9 },
+    { "brand": "Candy",      "awareness": 0.521, "rank": 10 },
+    { "brand": "Gorenje",    "awareness": 0.510, "rank": 11 },
+    { "brand": "Grundig",    "awareness": 0.413, "rank": 12 },
+    { "brand": "AEG",        "awareness": 0.346, "rank": 13 },
+    { "brand": "Miele",      "awareness": 0.317, "rank": 14 },
+    { "brand": "Ariston",    "awareness": 0.300, "rank": 15 },
+    { "brand": "Hotpoint",   "awareness": 0.265, "rank": 16 },
+    { "brand": "Haier",      "awareness": 0.183, "rank": 17 },
+    { "brand": "Liebherr",   "awareness": 0.150, "rank": 18 },
+    { "brand": "Franke",     "awareness": 0.158, "rank": 19 },
+    { "brand": "Solgaz",     "awareness": 0.121, "rank": 20 },
+    { "brand": "Leifheit",   "awareness": 0.115, "rank": 21 }
+  ],
+
+  "competitive_landscape_aided_wave2": [
+    { "brand": "Bosch",      "awareness": 0.840, "delta_pp": -2 },
+    { "brand": "Samsung",    "awareness": 0.828, "delta_pp": 0 },
+    { "brand": "Amica",      "awareness": 0.821, "delta_pp":  0 },
+    { "brand": "Beko",       "awareness": 0.838, "delta_pp":  0 },
+    { "brand": "Electrolux", "awareness": 0.800, "delta_pp":  1 },
+    { "brand": "Whirlpool",  "awareness": 0.792, "delta_pp":  0 },
+    { "brand": "LG",         "awareness": 0.781, "delta_pp":  0 },
+    { "brand": "Siemens",    "awareness": 0.702, "delta_pp":  0 },
+    { "brand": "Indesit",    "awareness": 0.653, "delta_pp":  1 },
+    { "brand": "Gorenje",    "awareness": 0.551, "delta_pp":  4 },
+    { "brand": "Candy",      "awareness": 0.545, "delta_pp":  2 },
+    { "brand": "Grundig",    "awareness": 0.432, "delta_pp":  2 },
+    { "brand": "Miele",      "awareness": 0.353, "delta_pp":  4 },
+    { "brand": "AEG",        "awareness": 0.304, "delta_pp": -4 },
+    { "brand": "Ariston",    "awareness": 0.304, "delta_pp":  0 },
+    { "brand": "Hotpoint",   "awareness": 0.285, "delta_pp":  2 },
+    { "brand": "Haier",      "awareness": 0.215, "delta_pp":  3 },
+    { "brand": "Liebherr",   "awareness": 0.181, "delta_pp":  3 },
+    { "brand": "Franke",     "awareness": 0.134, "delta_pp": -2 },
+    { "brand": "Solgaz",     "awareness": 0.109, "delta_pp": -1 },
+    { "brand": "Leifheit",   "awareness": 0.096, "delta_pp": -2 }
+  ],
+
+  "spontaneous_ad_recall_wave2_top10": [
+    { "brand": "Samsung",    "count": 176, "pct_approx": 0.332 },
+    { "brand": "Bosch",      "count": 150, "pct_approx": 0.283 },
+    { "brand": "Beko",       "count": 138, "pct_approx": 0.260 },
+    { "brand": "Amica",      "count": 111, "pct_approx": 0.209 },
+    { "brand": "Electrolux", "count": 72,  "pct_approx": 0.136 },
+    { "brand": "LG",         "count": 59,  "pct_approx": 0.111 },
+    { "brand": "Whirlpool",  "count": 48,  "pct_approx": 0.091 },
+    { "brand": "RTV EURO AGD","count": 39, "pct_approx": 0.074 },
+    { "brand": "Philips",    "count": 36,  "pct_approx": 0.068 },
+    { "brand": "Media Expert","count": 34, "pct_approx": 0.064 }
+  ],
+
+  "gender_breakdown": {
+    "male": {
+      "ad_recall_pre": 0.595,
+      "ad_recall_post": 0.630,
+      "tv_share_post": 0.747,
+      "internet_share_post": 0.512
+    },
+    "female": {
+      "ad_recall_pre": 0.604,
+      "ad_recall_post": 0.623,
+      "tv_share_post": 0.806,
+      "internet_share_post": 0.382
+    }
+  },
+
+  "validation_threshold": {
+    "pass":  "attentionScore Beko ≥5.0 dla person z kategorią home_appliances (wysoka znajomość marki); womSimulation zawiera odniesienie do lodówki/technologii",
+    "warn":  "attentionScore <4.0 lub brand recall <50% person z home_appliances",
+    "fail":  "Beko nieznane wśród >30% person z home_appliances (awareness ~84% w kat.)",
+    "note":  "Kampania TV 2021 – główny KPI to ad recall i message recall, nie brand awareness. Beko to top-3 marka AGD w Polsce."
+  }
+}

@@ -1,0 +1,2157 @@
+[
+  {
+    "brandName": "PKO BP",
+    "category": "financial_services",
+    "awareness": 0.95,
+    "sentimentWeights": {
+      "negative": 20,
+      "neutral": 50,
+      "positive": 30
+    },
+    "ageAffinity": [
+      35,
+      80
+    ],
+    "incomeAffinity": [
+      "below_2000",
+      "2000_3500",
+      "3500_5000",
+      "5000_8000",
+      "above_8000"
+    ],
+    "settlementBoost": [],
+    "tags": [
+      "bank",
+      "kredyt",
+      "konto"
+    ]
+  },
+  {
+    "brandName": "mBank",
+    "category": "financial_services",
+    "awareness": 0.75,
+    "sentimentWeights": {
+      "negative": 15,
+      "neutral": 40,
+      "positive": 45
+    },
+    "ageAffinity": [
+      22,
+      50
+    ],
+    "incomeAffinity": [
+      "2000_3500",
+      "3500_5000",
+      "5000_8000",
+      "above_8000"
+    ],
+    "settlementBoost": [
+      "medium_city",
+      "large_city",
+      "metropolis"
+    ],
+    "tags": [
+      "bank",
+      "konto",
+      "online"
+    ]
+  },
+  {
+    "brandName": "Revolut",
+    "category": "financial_services",
+    "awareness": 0.55,
+    "sentimentWeights": {
+      "negative": 10,
+      "neutral": 30,
+      "positive": 60
+    },
+    "ageAffinity": [
+      18,
+      40
+    ],
+    "incomeAffinity": [
+      "3500_5000",
+      "5000_8000",
+      "above_8000"
+    ],
+    "settlementBoost": [
+      "large_city",
+      "metropolis"
+    ],
+    "tags": [
+      "fintech",
+      "karta",
+      "podróże"
+    ]
+  },
+  {
+    "brandName": "Biedronka",
+    "category": "fmcg",
+    "awareness": 0.99,
+    "sentimentWeights": {
+      "negative": 10,
+      "neutral": 35,
+      "positive": 55
+    },
+    "ageAffinity": [
+      18,
+      80
+    ],
+    "incomeAffinity": [
+      "below_2000",
+      "2000_3500",
+      "3500_5000",
+      "5000_8000",
+      "above_8000"
+    ],
+    "settlementBoost": [],
+    "tags": [
+      "sklep",
+      "zakupy",
+      "dyskonty"
+    ]
+  },
+  {
+    "brandName": "Lidl",
+    "category": "fmcg",
+    "awareness": 0.97,
+    "sentimentWeights": {
+      "negative": 8,
+      "neutral": 32,
+      "positive": 60
+    },
+    "ageAffinity": [
+      18,
+      80
+    ],
+    "incomeAffinity": [
+      "below_2000",
+      "2000_3500",
+      "3500_5000",
+      "5000_8000",
+      "above_8000"
+    ],
+    "settlementBoost": [],
+    "tags": [
+      "sklep",
+      "zakupy",
+      "dyskonty"
+    ]
+  },
+  {
+    "brandName": "Allegro",
+    "category": "electronics",
+    "awareness": 0.97,
+    "sentimentWeights": {
+      "negative": 12,
+      "neutral": 35,
+      "positive": 53
+    },
+    "ageAffinity": [
+      18,
+      70
+    ],
+    "incomeAffinity": [
+      "below_2000",
+      "2000_3500",
+      "3500_5000",
+      "5000_8000",
+      "above_8000"
+    ],
+    "settlementBoost": [],
+    "tags": [
+      "e-commerce",
+      "zakupy online",
+      "marketplace"
+    ]
+  },
+  {
+    "brandName": "Samsung",
+    "category": "electronics",
+    "awareness": 0.95,
+    "sentimentWeights": {
+      "negative": 10,
+      "neutral": 35,
+      "positive": 55
+    },
+    "ageAffinity": [
+      18,
+      65
+    ],
+    "incomeAffinity": [
+      "2000_3500",
+      "3500_5000",
+      "5000_8000",
+      "above_8000"
+    ],
+    "settlementBoost": [],
+    "tags": [
+      "smartfon",
+      "telewizor",
+      "elektronika"
+    ]
+  },
+  {
+    "brandName": "Apple",
+    "category": "electronics",
+    "awareness": 0.92,
+    "sentimentWeights": {
+      "negative": 20,
+      "neutral": 30,
+      "positive": 50
+    },
+    "ageAffinity": [
+      18,
+      45
+    ],
+    "incomeAffinity": [
+      "3500_5000",
+      "5000_8000",
+      "above_8000"
+    ],
+    "settlementBoost": [
+      "large_city",
+      "metropolis"
+    ],
+    "tags": [
+      "iPhone",
+      "premium",
+      "ekosystem"
+    ]
+  },
+  {
+    "brandName": "Xiaomi",
+    "category": "electronics",
+    "awareness": 0.75,
+    "sentimentWeights": {
+      "negative": 12,
+      "neutral": 38,
+      "positive": 50
+    },
+    "ageAffinity": [
+      18,
+      40
+    ],
+    "incomeAffinity": [
+      "below_2000",
+      "2000_3500",
+      "3500_5000"
+    ],
+    "settlementBoost": [],
+    "tags": [
+      "smartfon",
+      "budżet",
+      "tech"
+    ]
+  },
+  {
+    "brandName": "Reserved",
+    "category": "fashion",
+    "awareness": 0.9,
+    "sentimentWeights": {
+      "negative": 12,
+      "neutral": 38,
+      "positive": 50
+    },
+    "ageAffinity": [
+      18,
+      45
+    ],
+    "incomeAffinity": [
+      "2000_3500",
+      "3500_5000",
+      "5000_8000"
+    ],
+    "settlementBoost": [
+      "medium_city",
+      "large_city",
+      "metropolis"
+    ],
+    "tags": [
+      "ubrania",
+      "moda",
+      "galeria"
+    ]
+  },
+  {
+    "brandName": "CCC",
+    "category": "fashion",
+    "awareness": 0.88,
+    "sentimentWeights": {
+      "negative": 15,
+      "neutral": 40,
+      "positive": 45
+    },
+    "ageAffinity": [
+      18,
+      60
+    ],
+    "incomeAffinity": [
+      "below_2000",
+      "2000_3500",
+      "3500_5000"
+    ],
+    "settlementBoost": [],
+    "tags": [
+      "obuwie",
+      "akcesoria",
+      "moda"
+    ]
+  },
+  {
+    "brandName": "Netflix",
+    "category": "entertainment",
+    "awareness": 0.9,
+    "sentimentWeights": {
+      "negative": 15,
+      "neutral": 30,
+      "positive": 55
+    },
+    "ageAffinity": [
+      18,
+      50
+    ],
+    "incomeAffinity": [
+      "2000_3500",
+      "3500_5000",
+      "5000_8000",
+      "above_8000"
+    ],
+    "settlementBoost": [
+      "medium_city",
+      "large_city",
+      "metropolis"
+    ],
+    "tags": [
+      "streaming",
+      "filmy",
+      "seriale"
+    ]
+  },
+  {
+    "brandName": "Spotify",
+    "category": "entertainment",
+    "awareness": 0.8,
+    "sentimentWeights": {
+      "negative": 10,
+      "neutral": 30,
+      "positive": 60
+    },
+    "ageAffinity": [
+      18,
+      45
+    ],
+    "incomeAffinity": [
+      "2000_3500",
+      "3500_5000",
+      "5000_8000",
+      "above_8000"
+    ],
+    "settlementBoost": [],
+    "tags": [
+      "muzyka",
+      "streaming",
+      "podcast"
+    ]
+  },
+  {
+    "brandName": "Glovo",
+    "category": "food_delivery",
+    "awareness": 0.7,
+    "sentimentWeights": {
+      "negative": 20,
+      "neutral": 35,
+      "positive": 45
+    },
+    "ageAffinity": [
+      18,
+      40
+    ],
+    "incomeAffinity": [
+      "2000_3500",
+      "3500_5000",
+      "5000_8000",
+      "above_8000"
+    ],
+    "settlementBoost": [
+      "medium_city",
+      "large_city",
+      "metropolis"
+    ],
+    "tags": [
+      "dostawa",
+      "jedzenie",
+      "aplikacja"
+    ]
+  },
+  {
+    "brandName": "Żywiec",
+    "category": "fmcg",
+    "awareness": 0.92,
+    "sentimentWeights": {
+      "negative": 10,
+      "neutral": 40,
+      "positive": 50
+    },
+    "ageAffinity": [
+      20,
+      70
+    ],
+    "incomeAffinity": [
+      "below_2000",
+      "2000_3500",
+      "3500_5000",
+      "5000_8000"
+    ],
+    "settlementBoost": [],
+    "tags": [
+      "piwo",
+      "alkohol",
+      "imprezy"
+    ]
+  },
+  {
+    "brandName": "Tymbark",
+    "category": "fmcg",
+    "awareness": 0.93,
+    "sentimentWeights": {
+      "negative": 5,
+      "neutral": 35,
+      "positive": 60
+    },
+    "ageAffinity": [
+      18,
+      80
+    ],
+    "incomeAffinity": [
+      "below_2000",
+      "2000_3500",
+      "3500_5000",
+      "5000_8000",
+      "above_8000"
+    ],
+    "settlementBoost": [],
+    "tags": [
+      "soki",
+      "napoje",
+      "dzieci"
+    ]
+  },
+  {
+    "brandName": "Wedel",
+    "category": "fmcg",
+    "awareness": 0.95,
+    "sentimentWeights": {
+      "negative": 5,
+      "neutral": 30,
+      "positive": 65
+    },
+    "ageAffinity": [
+      18,
+      80
+    ],
+    "incomeAffinity": [
+      "below_2000",
+      "2000_3500",
+      "3500_5000",
+      "5000_8000",
+      "above_8000"
+    ],
+    "settlementBoost": [],
+    "tags": [
+      "czekolada",
+      "słodycze",
+      "polskie"
+    ]
+  },
+  {
+    "brandName": "LOT",
+    "category": "travel",
+    "awareness": 0.88,
+    "sentimentWeights": {
+      "negative": 25,
+      "neutral": 40,
+      "positive": 35
+    },
+    "ageAffinity": [
+      25,
+      70
+    ],
+    "incomeAffinity": [
+      "3500_5000",
+      "5000_8000",
+      "above_8000"
+    ],
+    "settlementBoost": [
+      "large_city",
+      "metropolis"
+    ],
+    "tags": [
+      "loty",
+      "podróże",
+      "polskie linie"
+    ]
+  },
+  {
+    "brandName": "Wizz Air",
+    "category": "travel",
+    "awareness": 0.8,
+    "sentimentWeights": {
+      "negative": 30,
+      "neutral": 35,
+      "positive": 35
+    },
+    "ageAffinity": [
+      18,
+      45
+    ],
+    "incomeAffinity": [
+      "2000_3500",
+      "3500_5000"
+    ],
+    "settlementBoost": [],
+    "tags": [
+      "loty",
+      "tanie linie",
+      "podróże"
+    ]
+  },
+  {
+    "brandName": "T-Mobile",
+    "category": "electronics",
+    "awareness": 0.9,
+    "sentimentWeights": {
+      "negative": 18,
+      "neutral": 40,
+      "positive": 42
+    },
+    "ageAffinity": [
+      18,
+      65
+    ],
+    "incomeAffinity": [
+      "below_2000",
+      "2000_3500",
+      "3500_5000",
+      "5000_8000",
+      "above_8000"
+    ],
+    "settlementBoost": [],
+    "tags": [
+      "internet",
+      "telefon",
+      "operator"
+    ]
+  },
+  {
+    "brandName": "Play",
+    "category": "electronics",
+    "awareness": 0.88,
+    "sentimentWeights": {
+      "negative": 20,
+      "neutral": 40,
+      "positive": 40
+    },
+    "ageAffinity": [
+      18,
+      55
+    ],
+    "incomeAffinity": [
+      "below_2000",
+      "2000_3500",
+      "3500_5000"
+    ],
+    "settlementBoost": [],
+    "tags": [
+      "internet",
+      "telefon",
+      "operator"
+    ]
+  },
+  {
+    "brandName": "LUX MED",
+    "category": "healthcare",
+    "awareness": 0.72,
+    "sentimentWeights": {
+      "negative": 15,
+      "neutral": 40,
+      "positive": 45
+    },
+    "ageAffinity": [
+      25,
+      70
+    ],
+    "incomeAffinity": [
+      "3500_5000",
+      "5000_8000",
+      "above_8000"
+    ],
+    "settlementBoost": [
+      "medium_city",
+      "large_city",
+      "metropolis"
+    ],
+    "tags": [
+      "prywatna opieka",
+      "lekarz",
+      "ubezpieczenie"
+    ]
+  },
+  {
+    "brandName": "Volkswagen",
+    "category": "automotive",
+    "awareness": 0.87,
+    "sentimentWeights": {
+      "negative": 15,
+      "neutral": 40,
+      "positive": 45
+    },
+    "ageAffinity": [
+      25,
+      70
+    ],
+    "incomeAffinity": [
+      "3500_5000",
+      "5000_8000",
+      "above_8000"
+    ],
+    "settlementBoost": [],
+    "tags": [
+      "samochód",
+      "auto",
+      "niemiecka jakość"
+    ],
+    "_source": "SAMAR YTD 2025: VW #3 PL (7% market share, 43k rejestracji)"
+  },
+  {
+    "brandName": "Toyota",
+    "category": "automotive",
+    "awareness": 0.88,
+    "sentimentWeights": {
+      "negative": 8,
+      "neutral": 40,
+      "positive": 52
+    },
+    "ageAffinity": [
+      30,
+      75
+    ],
+    "incomeAffinity": [
+      "3500_5000",
+      "5000_8000",
+      "above_8000"
+    ],
+    "settlementBoost": [],
+    "tags": [
+      "samochód",
+      "niezawodność",
+      "hybryda"
+    ],
+    "_source": "SAMAR YTD 2025: Toyota #1 PL (15% market share, 92k rejestracji)"
+  },
+  {
+    "brandName": "Bosch",
+    "category": "home_appliances",
+    "awareness": 0.86,
+    "sentimentWeights": {
+      "negative": 8,
+      "neutral": 35,
+      "positive": 57
+    },
+    "ageAffinity": [
+      25,
+      70
+    ],
+    "incomeAffinity": [
+      "3500_5000",
+      "5000_8000",
+      "above_8000"
+    ],
+    "settlementBoost": [],
+    "tags": [
+      "AGD",
+      "jakość",
+      "niemieckie"
+    ],
+    "_source_agd": "4P Beko 2021: aided 85.6% (rank 1 AGD PL)"
+  },
+  {
+    "brandName": "Beko",
+    "category": "home_appliances",
+    "awareness": 0.84,
+    "sentimentWeights": {
+      "negative": 22,
+      "neutral": 52,
+      "positive": 26
+    },
+    "ageAffinity": [
+      25,
+      55
+    ],
+    "incomeAffinity": [
+      "below_2000",
+      "2000_3500",
+      "3500_5000"
+    ],
+    "settlementBoost": [],
+    "tags": [
+      "AGD",
+      "pralka",
+      "lodówka",
+      "budżet"
+    ],
+    "_source": "4P/MediaRepublic Beko 2024-08: spontaniczne recall 18%, blind test brand ID 5%",
+    "_source_agd": "4P Beko 2021: aided 83.5%, ad recall rank #3, HarvestFresh campaign"
+  },
+  {
+    "brandName": "Amica",
+    "category": "home_appliances",
+    "awareness": 0.82,
+    "sentimentWeights": {
+      "negative": 12,
+      "neutral": 45,
+      "positive": 43
+    },
+    "ageAffinity": [
+      30,
+      65
+    ],
+    "incomeAffinity": [
+      "below_2000",
+      "2000_3500",
+      "3500_5000"
+    ],
+    "settlementBoost": [],
+    "tags": [
+      "AGD",
+      "polskie",
+      "pralka",
+      "kuchenka"
+    ],
+    "_source": "4P/MediaRepublic Beko 2024-08: spontaniczne recall kategorii AGD 16%",
+    "_source_agd": "4P Beko 2021: aided 81.9% (rank 4 AGD PL)"
+  },
+  {
+    "brandName": "Electrolux",
+    "category": "home_appliances",
+    "awareness": 0.8,
+    "sentimentWeights": {
+      "negative": 12,
+      "neutral": 42,
+      "positive": 46
+    },
+    "ageAffinity": [
+      30,
+      65
+    ],
+    "incomeAffinity": [
+      "2000_3500",
+      "3500_5000",
+      "5000_8000"
+    ],
+    "settlementBoost": [],
+    "tags": [
+      "AGD",
+      "pralka",
+      "lodówka"
+    ],
+    "_source": "4P/MediaRepublic Beko 2024-08: spontaniczne recall kategorii AGD 11%",
+    "_source_agd": "4P Beko 2021: aided 79.2% (rank 5 AGD PL)"
+  },
+  {
+    "brandName": "Whirlpool",
+    "category": "home_appliances",
+    "awareness": 0.79,
+    "sentimentWeights": {
+      "negative": 15,
+      "neutral": 48,
+      "positive": 37
+    },
+    "ageAffinity": [
+      30,
+      65
+    ],
+    "incomeAffinity": [
+      "2000_3500",
+      "3500_5000",
+      "5000_8000"
+    ],
+    "settlementBoost": [],
+    "tags": [
+      "AGD",
+      "pralka",
+      "zmywarka"
+    ],
+    "_source": "4P/MediaRepublic Beko 2024-08: spontaniczne recall kategorii AGD 7%",
+    "_source_agd": "4P Beko 2021: aided 79.2% (rank 6 AGD PL)"
+  },
+  {
+    "brandName": "Siemens",
+    "category": "home_appliances",
+    "awareness": 0.7,
+    "sentimentWeights": {
+      "negative": 8,
+      "neutral": 38,
+      "positive": 54
+    },
+    "ageAffinity": [
+      35,
+      70
+    ],
+    "incomeAffinity": [
+      "3500_5000",
+      "5000_8000",
+      "above_8000"
+    ],
+    "settlementBoost": [
+      "large_city",
+      "metropolis"
+    ],
+    "tags": [
+      "AGD",
+      "premium",
+      "niemieckie"
+    ],
+    "_source": "4P/MediaRepublic Beko 2024-08: spontaniczne recall kategorii AGD 2%",
+    "_source_agd": "4P Beko 2021: aided 70.4% (rank 8 AGD PL)"
+  },
+  {
+    "brandName": "Gorenje",
+    "category": "home_appliances",
+    "awareness": 0.51,
+    "sentimentWeights": {
+      "negative": 10,
+      "neutral": 52,
+      "positive": 38
+    },
+    "ageAffinity": [
+      30,
+      65
+    ],
+    "incomeAffinity": [
+      "2000_3500",
+      "3500_5000"
+    ],
+    "settlementBoost": [],
+    "tags": [
+      "AGD",
+      "pralka",
+      "lodówka"
+    ],
+    "_source": "4P/MediaRepublic Beko 2024-08: spontaniczne recall kategorii AGD 4%",
+    "_source_agd": "4P Beko 2021: aided 51.0% (rank 11 AGD PL)"
+  },
+  {
+    "brandName": "L'Oréal",
+    "category": "beauty",
+    "awareness": 0.88,
+    "sentimentWeights": {
+      "negative": 10,
+      "neutral": 32,
+      "positive": 58
+    },
+    "ageAffinity": [
+      22,
+      65
+    ],
+    "incomeAffinity": [
+      "2000_3500",
+      "3500_5000",
+      "5000_8000",
+      "above_8000"
+    ],
+    "settlementBoost": [
+      "medium_city",
+      "large_city",
+      "metropolis"
+    ],
+    "tags": [
+      "pielęgnacja włosów",
+      "kosmetyki",
+      "premium"
+    ],
+    "_source": "4P/MediaRepublic Wella 2024: świadomość spontaniczna haircare PRE=41% POST=39% (N~500)"
+  },
+  {
+    "brandName": "Garnier",
+    "category": "beauty",
+    "awareness": 0.8,
+    "sentimentWeights": {
+      "negative": 8,
+      "neutral": 35,
+      "positive": 57
+    },
+    "ageAffinity": [
+      18,
+      55
+    ],
+    "incomeAffinity": [
+      "2000_3500",
+      "3500_5000",
+      "5000_8000"
+    ],
+    "settlementBoost": [],
+    "tags": [
+      "pielęgnacja włosów",
+      "szampon",
+      "dostępny"
+    ],
+    "_source": "4P/MediaRepublic Wella 2024: świadomość spontaniczna haircare PRE=28% POST=20%"
+  },
+  {
+    "brandName": "Pantene",
+    "category": "beauty",
+    "awareness": 0.72,
+    "sentimentWeights": {
+      "negative": 8,
+      "neutral": 37,
+      "positive": 55
+    },
+    "ageAffinity": [
+      25,
+      60
+    ],
+    "incomeAffinity": [
+      "2000_3500",
+      "3500_5000",
+      "5000_8000"
+    ],
+    "settlementBoost": [],
+    "tags": [
+      "szampon",
+      "odżywka",
+      "pielęgnacja"
+    ],
+    "_source": "4P/MediaRepublic Wella 2024: świadomość spontaniczna haircare PRE=17% POST=17%"
+  },
+  {
+    "brandName": "Syoss",
+    "category": "beauty",
+    "awareness": 0.68,
+    "sentimentWeights": {
+      "negative": 10,
+      "neutral": 45,
+      "positive": 45
+    },
+    "ageAffinity": [
+      20,
+      50
+    ],
+    "incomeAffinity": [
+      "below_2000",
+      "2000_3500",
+      "3500_5000"
+    ],
+    "settlementBoost": [],
+    "tags": [
+      "szampon",
+      "budżet",
+      "pielęgnacja"
+    ],
+    "_source": "4P/MediaRepublic Wella 2024: świadomość spontaniczna haircare PRE=16% POST=17%"
+  },
+  {
+    "brandName": "Head & Shoulders",
+    "category": "beauty",
+    "awareness": 0.7,
+    "sentimentWeights": {
+      "negative": 10,
+      "neutral": 40,
+      "positive": 50
+    },
+    "ageAffinity": [
+      20,
+      55
+    ],
+    "incomeAffinity": [
+      "below_2000",
+      "2000_3500",
+      "3500_5000",
+      "5000_8000"
+    ],
+    "settlementBoost": [],
+    "tags": [
+      "szampon",
+      "łupież",
+      "funkcjonalny"
+    ],
+    "_source": "4P/MediaRepublic Wella 2024: świadomość spontaniczna haircare PRE=13% POST=10%"
+  },
+  {
+    "brandName": "Schwarzkopf",
+    "category": "beauty",
+    "awareness": 0.65,
+    "sentimentWeights": {
+      "negative": 8,
+      "neutral": 38,
+      "positive": 54
+    },
+    "ageAffinity": [
+      25,
+      60
+    ],
+    "incomeAffinity": [
+      "2000_3500",
+      "3500_5000",
+      "5000_8000",
+      "above_8000"
+    ],
+    "settlementBoost": [
+      "medium_city",
+      "large_city",
+      "metropolis"
+    ],
+    "tags": [
+      "farba",
+      "pielęgnacja włosów",
+      "premium",
+      "salon"
+    ],
+    "_source": "4P/MediaRepublic Wella 2024: świadomość spontaniczna haircare PRE=11% POST=11%"
+  },
+  {
+    "brandName": "Gliss Kur",
+    "category": "beauty",
+    "awareness": 0.62,
+    "sentimentWeights": {
+      "negative": 8,
+      "neutral": 40,
+      "positive": 52
+    },
+    "ageAffinity": [
+      20,
+      50
+    ],
+    "incomeAffinity": [
+      "2000_3500",
+      "3500_5000"
+    ],
+    "settlementBoost": [],
+    "tags": [
+      "odżywka",
+      "regeneracja",
+      "pielęgnacja"
+    ],
+    "_source": "4P/MediaRepublic Wella 2024: świadomość spontaniczna haircare PRE=11% POST=10%"
+  },
+  {
+    "brandName": "Wella",
+    "category": "beauty",
+    "awareness": 0.55,
+    "sentimentWeights": {
+      "negative": 8,
+      "neutral": 42,
+      "positive": 50
+    },
+    "ageAffinity": [
+      28,
+      60
+    ],
+    "incomeAffinity": [
+      "2000_3500",
+      "3500_5000",
+      "5000_8000",
+      "above_8000"
+    ],
+    "settlementBoost": [
+      "medium_city",
+      "large_city",
+      "metropolis"
+    ],
+    "tags": [
+      "pielęgnacja włosów",
+      "profesjonalna",
+      "salon"
+    ],
+    "_source": "4P/MediaRepublic Wella 2024: świadomość spontaniczna haircare PRE=10% POST=11% (kampania MR +1pp lift)"
+  },
+  {
+    "brandName": "Dove",
+    "category": "beauty",
+    "awareness": 0.75,
+    "sentimentWeights": {
+      "negative": 6,
+      "neutral": 32,
+      "positive": 62
+    },
+    "ageAffinity": [
+      20,
+      65
+    ],
+    "incomeAffinity": [
+      "below_2000",
+      "2000_3500",
+      "3500_5000",
+      "5000_8000"
+    ],
+    "settlementBoost": [],
+    "tags": [
+      "pielęgnacja",
+      "delikatny",
+      "nawilżanie",
+      "szampon"
+    ],
+    "_source": "4P/MediaRepublic Wella 2024: świadomość spontaniczna haircare PRE=8% POST=7%"
+  },
+  {
+    "brandName": "Ariston",
+    "category": "home_appliances",
+    "_subcategory": "heating",
+    "_source": "4P dla MR Ariston I+II fala 2025-2026; spontaniczna PRE=3% POST=4%; wspomagana pompy PRE=30% POST=34%, kotły PRE=27% POST=28%",
+    "awareness": 0.31,
+    "sentimentWeights": {
+      "negative": 15,
+      "neutral": 50,
+      "positive": 35
+    },
+    "ageAffinity": [
+      30,
+      65
+    ],
+    "incomeAffinity": [
+      "3500_5000",
+      "5000_8000",
+      "above_8000"
+    ],
+    "settlementBoost": [
+      "village",
+      "small_city"
+    ],
+    "tags": [
+      "pompa ciepła",
+      "kocioł kondensacyjny",
+      "ogrzewanie",
+      "włoski producent"
+    ]
+  },
+  {
+    "brandName": "Viessmann",
+    "category": "home_appliances",
+    "_subcategory": "heating",
+    "_source": "4P dla MR Ariston 2025-2026; lider spontanicznej 20-21%; wspomagana pompy 59%, kotły 52%",
+    "awareness": 0.55,
+    "sentimentWeights": {
+      "negative": 8,
+      "neutral": 32,
+      "positive": 60
+    },
+    "ageAffinity": [
+      35,
+      65
+    ],
+    "incomeAffinity": [
+      "5000_8000",
+      "above_8000"
+    ],
+    "settlementBoost": [
+      "village",
+      "small_city",
+      "medium_city"
+    ],
+    "tags": [
+      "pompa ciepła",
+      "kocioł",
+      "premium",
+      "niemiecki producent"
+    ]
+  },
+  {
+    "brandName": "Vaillant",
+    "category": "home_appliances",
+    "_subcategory": "heating",
+    "_source": "4P dla MR Ariston 2025-2026; spontaniczna 11%; wspomagana pompy 46%, kotły 42%",
+    "awareness": 0.44,
+    "sentimentWeights": {
+      "negative": 10,
+      "neutral": 38,
+      "positive": 52
+    },
+    "ageAffinity": [
+      35,
+      65
+    ],
+    "incomeAffinity": [
+      "3500_5000",
+      "5000_8000",
+      "above_8000"
+    ],
+    "settlementBoost": [
+      "village",
+      "small_city",
+      "medium_city"
+    ],
+    "tags": [
+      "kocioł kondensacyjny",
+      "pompa ciepła",
+      "premium",
+      "niemiecki producent"
+    ]
+  },
+  {
+    "brandName": "Buderus",
+    "category": "home_appliances",
+    "_subcategory": "heating",
+    "_source": "4P dla MR Ariston 2025-2026; spontaniczna 7%; wspomagana kotły 30%",
+    "awareness": 0.3,
+    "sentimentWeights": {
+      "negative": 10,
+      "neutral": 45,
+      "positive": 45
+    },
+    "ageAffinity": [
+      40,
+      65
+    ],
+    "incomeAffinity": [
+      "5000_8000",
+      "above_8000"
+    ],
+    "settlementBoost": [
+      "village",
+      "small_city"
+    ],
+    "tags": [
+      "kocioł kondensacyjny",
+      "ogrzewanie",
+      "premium"
+    ]
+  },
+  {
+    "brandName": "Daikin",
+    "category": "home_appliances",
+    "_subcategory": "heating_ac",
+    "_source": "4P dla MR Ariston 2025-2026; spontaniczna 4-5%; wspomagana pompy 29%",
+    "awareness": 0.29,
+    "sentimentWeights": {
+      "negative": 10,
+      "neutral": 45,
+      "positive": 45
+    },
+    "ageAffinity": [
+      30,
+      60
+    ],
+    "incomeAffinity": [
+      "5000_8000",
+      "above_8000"
+    ],
+    "settlementBoost": [
+      "village",
+      "small_city",
+      "medium_city"
+    ],
+    "tags": [
+      "pompa ciepła",
+      "klimatyzacja",
+      "japoński producent"
+    ]
+  },
+  {
+    "brandName": "Nibe",
+    "category": "home_appliances",
+    "_subcategory": "heating",
+    "_source": "4P dla MR Ariston 2025-2026; wspomagana pompy 24%",
+    "awareness": 0.24,
+    "sentimentWeights": {
+      "negative": 8,
+      "neutral": 50,
+      "positive": 42
+    },
+    "ageAffinity": [
+      35,
+      65
+    ],
+    "incomeAffinity": [
+      "5000_8000",
+      "above_8000"
+    ],
+    "settlementBoost": [
+      "village",
+      "small_city"
+    ],
+    "tags": [
+      "pompa ciepła gruntowa",
+      "ogrzewanie",
+      "szwedzki producent",
+      "premium"
+    ]
+  },
+  {
+    "brandName": "Kaisai",
+    "category": "home_appliances",
+    "_subcategory": "heating_ac",
+    "_source": "4P dla MR Ariston 2025-2026; spontaniczna 4%; wspomagana pompy 27%",
+    "awareness": 0.27,
+    "sentimentWeights": {
+      "negative": 15,
+      "neutral": 55,
+      "positive": 30
+    },
+    "ageAffinity": [
+      30,
+      60
+    ],
+    "incomeAffinity": [
+      "2000_3500",
+      "3500_5000",
+      "5000_8000"
+    ],
+    "settlementBoost": [
+      "village",
+      "small_city",
+      "medium_city"
+    ],
+    "tags": [
+      "pompa ciepła",
+      "klimatyzacja",
+      "budget"
+    ]
+  },
+  {
+    "brandName": "Skoda",
+    "category": "automotive",
+    "_source": "SAMAR YTD 2025: #2 PL (11% market share, 65k rejestracji)",
+    "awareness": 0.85,
+    "sentimentWeights": {
+      "negative": 10,
+      "neutral": 38,
+      "positive": 52
+    },
+    "ageAffinity": [
+      25,
+      65
+    ],
+    "incomeAffinity": [
+      "2000_3500",
+      "3500_5000",
+      "5000_8000"
+    ],
+    "settlementBoost": [
+      "medium_city",
+      "large_city",
+      "metropolis"
+    ],
+    "tags": [
+      "rodzinne",
+      "praktyczne",
+      "czeska marka",
+      "wartość"
+    ]
+  },
+  {
+    "brandName": "BMW",
+    "category": "automotive",
+    "_source": "SAMAR YTD 2025: #4 PL (5% market share, 31k rejestracji)",
+    "awareness": 0.88,
+    "sentimentWeights": {
+      "negative": 8,
+      "neutral": 25,
+      "positive": 67
+    },
+    "ageAffinity": [
+      30,
+      60
+    ],
+    "incomeAffinity": [
+      "5000_8000",
+      "above_8000"
+    ],
+    "settlementBoost": [
+      "large_city",
+      "metropolis"
+    ],
+    "tags": [
+      "premium",
+      "prestiż",
+      "sportowe",
+      "BEV rosnące"
+    ]
+  },
+  {
+    "brandName": "Kia",
+    "category": "automotive",
+    "_source": "SAMAR YTD 2025: #5 PL (5% market share, 31k rejestracji); lider C-SUV po Toyota",
+    "awareness": 0.78,
+    "sentimentWeights": {
+      "negative": 10,
+      "neutral": 40,
+      "positive": 50
+    },
+    "ageAffinity": [
+      25,
+      55
+    ],
+    "incomeAffinity": [
+      "3500_5000",
+      "5000_8000"
+    ],
+    "settlementBoost": [
+      "medium_city",
+      "large_city"
+    ],
+    "tags": [
+      "SUV",
+      "koreańska",
+      "gwarancja 7 lat",
+      "Sportage"
+    ]
+  },
+  {
+    "brandName": "Audi",
+    "category": "automotive",
+    "_source": "SAMAR YTD 2025: #6 PL (5% market share, 31k rejestracji)",
+    "awareness": 0.86,
+    "sentimentWeights": {
+      "negative": 8,
+      "neutral": 27,
+      "positive": 65
+    },
+    "ageAffinity": [
+      30,
+      60
+    ],
+    "incomeAffinity": [
+      "5000_8000",
+      "above_8000"
+    ],
+    "settlementBoost": [
+      "large_city",
+      "metropolis"
+    ],
+    "tags": [
+      "premium",
+      "technologia",
+      "Quattro",
+      "BEV"
+    ]
+  },
+  {
+    "brandName": "Mercedes",
+    "category": "automotive",
+    "_source": "SAMAR YTD 2025: #7 PL (5% market share, 30k rejestracji)",
+    "awareness": 0.88,
+    "sentimentWeights": {
+      "negative": 8,
+      "neutral": 22,
+      "positive": 70
+    },
+    "ageAffinity": [
+      35,
+      65
+    ],
+    "incomeAffinity": [
+      "5000_8000",
+      "above_8000"
+    ],
+    "settlementBoost": [
+      "large_city",
+      "metropolis"
+    ],
+    "tags": [
+      "luksus",
+      "prestiż",
+      "status",
+      "premium"
+    ]
+  },
+  {
+    "brandName": "Hyundai",
+    "category": "automotive",
+    "_source": "SAMAR YTD 2025: #8 PL (5% market share, 29k rejestracji)",
+    "awareness": 0.78,
+    "sentimentWeights": {
+      "negative": 10,
+      "neutral": 42,
+      "positive": 48
+    },
+    "ageAffinity": [
+      25,
+      55
+    ],
+    "incomeAffinity": [
+      "3500_5000",
+      "5000_8000"
+    ],
+    "settlementBoost": [
+      "medium_city",
+      "large_city"
+    ],
+    "tags": [
+      "koreańska",
+      "SUV",
+      "Tucson",
+      "niezawodność"
+    ]
+  },
+  {
+    "brandName": "Dacia",
+    "category": "automotive",
+    "_source": "SAMAR YTD 2025: #9 PL (4% market share, 22k rejestracji); lider budżetowy",
+    "awareness": 0.72,
+    "sentimentWeights": {
+      "negative": 15,
+      "neutral": 45,
+      "positive": 40
+    },
+    "ageAffinity": [
+      25,
+      65
+    ],
+    "incomeAffinity": [
+      "below_2000",
+      "2000_3500",
+      "3500_5000"
+    ],
+    "settlementBoost": [
+      "village",
+      "small_city",
+      "medium_city"
+    ],
+    "tags": [
+      "budżetowa",
+      "praktyczna",
+      "Duster",
+      "rumuńska"
+    ]
+  },
+  {
+    "brandName": "Renault",
+    "category": "automotive",
+    "_source": "SAMAR YTD 2025: #10 PL (4% market share, 22k rejestracji)",
+    "awareness": 0.8,
+    "sentimentWeights": {
+      "negative": 12,
+      "neutral": 43,
+      "positive": 45
+    },
+    "ageAffinity": [
+      25,
+      60
+    ],
+    "incomeAffinity": [
+      "2000_3500",
+      "3500_5000",
+      "5000_8000"
+    ],
+    "settlementBoost": [
+      "medium_city",
+      "large_city"
+    ],
+    "tags": [
+      "francuska",
+      "miejska",
+      "Captur",
+      "BEV Megane"
+    ]
+  },
+  {
+    "brandName": "Tesla",
+    "category": "automotive",
+    "_source": "SAMAR YTD 2025: #1 BEV PL (12% BEV share, 5.2k rejestracji)",
+    "awareness": 0.82,
+    "sentimentWeights": {
+      "negative": 15,
+      "neutral": 28,
+      "positive": 57
+    },
+    "ageAffinity": [
+      25,
+      50
+    ],
+    "incomeAffinity": [
+      "5000_8000",
+      "above_8000"
+    ],
+    "settlementBoost": [
+      "large_city",
+      "metropolis"
+    ],
+    "tags": [
+      "elektryczna",
+      "technologia",
+      "Elon Musk",
+      "premium EV",
+      "Model Y"
+    ]
+  },
+  {
+    "brandName": "BYD",
+    "category": "automotive",
+    "_source": "SAMAR YTD 2025: #2 BEV PL (8% BEV); chiński producent, +1567% r/r w 2025",
+    "awareness": 0.42,
+    "sentimentWeights": {
+      "negative": 20,
+      "neutral": 48,
+      "positive": 32
+    },
+    "ageAffinity": [
+      25,
+      50
+    ],
+    "incomeAffinity": [
+      "3500_5000",
+      "5000_8000"
+    ],
+    "settlementBoost": [
+      "large_city",
+      "metropolis"
+    ],
+    "tags": [
+      "chiński",
+      "elektryczny",
+      "tani EV",
+      "rosnący"
+    ]
+  },
+  {
+    "brandName": "MG",
+    "category": "automotive",
+    "_source": "SAMAR YTD 2025: #1 chiński PL (2.5% market share, 15k rejestracji)",
+    "awareness": 0.38,
+    "sentimentWeights": {
+      "negative": 18,
+      "neutral": 50,
+      "positive": 32
+    },
+    "ageAffinity": [
+      25,
+      50
+    ],
+    "incomeAffinity": [
+      "2000_3500",
+      "3500_5000"
+    ],
+    "settlementBoost": [
+      "medium_city",
+      "large_city"
+    ],
+    "tags": [
+      "chiński",
+      "budżetowy SUV",
+      "rosnący"
+    ]
+  },
+  {
+    "brandName": "Magne B6",
+    "category": "healthcare",
+    "subcategory": "otc_magnez",
+    "awareness": 0.68,
+    "sentimentWeights": {
+      "negative": 10,
+      "neutral": 55,
+      "positive": 35
+    },
+    "ageAffinity": [
+      25,
+      70
+    ],
+    "genderSkew": "female_primary",
+    "incomeAffinity": [
+      "below_2000",
+      "2000_3500",
+      "3500_5000",
+      "5000_8000"
+    ],
+    "settlementBoost": [],
+    "tags": [
+      "magnez",
+      "suplement",
+      "otc",
+      "apteka",
+      "stres",
+      "zmęczenie",
+      "sanofi"
+    ],
+    "marketSharePct": 51.2,
+    "notes": "Lider kategorii magnez w PL; silna wieloletnia obecność TV"
+  },
+  {
+    "brandName": "Magnefar B6",
+    "category": "healthcare",
+    "subcategory": "otc_magnez",
+    "awareness": 0.48,
+    "sentimentWeights": {
+      "negative": 10,
+      "neutral": 52,
+      "positive": 38
+    },
+    "ageAffinity": [
+      30,
+      65
+    ],
+    "genderSkew": "female_primary",
+    "incomeAffinity": [
+      "below_2000",
+      "2000_3500",
+      "3500_5000"
+    ],
+    "settlementBoost": [],
+    "tags": [
+      "magnez",
+      "suplement",
+      "otc",
+      "apteka",
+      "biofarm",
+      "tańsza_alternatywa"
+    ],
+    "marketSharePct": 10.4,
+    "notes": "Nr 2 rynku; dokument 4P: NISKI brand awareness; cena 2/3 vs Magne"
+  },
+  {
+    "brandName": "Maglek",
+    "category": "healthcare",
+    "subcategory": "otc_magnez",
+    "awareness": 0.28,
+    "sentimentWeights": {
+      "negative": 12,
+      "neutral": 58,
+      "positive": 30
+    },
+    "ageAffinity": [
+      30,
+      65
+    ],
+    "genderSkew": "female_primary",
+    "incomeAffinity": [
+      "below_2000",
+      "2000_3500"
+    ],
+    "settlementBoost": [],
+    "tags": [
+      "magnez",
+      "suplement",
+      "otc",
+      "apteka"
+    ],
+    "marketSharePct": 6.3
+  },
+  {
+    "brandName": "Ibuvit D",
+    "category": "healthcare",
+    "subcategory": "otc_witamina_d",
+    "awareness": 0.8,
+    "sentimentWeights": {
+      "negative": 8,
+      "neutral": 38,
+      "positive": 54
+    },
+    "ageAffinity": [
+      25,
+      75
+    ],
+    "genderSkew": "female_primary",
+    "incomeAffinity": [
+      "2000_3500",
+      "3500_5000",
+      "5000_8000",
+      "above_8000"
+    ],
+    "settlementBoost": [
+      "medium_city",
+      "large_city",
+      "metropolis"
+    ],
+    "tags": [
+      "witamina_d",
+      "odpornosc",
+      "otc",
+      "apteka",
+      "jesien_zima",
+      "suplement"
+    ],
+    "marketSharePct": 53.7,
+    "notes": "Lider wit. D; +43% r/r; dominuje kategorię; silna kampania TV"
+  },
+  {
+    "brandName": "Vigalex",
+    "category": "healthcare",
+    "subcategory": "otc_witamina_d",
+    "awareness": 0.22,
+    "sentimentWeights": {
+      "negative": 8,
+      "neutral": 65,
+      "positive": 27
+    },
+    "ageAffinity": [
+      30,
+      70
+    ],
+    "genderSkew": "female_primary",
+    "incomeAffinity": [
+      "below_2000",
+      "2000_3500",
+      "3500_5000"
+    ],
+    "settlementBoost": [],
+    "tags": [
+      "witamina_d",
+      "odpornosc",
+      "otc",
+      "apteka",
+      "biofarm",
+      "tańsza_alternatywa"
+    ],
+    "marketSharePct": 10.4,
+    "notes": "Nr 2 rynku; dokument 4P: NISKI brand awareness; tańsza alternatywa Ibuvit"
+  },
+  {
+    "brandName": "Vigantoletten",
+    "category": "healthcare",
+    "subcategory": "otc_witamina_d",
+    "awareness": 0.38,
+    "sentimentWeights": {
+      "negative": 8,
+      "neutral": 52,
+      "positive": 40
+    },
+    "ageAffinity": [
+      35,
+      75
+    ],
+    "genderSkew": "female_primary",
+    "incomeAffinity": [
+      "2000_3500",
+      "3500_5000",
+      "5000_8000"
+    ],
+    "settlementBoost": [
+      "large_city",
+      "metropolis"
+    ],
+    "tags": [
+      "witamina_d",
+      "odpornosc",
+      "otc",
+      "apteka",
+      "merck",
+      "premium"
+    ],
+    "marketSharePct": 10.3
+  },
+  {
+    "brandName": "Ginkofar",
+    "category": "healthcare",
+    "subcategory": "otc_ginko",
+    "awareness": 0.52,
+    "sentimentWeights": {
+      "negative": 8,
+      "neutral": 52,
+      "positive": 40
+    },
+    "ageAffinity": [
+      55,
+      80
+    ],
+    "genderSkew": "female_primary",
+    "incomeAffinity": [
+      "2000_3500",
+      "3500_5000",
+      "5000_8000"
+    ],
+    "settlementBoost": [
+      "small_city",
+      "medium_city"
+    ],
+    "tags": [
+      "ginko",
+      "pamiec",
+      "koncentracja",
+      "otc",
+      "apteka",
+      "biofarm",
+      "senior"
+    ],
+    "marketSharePct": 51.9,
+    "notes": "Lider kategorii ginko; jedyna aktywna marka ATL w kategorii; target 55+"
+  },
+  {
+    "brandName": "Bilobil",
+    "category": "healthcare",
+    "subcategory": "otc_ginko",
+    "awareness": 0.25,
+    "sentimentWeights": {
+      "negative": 10,
+      "neutral": 55,
+      "positive": 35
+    },
+    "ageAffinity": [
+      55,
+      80
+    ],
+    "genderSkew": "female_primary",
+    "incomeAffinity": [
+      "2000_3500",
+      "3500_5000"
+    ],
+    "settlementBoost": [],
+    "tags": [
+      "ginko",
+      "pamiec",
+      "otc",
+      "apteka",
+      "krka"
+    ],
+    "marketSharePct": 16.4
+  },
+  {
+    "brandName": "Dorminox",
+    "category": "healthcare",
+    "subcategory": "otc_sen_doksylamina",
+    "awareness": 0.42,
+    "sentimentWeights": {
+      "negative": 12,
+      "neutral": 60,
+      "positive": 28
+    },
+    "ageAffinity": [
+      35,
+      65
+    ],
+    "genderSkew": "female_primary",
+    "incomeAffinity": [
+      "2000_3500",
+      "3500_5000",
+      "5000_8000"
+    ],
+    "settlementBoost": [
+      "medium_city",
+      "large_city",
+      "metropolis"
+    ],
+    "tags": [
+      "sen",
+      "bezsennosc",
+      "otc",
+      "apteka",
+      "sanofi",
+      "doksylamina"
+    ],
+    "marketSharePct": 37,
+    "notes": "Lider kategorii leków nasennych OTC; 3015 GRP Q1-Q2 2025"
+  },
+  {
+    "brandName": "Noctis Noc",
+    "category": "healthcare",
+    "subcategory": "otc_sen_doksylamina",
+    "awareness": 0.32,
+    "sentimentWeights": {
+      "negative": 10,
+      "neutral": 62,
+      "positive": 28
+    },
+    "ageAffinity": [
+      35,
+      55
+    ],
+    "genderSkew": "female_primary",
+    "incomeAffinity": [
+      "2000_3500",
+      "3500_5000",
+      "5000_8000"
+    ],
+    "settlementBoost": [
+      "medium_city",
+      "large_city",
+      "metropolis"
+    ],
+    "tags": [
+      "sen",
+      "bezsennosc",
+      "otc",
+      "apteka",
+      "biofarm",
+      "doksylamina",
+      "nowy"
+    ],
+    "marketSharePct": 27,
+    "notes": "Wejście 2024; 27% share po roku; 1300 GRP Q1-Q2 2025; tańszy od Dorminox"
+  },
+  {
+    "brandName": "Senamina",
+    "category": "healthcare",
+    "subcategory": "otc_sen_doksylamina",
+    "awareness": 0.28,
+    "sentimentWeights": {
+      "negative": 10,
+      "neutral": 52,
+      "positive": 38
+    },
+    "ageAffinity": [
+      35,
+      65
+    ],
+    "genderSkew": "female_primary",
+    "incomeAffinity": [
+      "2000_3500",
+      "3500_5000"
+    ],
+    "settlementBoost": [],
+    "tags": [
+      "sen",
+      "bezsennosc",
+      "otc",
+      "apteka",
+      "doksylamina"
+    ],
+    "marketSharePct": 20
+  },
+  {
+    "brandName": "Melatonina Lek-am",
+    "category": "healthcare",
+    "subcategory": "otc_melatonina",
+    "awareness": 0.58,
+    "sentimentWeights": {
+      "negative": 10,
+      "neutral": 60,
+      "positive": 30
+    },
+    "ageAffinity": [
+      35,
+      65
+    ],
+    "genderSkew": "female_primary",
+    "incomeAffinity": [
+      "2000_3500",
+      "3500_5000",
+      "5000_8000"
+    ],
+    "settlementBoost": [],
+    "tags": [
+      "melatonina",
+      "sen",
+      "ritm_dobowy",
+      "otc",
+      "apteka",
+      "lider"
+    ],
+    "marketSharePct": 71.3,
+    "notes": "Dominujący lider melatoniny; 1663 GRP Q1-Q2 2025; spada z ~80% do 71%"
+  },
+  {
+    "brandName": "Melatonina Biofarm",
+    "category": "healthcare",
+    "subcategory": "otc_melatonina",
+    "awareness": 0.12,
+    "sentimentWeights": {
+      "negative": 8,
+      "neutral": 70,
+      "positive": 22
+    },
+    "ageAffinity": [
+      35,
+      60
+    ],
+    "genderSkew": "female_primary",
+    "incomeAffinity": [
+      "below_2000",
+      "2000_3500",
+      "3500_5000"
+    ],
+    "settlementBoost": [],
+    "tags": [
+      "melatonina",
+      "sen",
+      "ritm_dobowy",
+      "otc",
+      "apteka",
+      "biofarm",
+      "nowy"
+    ],
+    "marketSharePct": 8.1,
+    "notes": "Wejście sierpień 2024; bardzo niski awareness; najtańsza opcja; 434 GRP Q1-Q2 2025"
+  },
+  {
+    "brandName": "Melabiorytm",
+    "category": "healthcare",
+    "subcategory": "otc_melatonina",
+    "awareness": 0.22,
+    "sentimentWeights": {
+      "negative": 8,
+      "neutral": 58,
+      "positive": 34
+    },
+    "ageAffinity": [
+      35,
+      65
+    ],
+    "genderSkew": "female_primary",
+    "incomeAffinity": [
+      "2000_3500",
+      "3500_5000"
+    ],
+    "settlementBoost": [],
+    "tags": [
+      "melatonina",
+      "sen",
+      "otc",
+      "apteka"
+    ],
+    "marketSharePct": 11
+  },
+  {
+    "brandName": "Magnefar",
+    "category": "healthcare",
+    "awareness": 0.28,
+    "sentimentWeights": {
+      "negative": 8,
+      "neutral": 65,
+      "positive": 27
+    },
+    "notes": "OTC mag+B6 wice-lider, niska świadomość, model trade-based"
+  },
+  {
+    "brandName": "Magvit",
+    "category": "healthcare",
+    "awareness": 0.22,
+    "sentimentWeights": {
+      "negative": 8,
+      "neutral": 67,
+      "positive": 25
+    },
+    "notes": "OTC magnez Angelini, 4.4% share"
+  },
+  {
+    "brandName": "Ibuvit",
+    "category": "healthcare",
+    "awareness": 0.62,
+    "sentimentWeights": {
+      "negative": 8,
+      "neutral": 52,
+      "positive": 40
+    },
+    "notes": "OTC wit. D3 lider (53.7% share), silna kampania TV Polpharma"
+  },
+  {
+    "brandName": "DVitum",
+    "category": "healthcare",
+    "awareness": 0.32,
+    "sentimentWeights": {
+      "negative": 8,
+      "neutral": 65,
+      "positive": 27
+    },
+    "notes": "SD wit. D3 Oleofarm, 8.4% share"
+  },
+  {
+    "brandName": "Bilomag",
+    "category": "healthcare",
+    "awareness": 0.2,
+    "sentimentWeights": {
+      "negative": 10,
+      "neutral": 65,
+      "positive": 25
+    },
+    "notes": "SD Ginkgo Biloba, 15.3% share, trend spadkowy"
+  },
+  {
+    "brandName": "Sentino",
+    "category": "healthcare",
+    "awareness": 0.22,
+    "sentimentWeights": {
+      "negative": 8,
+      "neutral": 65,
+      "positive": 27
+    },
+    "notes": "OTC doksylamina USP Zdrowie, dynamiczny wzrost (486% r/r)"
+  }
+]

@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.env
+*.log
+data/results/
+data/simulations/
+data/population.json
+data/temp/

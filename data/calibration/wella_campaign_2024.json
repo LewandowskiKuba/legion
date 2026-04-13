@@ -1,0 +1,59 @@
+{
+  "_meta": {
+    "description": "Ground truth do walidacji symulacji – kampania Wella / Media Republic 2024",
+    "source": "4P dla MR Wella – Świadomość spontaniczna (PPTX)",
+    "date": "2024-08",
+    "methodology": "Świadomość spontaniczna (unaided recall). Q: 'Myśląc o produktach do pielęgnacji włosów, jakie marki przychodzą Ci do głowy?'",
+    "sample_pre": 501,
+    "sample_post": 502,
+    "usage": "Uruchom symulację kampanii Wella startując od awareness_pre. Oczekiwany wynik: awareness zbliżony do awareness_post (+1pp lift). Różnica >3pp sugeruje błąd kalibracji spreadu lub brand memory."
+  },
+  "category": "beauty",
+  "brand": "Wella",
+  "campaign_brand": "Wella",
+  "awareness_pre": 0.10,
+  "awareness_post": 0.11,
+  "awareness_lift_pp": 1,
+  "competitive_landscape_pre": [
+    { "brand": "L'Oréal",          "awareness": 0.41 },
+    { "brand": "Garnier",          "awareness": 0.28 },
+    { "brand": "Nivea",            "awareness": 0.17 },
+    { "brand": "Pantene",          "awareness": 0.17 },
+    { "brand": "Syoss",            "awareness": 0.16 },
+    { "brand": "Shauma",           "awareness": 0.15 },
+    { "brand": "OnlyBio",          "awareness": 0.14 },
+    { "brand": "Head & Shoulders", "awareness": 0.13 },
+    { "brand": "Schwarzkopf",      "awareness": 0.11 },
+    { "brand": "Elseve",           "awareness": 0.11 },
+    { "brand": "Gliss Kur",        "awareness": 0.11 },
+    { "brand": "Wella",            "awareness": 0.10 },
+    { "brand": "Joanna",           "awareness": 0.10 },
+    { "brand": "Ziaja",            "awareness": 0.08 },
+    { "brand": "Kerastase",        "awareness": 0.08 },
+    { "brand": "Dove",             "awareness": 0.08 },
+    { "brand": "Isana",            "awareness": 0.08 },
+    { "brand": "Anwen",            "awareness": 0.07 }
+  ],
+  "competitive_landscape_post": [
+    { "brand": "L'Oréal",          "awareness": 0.39, "delta_pp": -2 },
+    { "brand": "Garnier",          "awareness": 0.20, "delta_pp": -8 },
+    { "brand": "Nivea",            "awareness": 0.18, "delta_pp": +1 },
+    { "brand": "Pantene",          "awareness": 0.17, "delta_pp":  0 },
+    { "brand": "Syoss",            "awareness": 0.17, "delta_pp": +1 },
+    { "brand": "Shauma",           "awareness": 0.16, "delta_pp": +1 },
+    { "brand": "Ziaja",            "awareness": 0.12, "delta_pp": +4 },
+    { "brand": "OnlyBio",          "awareness": 0.11, "delta_pp": -3 },
+    { "brand": "Schwarzkopf",      "awareness": 0.11, "delta_pp":  0 },
+    { "brand": "Wella",            "awareness": 0.11, "delta_pp": +1 },
+    { "brand": "Elseve",           "awareness": 0.10, "delta_pp": -1 },
+    { "brand": "Gliss Kur",        "awareness": 0.10, "delta_pp": -1 },
+    { "brand": "Head & Shoulders", "awareness": 0.10, "delta_pp": -3 },
+    { "brand": "Joanna",           "awareness": 0.10, "delta_pp":  0 },
+    { "brand": "Dove",             "awareness": 0.07, "delta_pp": -1 }
+  ],
+  "validation_threshold": {
+    "pass": "Symulowany awareness_post Wella w przedziale [0.09, 0.13]",
+    "warn": "Symulowany awareness_post Wella poza przedziałem [0.09, 0.13] ale <0.20",
+    "fail": "Symulowany awareness_post Wella ≥0.20 lub ≤0.05"
+  }
+}

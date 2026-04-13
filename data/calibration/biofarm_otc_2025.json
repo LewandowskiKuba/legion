@@ -1,0 +1,115 @@
+{
+  "_meta": {
+    "source": "Biofarm – Strategie OTC 2025 (Media Republic, lipiec 2025)",
+    "categories": ["magnesium", "vitamin_d", "ginkgo_memory", "sleep_doxylamine", "melatonin"],
+    "data_as_of": "MAT 03/2025"
+  },
+  "magnesium_market": {
+    "market_size_mln_pln": 477.2, "growth_yoy_pct": 13.8,
+    "seasonality": "brak – całoroczna",
+    "shares": [
+      { "brand": "Magne B6", "manufacturer": "Sanofi", "type": "OTC", "share_pct": 51.2, "value_mln": 244.3, "growth_pct": 14.8 },
+      { "brand": "Magnefar", "manufacturer": "Biofarm", "type": "OTC", "share_pct": 10.4, "value_mln": 49.7, "growth_pct": 8.8 },
+      { "brand": "Maglek", "manufacturer": "Lekam", "type": "OTC", "share_pct": 6.3, "value_mln": 30.2, "growth_pct": 76.3 },
+      { "brand": "Magvit", "manufacturer": "Angelini", "type": "OTC", "share_pct": 4.4, "value_mln": 21.2, "growth_pct": 17.9 },
+      { "brand": "Neomag", "manufacturer": "Aflofarm", "type": "SD", "share_pct": 2.7, "value_mln": 13.0, "growth_pct": -8.0 }
+    ],
+    "magnefar_brand": {
+      "position": "wice-lider (2nd)",
+      "awareness_note": "dosyć niska – model trade-based, brak konsekwentnej kampanii ATL",
+      "usp": "Lek OTC z 100mg Mg (cytrynian+wit.B6), tańszy od lidera o 2-3 PLN",
+      "target": "kobiety 35+, dolegliwości niedoboru magnezu (zmęczenie, nerwowość, skurcze)",
+      "media_2025": ["TV BBS 8s – dwa flighty: I i IX-XI", "digital: SEO/Search/display/YouTube/SoMe"]
+    }
+  },
+  "vitamin_d_market": {
+    "market_size_mln_pln": 359.0, "growth_yoy_pct": 17.2,
+    "seasonality": "sezonowy – szczyt jesień-zima; lider całorocznie",
+    "shares": [
+      { "brand": "Ibuvit", "manufacturer": "Polpharma", "type": "OTC", "share_pct": 53.7, "value_mln": 192.7, "growth_pct": 43.3 },
+      { "brand": "Vigalex", "manufacturer": "Biofarm", "type": "OTC", "share_pct": 10.4, "value_mln": 37.5, "growth_pct": -0.8 },
+      { "brand": "Vigantoletten", "manufacturer": "P&G", "type": "OTC+SD", "share_pct": 10.3, "value_mln": 37.1, "growth_pct": -4.6 },
+      { "brand": "DVitum", "manufacturer": "Oleofarm", "type": "SD", "share_pct": 8.4, "value_mln": 30.1, "growth_pct": 6.4 },
+      { "brand": "Vitrum", "manufacturer": "Takeda", "type": "SD", "share_pct": 4.1, "value_mln": 14.7, "growth_pct": 0.1 }
+    ],
+    "vigalex_brand": {
+      "position": "wice-lider (2nd), trend spadkowy (tabletka vs kaps. Ibuvit)",
+      "awareness_note": "niska – model trade-based, wsparcie ATL ograniczone do digitalowego",
+      "usp": "Jedyny lek OTC z wit. D3 z zapisem o odporności w ChPL; tańszy od lidera",
+      "target": "kobiety 35+, niedobory wit. D, poprawa odporności w sezonie",
+      "media_2025": ["tylko digital (brak TV w 2025)"]
+    }
+  },
+  "ginkgo_memory_market": {
+    "market_size_mln_pln": 37.9, "growth_yoy_pct": 4.1,
+    "seasonality": "brak – całoroczna",
+    "shares": [
+      { "brand": "Ginkofar", "manufacturer": "Biofarm", "type": "OTC", "share_pct": 51.9, "value_mln": 19.7, "growth_pct": 11.9 },
+      { "brand": "Bilobil", "manufacturer": "Krka", "type": "OTC", "share_pct": 16.4, "value_mln": 6.2, "growth_pct": -1.8 },
+      { "brand": "Bilomag", "type": "SD", "share_pct": 15.3, "value_mln": 5.8, "growth_pct": -8.2 },
+      { "brand": "Tanakan", "type": "OTC", "share_pct": 3.6, "value_mln": 1.3, "growth_pct": 3.8 }
+    ],
+    "ginkofar_brand": {
+      "position": "niekwestionowany lider (52%)",
+      "awareness_note": "wysoka – wieloletni lider, aktywna kampania ATL (TV sponsoring, radio, krzyżówki Technopol)",
+      "usp": "Ginkofar Extra 240mg – najwyższa dawka OTC, najtańsza kuracja (1.34 PLN/dzień)",
+      "target": "kobiety 55+ (problemy z pamięcią); kobiety 45+ (profilaktycznie)",
+      "media_2025": ["TV sponsoring I-V i VIII-XI", "The Voice Senior", "radio PR1+TOK FM", "krzyżówki Technopol"]
+    }
+  },
+  "sleep_doxylamine_market": {
+    "market_size_mln_pln": 41.6, "growth_yoy_pct": 41.9,
+    "seasonality": "wzrost III-IV i IX-XII",
+    "shares": [
+      { "brand": "Dorminox", "manufacturer": "Polpharma", "type": "OTC", "share_pct": 37.0, "value_mln": 15.2, "growth_pct": 11.2 },
+      { "brand": "Noctis Noc", "manufacturer": "Biofarm", "type": "OTC", "share_pct": 27.0, "value_mln": 11.4, "growth_pct": 40.3 },
+      { "brand": "Senamina", "manufacturer": "Adamed", "type": "OTC", "share_pct": 20.0, "value_mln": 8.2, "growth_pct": 27.9 },
+      { "brand": "Sentino", "manufacturer": "USP Zdrowie", "type": "OTC", "share_pct": 16.0, "value_mln": 6.6, "growth_pct": 486.4 }
+    ],
+    "noctis_noc_brand": {
+      "position": "2nd (27%)",
+      "awareness_note": "umiarkowana, budowana przez sezonowe ATL (TV+digital)",
+      "usp": "Najtańszy lek z doksylaminą w op. 20tab. (92% ceny lidera Dorminox)",
+      "target": "kobiety 35-54, sporadyczna bezsenność z powodu stresu i natłoku obowiązków",
+      "media_2025": ["TV+VOD sezonowo I-IV i IX-XI", "YouTube/Search/SEO/SoMe"]
+    }
+  },
+  "melatonin_market": {
+    "market_size_mln_pln": 76.3, "growth_yoy_pct": 31.5,
+    "seasonality": "wzrost VIII-I, szczyt XII-I",
+    "shares": [
+      { "brand": "Melatonina Lek-am", "manufacturer": "Lek-Am", "type": "OTC", "share_pct": 71.0, "value_mln": 54.4, "growth_pct": 23.8 },
+      { "brand": "Melabiorytm", "type": "OTC", "share_pct": 11.0, "value_mln": 8.7, "growth_pct": 17.4 },
+      { "brand": "Melatonina Biofarm", "manufacturer": "Biofarm", "type": "OTC", "share_pct": 8.1, "value_mln": 6.2, "intro_date": "2024-08" },
+      { "brand": "Melatonina Polfarmex", "type": "OTC", "share_pct": 6.0, "value_mln": 6.6, "growth_pct": 11.0 }
+    ],
+    "melatonina_biofarm_brand": {
+      "position": "3rd (8.1% – wejście 08/2024)",
+      "awareness_note": "bardzo niska – marka nowa, < 12 miesięcy na rynku",
+      "usp": "Najtańszy lek OTC z melatoniną (59-77% ceny lidera Lek-am)",
+      "target": "kobiety 35+, zaburzenia snu (praca zmianowa, jet lag, bezsenność)",
+      "media_2025": ["TV+digital I-II 2025 (434 GRP)"]
+    }
+  },
+  "simulation_guidance": {
+    "segment_description": "Kobiety 35-55, rodzinne gospodynie domowe kupujące leki dla siebie i rodziny",
+    "category_involvement": "zakup reaktywny przy dolegliwości, wysoka rola farmaceuty",
+    "awareness_table": {
+      "Magne B6": "wysoka (lider, aktywna TV całorocznie)",
+      "Magnefar": "niska (okazjonalna TV, model trade)",
+      "Ibuvit": "wysoka (lider, aktywna TV całorocznie)",
+      "Vigalex": "niska (brak TV, tylko digital)",
+      "Ginkofar": "wysoka w niszy (lider, aktywna TV+radio)",
+      "Dorminox": "umiarkowana (TV sezonowo)",
+      "Noctis Noc": "umiarkowana (TV sezonowo)",
+      "Melatonina Biofarm": "bardzo niska (nowość)"
+    },
+    "expected_benchmarks": {
+      "Magnefar": "attentionScore 3-6, niska rozpoznawalność, wyżej u target 35+ z dolegliwościami",
+      "Vigalex": "attentionScore 3-5, sezonowy, wyżej jesień/zima",
+      "Ginkofar": "attentionScore 5-7, silna świadomość w niszy, mocna reakcja 55+",
+      "Noctis Noc": "attentionScore 4-6, niszowy temat, identyfikacja target 35-54",
+      "Melatonina Biofarm": "attentionScore 3-5, brak rozpoznawalności marki, silna konkurencja lidera"
+    }
+  }
+}

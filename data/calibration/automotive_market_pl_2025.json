@@ -1,0 +1,98 @@
+{
+  "_meta": {
+    "description": "Dane rynkowe polskiego rynku automotive YTD grudzień 2025 – kalibracja brand salience",
+    "source": "Jameel Motors / SAMAR – Dane rynkowe grudzień 2025 (Załącznik 2)",
+    "methodology": "Rejestracje nowych pojazdów osobowych w Polsce YTD 2025. Dane SAMAR (System Analiz Motoryzacyjnych). Uwaga: to dane sprzedażowe, nie badanie brand awareness – market share użyty jako proxy dla brand salience.",
+    "total_market_2025": 597428,
+    "total_market_2024": 551565,
+    "yoy_growth": 0.083,
+    "usage": "Kalibracja kategorii automotive – weryfikacja czy boty z incomeAffinity wyższym trafnie rozpoznają marki premium (BMW, Mercedes, Audi) vs budżetowe (Dacia, Skoda). Sprawdź czy rozkład marek w rejection signals odpowiada udziałom rynkowym."
+  },
+  "category": "automotive",
+
+  "market_share_2025": [
+    { "brand": "Toyota",      "units": 92123,  "share": 0.154, "yoy": -0.11 },
+    { "brand": "Skoda",       "units": 65508,  "share": 0.110, "yoy": 0.09  },
+    { "brand": "Volkswagen",  "units": 42929,  "share": 0.072, "yoy": 0.12  },
+    { "brand": "BMW",         "units": 31298,  "share": 0.052, "yoy": 0.15  },
+    { "brand": "Kia",         "units": 30740,  "share": 0.051, "yoy": -0.08 },
+    { "brand": "Audi",        "units": 30626,  "share": 0.051, "yoy": 0.05  },
+    { "brand": "Mercedes",    "units": 30272,  "share": 0.051, "yoy": 0.05  },
+    { "brand": "Hyundai",     "units": 29226,  "share": 0.049, "yoy": -0.06 },
+    { "brand": "Dacia",       "units": 22420,  "share": 0.038, "yoy": 0.12  },
+    { "brand": "Renault",     "units": 22200,  "share": 0.037, "yoy": 0.03  },
+    { "brand": "Other",       "units": 200086, "share": 0.335, "yoy": 0.27  }
+  ],
+
+  "bev_market_2025": {
+    "total_bev": 43339,
+    "bev_share_of_total": 0.073,
+    "yoy_growth": 1.62,
+    "top_brands": [
+      { "brand": "Tesla",     "units": 5200, "bev_share": 0.12, "total_share": 0.009 },
+      { "brand": "BYD",       "units": 3588, "bev_share": 0.08, "total_share": 0.006 },
+      { "brand": "Audi",      "units": 3375, "bev_share": 0.08, "total_share": 0.006 },
+      { "brand": "BMW",       "units": 2999, "bev_share": 0.07, "total_share": 0.005 },
+      { "brand": "Mercedes",  "units": 2684, "bev_share": 0.06, "total_share": 0.004 },
+      { "brand": "Citroen",   "units": 2370, "bev_share": 0.05, "total_share": 0.004 },
+      { "brand": "Ford",      "units": 2267, "bev_share": 0.05, "total_share": 0.004 },
+      { "brand": "Leapmotor", "units": 2237, "bev_share": 0.05, "total_share": 0.004 },
+      { "brand": "Hyundai",   "units": 2152, "bev_share": 0.05, "total_share": 0.004 },
+      { "brand": "Kia",       "units": 1726, "bev_share": 0.04, "total_share": 0.003 }
+    ]
+  },
+
+  "engine_type_mix_dec2025": {
+    "ICE":  0.43,
+    "MHEV": 0.37,
+    "BEV":  0.11,
+    "PHEV": 0.09
+  },
+
+  "chinese_brands_2025": {
+    "total_units": 49154,
+    "market_share": 0.082,
+    "yoy_growth": 3.60,
+    "top_brands": [
+      { "brand": "MG",     "units": 15229, "share_of_chinese": 0.31 },
+      { "brand": "Omoda",  "units": 7552,  "share_of_chinese": 0.15 },
+      { "brand": "Jaecoo", "units": 7420,  "share_of_chinese": 0.15 },
+      { "brand": "BYD",    "units": 6853,  "share_of_chinese": 0.14 },
+      { "brand": "BAIC",   "units": 5126,  "share_of_chinese": 0.10 }
+    ]
+  },
+
+  "top_models_2025": {
+    "total_market": [
+      { "model": "Toyota Corolla",  "units": 23468 },
+      { "model": "Skoda Octavia",   "units": 21120 },
+      { "model": "VW T-Roc",        "units": 10033 },
+      { "model": "Kia Sportage",    "units": 13762 },
+      { "model": "Hyundai Tucson",  "units": 11645 },
+      { "model": "Dacia Duster",    "units": 8529  },
+      { "model": "Renault Captur",  "units": 7338  }
+    ],
+    "bev": [
+      { "model": "Tesla Model Y",   "units": 3169 },
+      { "model": "BYD Dolphin Surf","units": 2008 },
+      { "model": "Audi Q4 e-tron",  "units": 1550 },
+      { "model": "Citroen C3",      "units": 1907 }
+    ]
+  },
+
+  "calibration_notes": [
+    "Toyota dominuje rynek (15%) – persony z kategorią automotive powinny często wymieniać Toyotę (niezawodność, wartość)",
+    "Segment premium (BMW/Audi/Mercedes po ~5% each) – wysoka awareness ale niszowy zakup; incomeAffinity above_5000",
+    "Dacia – budżetowy lider dla niższych dochodów i wsi/małych miast; Duster #1 C-SUV budżetowy",
+    "Chińskie marki (8.2% market share, +360% r/r) – rosnąca rozpoznawalność ale wciąż niskie zaufanie u starszych konsumentów",
+    "BEV 7% rynku – boty z wyższym incomeLevel i metropolis/large_city powinny częściej wymieniać Tesla/BYD",
+    "MHEV dominuje (37%) – Corolla jako bestseller to głównie hybrydy"
+  ],
+
+  "validation_threshold": {
+    "pass":  "Persony z automotive category: marki premium (BMW/Audi/Mercedes) częściej u above_5000; Dacia/MG u below_3500 i village/small_city",
+    "warn":  "Brak zróżnicowania sentymentu wg dochodu w kategorii automotive",
+    "fail":  "Toyota nieznana wśród automotive personas (awareness ~88%)",
+    "note":  "Dane sprzedażowe 2025 – nie badanie awareness. Market share jako proxy brand salience."
+  }
+}

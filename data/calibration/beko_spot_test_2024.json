@@ -1,0 +1,125 @@
+{
+  "_meta": {
+    "description": "Ground truth – spot test Beko 2024, blind test + ocena kreacji",
+    "source": "4P dla Media Republic – Badanie spotu BEKO, 28.08.2024",
+    "methodology": "CAWI, N=501, TG: Polacy 25-59 lat. Schemat: (1) spontaniczny recall reklam AGD, (2) blind test 4 kadry bez logo, (3) prezentacja pełnego spotu.",
+    "sample": 501,
+    "population_target": "Polacy 25-59 lat, general population",
+    "usage": "Walidacja dla kampanii Beko w kategorii home_appliances. Kluczowe insight: słaby branding spotu – 74% nie rozpoznaje marki w blind teście, spot często mylony z Bosch. Symulacja powinna zwracać niski recall marki + rejection signals dot. generyczności przekazu."
+  },
+  "category": "home_appliances",
+  "brand": "Beko",
+  "study_type": "spot_test",
+  "study_date": "2024-08",
+
+  "spontaneous_ad_recall_last_2months": {
+    "_note": "Odsetek Polaków 25-59 którzy spontanicznie wymienili markę jako reklamującą się w AGD (N=501)",
+    "Bosch":      0.26,
+    "Samsung":    0.23,
+    "Beko":       0.18,
+    "Amica":      0.16,
+    "Electrolux": 0.11,
+    "Whirlpool":  0.07,
+    "Philips":    0.05,
+    "LG":         0.05,
+    "Siemens":    0.04,
+    "Gorenje":    0.02,
+    "zadnej":     0.44
+  },
+
+  "blind_test": {
+    "_note": "4 kadry ze spotu z ukrytym logiem. Baza: wszyscy N=501",
+    "campaign_reach_declared": 0.31,
+    "brand_id_correct_beko": 0.052,
+    "brand_id_bosch_misattribution": 0.078,
+    "brand_id_amica": 0.032,
+    "brand_id_samsung": 0.026,
+    "brand_id_whirlpool": 0.026,
+    "brand_id_electrolux": 0.013,
+    "brand_id_none": 0.74,
+    "_insight": "74% osób które widziały kampanię nie potrafi zidentyfikować marki. Bosch wymieniany częściej niż Beko (7.8% vs 5.2%) – silna estetyczna zbieżność kreacji."
+  },
+
+  "full_spot_presentation": {
+    "_note": "Po prezentacji pełnego spotu wideo. Baza: wszyscy N=501",
+    "campaign_reach_declared": 0.36,
+    "brand_id_correct_beko": 0.91,
+    "brand_id_other": 0.01,
+    "brand_id_none": 0.08
+  },
+
+  "spot_quality_scores_top2box": {
+    "_note": "% respondentów którzy ocenili spot pozytywnie (Top2Box: zgadzam się + zdecydowanie się zgadzam). Baza: ALL N=501 / widzowie N=182",
+    "jasny_czytelny_zrozumialy": { "total": 0.74, "viewers": 0.81 },
+    "ciekawy_atrakcyjny":        { "total": 0.68, "viewers": 0.78 },
+    "podobal_sie":               { "total": 0.65, "viewers": 0.73 },
+    "zacheca_do_zapoznania":     { "total": 0.64, "viewers": 0.73 },
+    "wyoluje_chec_zakupu":       { "total": 0.57, "viewers": 0.68 },
+    "zacheca_do_porownan":       { "total": 0.53, "viewers": 0.65 }
+  },
+
+  "spot_content_recall_open": {
+    "_note": "Skojarzenia z treścią spotu (pytanie otwarte). Baza: ALL N=501",
+    "sprzet_agd_ogolnie":       0.23,
+    "sprzet_agd_beko":          0.16,
+    "zmywarka":                 0.11,
+    "lodowka":                  0.11,
+    "niezawodnosc_agd_ogolnie": 0.08,
+    "reklama_beko_ogolnie":     0.07,
+    "niezawodnosc_beko":        0.07,
+    "rodzina_dzieci":           0.06,
+    "lodowka_beko":             0.06,
+    "zmywarka_beko":            0.06,
+    "_insight": "23% wiąże spot z AGD ogólnie, tylko 16% z Beko. Przekaz silnie generyczny – niezawodność i dzieci/rodzina to niewyróżniające komunikaty w kategorii."
+  },
+
+  "call_to_action_post_spot": {
+    "_note": "Baza: widzowie N=182",
+    "sprawdzil_opinie_beko":   0.21,
+    "czytal_opinie_agd_ogolnie": 0.21,
+    "sprawdzil_ceny_beko":     0.19,
+    "szukal_info_beko":        0.18,
+    "porownywal_ceny_agd":     0.17,
+    "sprawdzil_rankingi_agd":  0.15,
+    "odwiedzil_beko_com":      0.14,
+    "szukal_info_agd_ogolnie": 0.10,
+    "kupil_produkt_beko":      0.07,
+    "zadna_akcja":             0.35,
+    "summary": {
+      "tylko_beko": 0.24,
+      "beko_i_inne": 0.22,
+      "tylko_inne": 0.20,
+      "brak_akcji": 0.35
+    }
+  },
+
+  "key_calibration_insights": [
+    "Beko jest top-3 marką AGD w Polsce z 18% spontanicznym recall reklam (za Bosch 26% i Samsung 23%)",
+    "Spot 2024 ma słaby branding: 74% nie identyfikuje marki w blind teście, mylony z Bosch (7.8% vs 5.2%)",
+    "Jakość kreacji jest dobra (74% czytelność, 68% atrakcyjność) ale genericowa – przekaz nie wyróżnia Beko",
+    "Spot wywołuje umiarkowane CTA: 24% wykonało akcję wyłącznie dla Beko, 35% nie zrobiło nic",
+    "Zakup produktu Beko po obejrzeniu spotu: tylko 7% widzów – niski conversion rate"
+  ],
+
+  "expected_simulation_output": {
+    "attention_score_range": [4, 7],
+    "resonance_score_range": [3, 6],
+    "purchase_intent_delta_range": [-1, 2],
+    "trust_impact_range": [-1, 2],
+    "typical_rejection_signals": [
+      "Nie kojarzę tej marki za bardzo",
+      "To mogła być reklama Boscha, nie byłem pewien",
+      "Reklama jak każda inna – sprzęt AGD to sprzęt AGD",
+      "Nic szczególnego, kolejna reklama pralki/lodówki"
+    ],
+    "typical_recall": "Jakaś reklama AGD, chyba Beko, z rodziną i sprzętem domowym",
+    "_note": "Uwaga: persona powinna mieć wysoki brandTrust żeby wykazać pozytywne skojarzenia z Beko, niski brandTrust → brak różnicowania Beko od Boscha"
+  },
+
+  "validation_threshold": {
+    "pass":  "recall zawiera 'Beko' lub odniesienie do AGD; purchaseIntentDelta w [-1, +3]",
+    "warn":  "Beko mylone z Bosch w womSimulation (ok – zgodne z blind test); attentionScore <3",
+    "fail":  "attentionScore >8 lub purchaseIntentDelta >4 (nieoczekiwanie wysokie dla genericowego spotu)",
+    "note":  "Spot był oceniany jako dobry jakościowo ale słaby brandingowo. Symulacja powinna odzwierciedlać tę dualność."
+  }
+}

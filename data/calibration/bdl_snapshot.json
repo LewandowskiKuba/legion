@@ -1,0 +1,143 @@
+{
+  "_meta": {
+    "source": "GUS Bank Danych Lokalnych (BDL API)",
+    "url": "https://bdl.stat.gov.pl/api/v1/",
+    "generated": "2026-03-25T22:39:43.296Z",
+    "data_year_demographic": 2024,
+    "data_year_education": 2021,
+    "data_year_households": 2021
+  },
+  "age_18_80": {
+    "_note": "Populacja 18-80 lat, GUS 2024. Źródło: grupy 5-letnie z BDL subj P2137.",
+    "brackets_pct": {
+      "18-24": 8.7,
+      "25-34": 15.3,
+      "35-44": 20.7,
+      "45-54": 18.8,
+      "55-64": 15.1,
+      "65-74": 15.9,
+      "75-80": 5.5
+    },
+    "brackets_abs": {
+      "18-24": 2559398,
+      "25-34": 4485471,
+      "35-44": 6078549,
+      "45-54": 5526593,
+      "55-64": 4428341,
+      "65-74": 4663081,
+      "75-80": 1608895
+    },
+    "suggested_distributions_ts_weights": {
+      "18-24": 9,
+      "25-34": 15,
+      "35-44": 21,
+      "45-54": 19,
+      "55-64": 15,
+      "65-74": 16,
+      "75-80": 6
+    }
+  },
+  "education": {
+    "_note": "NSP 2021 – cała populacja dorosłych (nie tylko aktywni zawodowo jak w BAEL)",
+    "pct": {
+      "higher": 26.7,
+      "secondary": 37.3,
+      "vocational": 23.2,
+      "primary": 12.8
+    },
+    "abs": {
+      "higher": 8050067,
+      "secondary_poly": 11271572,
+      "vocational": 7000906,
+      "primary": 3874564
+    },
+    "suggested_distributions_ts_weights": {
+      "higher": 27,
+      "secondary": 37,
+      "vocational": 23,
+      "primary": 13
+    }
+  },
+  "settlement": {
+    "_note": "GUS 2024 – miasto/wieś podział",
+    "pct": {
+      "urban": 59.4,
+      "rural": 40.6
+    },
+    "abs": {
+      "urban": 22275967,
+      "rural": 15213120
+    },
+    "note_subcategories": "Podkategorie miejskie (small_city/medium_city/large_city/metropolis) w distributions.ts są szacunkowe – BDL nie rozbija według rozmiaru miasta"
+  },
+  "region_weights_pct": {
+    "malopolskie": 9.1,
+    "slaskie": 11.4,
+    "lubuskie": 2.6,
+    "wielkopolskie": 9.3,
+    "zachodniopomorskie": 4.3,
+    "dolnoslaskie": 7.7,
+    "opolskie": 2.5,
+    "kujawsko-pomorskie": 5.3,
+    "pomorskie": 6.3,
+    "warminsko-mazurskie": 3.6,
+    "lodzkie": 6.3,
+    "swietokrzyskie": 3.1,
+    "lubelskie": 5.3,
+    "podkarpackie": 5.5,
+    "podlaskie": 3,
+    "mazowieckie": 14.7
+  },
+  "income": {
+    "disposable_per_capita_pln": {
+      "latest_year": 2024,
+      "latest_value": 3103.06,
+      "timeseries": [
+        {
+          "year": 2020,
+          "val": 1874.24
+        },
+        {
+          "year": 2021,
+          "val": 2014.61
+        },
+        {
+          "year": 2022,
+          "val": 2194.62
+        },
+        {
+          "year": 2023,
+          "val": 2622.11
+        },
+        {
+          "year": 2024,
+          "val": 3103.06
+        }
+      ],
+      "yoy_growth_pct": 18.3
+    },
+    "suggested_income_brackets": {
+      "note": "Progi przeskalowane wg wzrostu dochodu rozporządzalnego (×1.183)",
+      "below": 2400,
+      "lower": 4100,
+      "middle": 5900,
+      "upper": 9500
+    }
+  },
+  "households": {
+    "_note": "NSP 2021 – typy gosp. domowych. Wartości to % liczby gosp., nie osób.",
+    "pct": {
+      "single": 22.5,
+      "couple_no_kids": 19.9,
+      "couple_with_kids": 37.2,
+      "single_parent": 20.5
+    },
+    "abs": {
+      "single": 2824558,
+      "couple_no_kids": 2492516,
+      "couple_with_kids": 4663677,
+      "single_mom": 2195529,
+      "single_dad": 371370
+    }
+  }
+}
