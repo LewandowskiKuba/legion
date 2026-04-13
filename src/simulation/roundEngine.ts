@@ -15,6 +15,7 @@ import type {
   SimulationRound,
 } from "./schema.js";
 import { AgentMemoryStore } from "./agentMemory.js";
+import { BeliefState, type PostSeen } from "./beliefState.js";
 
 function clamp(val: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, val));
@@ -82,11 +83,23 @@ function buildFeedForPersona(
     }));
 }
 
+// Policz ile razy agentowi zalajkowano/zdyslajkowano w tej rundzie
+function viralPathsForPersona(
+  actions: AgentAction[],
+  personaId: string,
+  actionType: ActionType
+): number {
+  return actions.filter(
+    (a) => a.targetPersonaId === personaId && a.actionType === actionType
+  ).length;
+}
+
 export async function runRound(params: {
   round: number;
   totalRounds: number;
   population: Persona[];
   agentOpinions: Record<string, number>;
+  agentBeliefs: Map<string, BeliefState>;  // BeliefState per agent (mutable)
   memoryStore: AgentMemoryStore;
   knowledgeGraph: KnowledgeGraph;
   previousActions: AgentAction[];
@@ -100,6 +113,7 @@ export async function runRound(params: {
     totalRounds,
     population,
     agentOpinions,
+    agentBeliefs,
     memoryStore,
     knowledgeGraph,
     previousActions,
@@ -129,8 +143,11 @@ export async function runRound(params: {
       const memorySummary = memoryStore.getSummary(persona.id);
       const recentFeed = buildFeedForPersona(persona.id, previousActions, personaMap);
 
+      const beliefState = agentBeliefs.get(persona.id);
+      const beliefText = beliefState?.toPromptText() ?? "";
+
       const simCtx: SimulationContext = {
-        memorySummary,
+        memorySummary: [memorySummary, beliefText].filter(Boolean).join("\n\n"),
         currentOpinion,
         knowledgeGraph,
         roundNumber: round,
@@ -153,20 +170,20 @@ export async function runRound(params: {
     onProgress
   );
 
-  // Zaktualizuj opinie i pamięć
+  // Zaktualizuj opinie, pamięć i BeliefState
   for (const action of actions) {
     agentOpinions[action.personaId] = action.currentOpinion;
 
     // Dodaj do pamięci agenta
     const entry: MemoryEntry = {
       round,
-      type: action.actionType === "ignore" ? "saw_post" : "saw_post",
+      type: "saw_post",
       content: action.content || `${action.actionType} w rundzie ${round}`,
       emotionalValence: action.opinionDelta > 0 ? 1 : action.opinionDelta < 0 ? -1 : 0,
     };
     memoryStore.add(action.personaId, entry);
 
-    // Jeśli ktoś był targetowany – dodaj mu do pamięci
+    // Jeśli ktoś był targetowany – dodaj mu do pamięci + zaktualizuj trust
     if (action.targetPersonaId && ["comment", "share"].includes(action.actionType)) {
       const targetEntry: MemoryEntry = {
         round,
@@ -177,7 +194,35 @@ export async function runRound(params: {
         emotionalValence: 0,
       };
       memoryStore.add(action.targetPersonaId, targetEntry);
+
+      // Interakcja wpływa na zaufanie między agentami
+      const targetBs = agentBeliefs.get(action.targetPersonaId);
+      if (targetBs) {
+        targetBs.updateTrust(action.personaId, action.actionType === "like" ? "like" : "follow");
+      }
     }
+  }
+
+  // Zaktualizuj BeliefState dla każdego aktywnego agenta na podstawie feedu
+  for (const persona of activePersonas) {
+    const bs = agentBeliefs.get(persona.id);
+    if (!bs) continue;
+
+    const feed = buildFeedForPersona(persona.id, previousActions, personaMap);
+    const postsSeen: PostSeen[] = feed.map((f) => ({
+      content: f.content,
+      authorId: actions.find((a) => a.personaName === f.personaName)?.personaId,
+    }));
+
+    const ownActions = actions.filter((a) => a.personaId === persona.id);
+    const likesReceived = viralPathsForPersona(actions, persona.id, "like");
+    const dislikesReceived = viralPathsForPersona(actions, persona.id, "react_neg");
+
+    bs.updateFromRound({
+      postsSeen,
+      ownEngagement: { likesReceived, dislikesReceived },
+      roundNum: round,
+    });
   }
 
   // Oblicz statystyki rundy

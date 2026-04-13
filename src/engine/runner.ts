@@ -6,7 +6,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
 import type { Persona, AdMaterial, BotResponse } from "../personas/schema.js";
 import { buildSystemPrompt, buildUserPrompt, type SimulationContext } from "./prompt.js";
-import { selectModel, type ModelProvider } from "./modelRouter.js";
+import { selectModel, selectSmartModel, selectNerModel, type ModelConfig, type ModelProvider } from "./modelRouter.js";
 
 const CONCURRENCY = parseInt(process.env.CONCURRENCY ?? "5", 10);
 const MAX_RETRIES = 3;
@@ -16,7 +16,14 @@ const MAX_RETRIES = 3;
 const anthropicClient = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 let _openaiClient: OpenAI | null = null;
-function getOpenAI(): OpenAI {
+function getOpenAI(apiKey?: string, baseURL?: string): OpenAI {
+  // Dla custom klucza/URL zawsze tworzymy nową instancję
+  if (apiKey || baseURL) {
+    return new OpenAI({
+      apiKey: apiKey ?? process.env.OPENAI_API_KEY ?? "",
+      ...(baseURL ? { baseURL } : {}),
+    });
+  }
   if (!_openaiClient) {
     if (!process.env.OPENAI_API_KEY) throw new Error("Brak OPENAI_API_KEY w .env");
     _openaiClient = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -25,7 +32,13 @@ function getOpenAI(): OpenAI {
 }
 
 let _groqClient: OpenAI | null = null;
-function getGroq(): OpenAI {
+function getGroq(apiKey?: string, baseURL?: string): OpenAI {
+  if (apiKey || baseURL) {
+    return new OpenAI({
+      apiKey: apiKey ?? process.env.GROQ_API_KEY ?? "",
+      baseURL: baseURL ?? "https://api.groq.com/openai/v1",
+    });
+  }
   if (!_groqClient) {
     if (!process.env.GROQ_API_KEY) throw new Error("Brak GROQ_API_KEY w .env");
     _groqClient = new OpenAI({
@@ -34,6 +47,14 @@ function getGroq(): OpenAI {
     });
   }
   return _groqClient;
+}
+
+// Anthropic z opcjonalnym custom kluczem
+function getAnthropicClient(apiKey?: string): Anthropic {
+  if (apiKey && apiKey !== process.env.ANTHROPIC_API_KEY) {
+    return new Anthropic({ apiKey });
+  }
+  return anthropicClient;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -166,6 +187,80 @@ async function callOpenAICompatible(
   });
 
   return completion.choices[0]?.message?.content ?? "";
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Generyczne wywołanie LLM z explicite podanym ModelConfig
+// Używane przez Tier 2 (Smart) i Tier 3 (NER) — niezależne od profilu persony
+// ─────────────────────────────────────────────────────────────────────────────
+
+export async function callModelRaw(
+  model: ModelConfig,
+  systemPrompt: string,
+  userPrompt: string,
+  maxTokens = 1024,
+  attempt = 0
+): Promise<string> {
+  const { provider, modelId, apiKey, baseURL, label } = model;
+
+  await waitForRateLimit(provider);
+
+  try {
+    let raw: string;
+    if (provider === "anthropic") {
+      const client = getAnthropicClient(apiKey);
+      const message = await client.messages.create({
+        model: modelId,
+        max_tokens: maxTokens,
+        temperature: 1.0,
+        system: systemPrompt,
+        messages: [{ role: "user", content: userPrompt }],
+      });
+      raw = message.content
+        .filter((b) => b.type === "text")
+        .map((b) => (b as { type: "text"; text: string }).text)
+        .join("");
+    } else {
+      const client = provider === "openai" ? getOpenAI(apiKey, baseURL) : getGroq(apiKey, baseURL);
+      const completion = await client.chat.completions.create({
+        model: modelId,
+        max_tokens: maxTokens,
+        temperature: 1.0,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+        ],
+      });
+      raw = completion.choices[0]?.message?.content ?? "";
+    }
+    return raw;
+  } catch (err: any) {
+    if (err?.status === 429 || err?.type === "rate_limit_error" || err?.error?.type === "rate_limit_error") {
+      const retryAfter = parseInt(err?.headers?.["retry-after"] ?? "0", 10);
+      const backoff = retryAfter > 0 ? retryAfter * 1000 : Math.min(5000 * 2 ** attempt, 60000);
+      rateLimitUntil[provider] = Math.max(rateLimitUntil[provider], Date.now() + backoff);
+      console.warn(`⚠ Rate limit [${label}] – czekam ${Math.round(backoff / 1000)}s (attempt ${attempt + 1})`);
+      if (attempt < MAX_RETRIES) {
+        await sleep(backoff);
+        return callModelRaw(model, systemPrompt, userPrompt, maxTokens, attempt + 1);
+      }
+    }
+    if (attempt < MAX_RETRIES) {
+      await sleep(1000 * (attempt + 1));
+      return callModelRaw(model, systemPrompt, userPrompt, maxTokens, attempt + 1);
+    }
+    throw err;
+  }
+}
+
+// Shorthand dla Tier 2 (Smart)
+export async function callSmartModel(systemPrompt: string, userPrompt: string, maxTokens = 1024): Promise<string> {
+  return callModelRaw(selectSmartModel(), systemPrompt, userPrompt, maxTokens);
+}
+
+// Shorthand dla Tier 3 (NER)
+export async function callNerModel(systemPrompt: string, userPrompt: string, maxTokens = 256): Promise<string> {
+  return callModelRaw(selectNerModel(), systemPrompt, userPrompt, maxTokens);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

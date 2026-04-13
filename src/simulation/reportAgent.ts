@@ -2,11 +2,8 @@
 // Report Agent – LLM-powered synteza wyników symulacji
 // ─────────────────────────────────────────────────────────────────────────────
 
-import Anthropic from "@anthropic-ai/sdk";
 import type { SimulationState, SimulationInsights, Coalition, InfluencerPersona } from "./schema.js";
-
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-const REPORT_MODEL = "claude-sonnet-4-6";
+import { callSmartModel } from "../engine/runner.js";
 
 function buildOpinionTrajectory(state: SimulationState): SimulationInsights["opinionTrajectory"] {
   return state.rounds.map((r) => ({
@@ -192,18 +189,11 @@ Odpowiedz WYŁĄCZNIE w JSON:
   let recommendations: string[] = [];
 
   try {
-    const message = await client.messages.create({
-      model: REPORT_MODEL,
-      max_tokens: 1200,
-      temperature: 0.3,
-      system: "Jesteś ekspertem od analizy kampanii reklamowych. Piszesz po polsku. Odpowiadasz wyłącznie w JSON.",
-      messages: [{ role: "user", content: prompt }],
-    });
-
-    const raw = message.content
-      .filter((b) => b.type === "text")
-      .map((b) => (b as { type: "text"; text: string }).text)
-      .join("");
+    const raw = await callSmartModel(
+      "Jesteś ekspertem od analizy kampanii reklamowych. Piszesz po polsku. Odpowiadasz wyłącznie w JSON.",
+      prompt,
+      1200
+    );
 
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (jsonMatch) {

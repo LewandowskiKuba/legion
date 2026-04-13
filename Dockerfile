@@ -1,35 +1,37 @@
-# ── Stage 1: Build frontend ───────────────────────────────────────────────────
-FROM node:20-alpine AS frontend-build
-WORKDIR /app/frontend
+# ── Stage 1: Build backend ────────────────────────────────────────────────────
+FROM node:22-alpine AS backend-builder
+WORKDIR /app
+COPY package*.json ./
+RUN npm ci --ignore-scripts
+COPY tsconfig.json ./
+COPY src/ ./src/
+RUN npm run build
+
+# ── Stage 2: Build frontend ───────────────────────────────────────────────────
+FROM node:22-alpine AS frontend-builder
+WORKDIR /frontend
 COPY frontend/package*.json ./
-RUN npm install
+RUN npm ci --ignore-scripts
 COPY frontend/ ./
 RUN npm run build
 
-# ── Stage 2: Build backend ────────────────────────────────────────────────────
-FROM node:20-alpine AS backend-build
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY tsconfig.json ./
-COPY src/ ./src/
-RUN npx tsc
-
-# ── Stage 3: Runtime ──────────────────────────────────────────────────────────
-FROM node:20-alpine
+# ── Stage 3: Production runtime ───────────────────────────────────────────────
+FROM node:22-alpine AS production
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm install --omit=dev
+RUN npm ci --omit=dev --ignore-scripts
 
-COPY --from=backend-build /app/dist ./dist
-COPY --from=frontend-build /app/frontend/dist ./frontend/dist
+COPY --from=backend-builder /app/dist ./dist
 
-COPY data/brands/ ./data/brands/
-COPY data/calibration/ ./data/calibration/
-COPY campaigns/ ./campaigns/
+# Frontend dist trafia do nginx – kopiujemy tu żeby docker cp działał
+COPY --from=frontend-builder /frontend/dist ./frontend-dist
 
-RUN mkdir -p data/results
+# Dane statyczne (jeśli istnieją)
+COPY data/brands/ ./data/brands/ 2>/dev/null || true
+COPY data/calibration/ ./data/calibration/ 2>/dev/null || true
+
+RUN mkdir -p data/simulations data/results data/temp
 
 ENV NODE_ENV=production
 ENV PORT=3000

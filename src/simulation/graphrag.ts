@@ -1,15 +1,11 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // GraphRAG-lite – wyciąga encje i relacje z materiału reklamowego
-// Pojedyncze wywołanie LLM do Claude (zawsze Anthropic, niezależnie od routingu)
+// Używa Tier 2 (Smart Model) — konfigurowalny przez env, domyślnie Claude Sonnet
 // ─────────────────────────────────────────────────────────────────────────────
 
-import Anthropic from "@anthropic-ai/sdk";
 import type { AdMaterial } from "../personas/schema.js";
 import type { KnowledgeGraph } from "./schema.js";
-
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
-
-const ANALYSIS_MODEL = "claude-sonnet-4-6";
+import { callSmartModel } from "../engine/runner.js";
 
 export async function extractKnowledgeGraph(ad: AdMaterial): Promise<KnowledgeGraph> {
   const adText = [
@@ -23,15 +19,9 @@ export async function extractKnowledgeGraph(ad: AdMaterial): Promise<KnowledgeGr
     .filter(Boolean)
     .join("\n");
 
-  const message = await client.messages.create({
-    model: ANALYSIS_MODEL,
-    max_tokens: 800,
-    temperature: 0,
-    system: `Jesteś analitykiem reklamy. Analizujesz materiały reklamowe i wyciągasz kluczowe informacje w formacie JSON. Odpowiadaj WYŁĄCZNIE poprawnym JSON, bez markdown ani komentarzy.`,
-    messages: [
-      {
-        role: "user",
-        content: `Przeanalizuj poniższy materiał reklamowy i wyciągnij kluczowe informacje.
+  const raw = await callSmartModel(
+    `Jesteś analitykiem reklamy. Analizujesz materiały reklamowe i wyciągasz kluczowe informacje w formacie JSON. Odpowiadaj WYŁĄCZNIE poprawnym JSON, bez markdown ani komentarzy.`,
+    `Przeanalizuj poniższy materiał reklamowy i wyciągnij kluczowe informacje.
 
 ${adText}
 
@@ -51,14 +41,8 @@ Zasady:
 - competitors: tylko jeśli wyraźnie lub pośrednio wspomniani (może być [])
 - emotionalAnchors: słowa/obrazy wywołujące emocje (max 4)
 - controversialElements: elementy, które mogą polaryzować lub irytować (max 3, może być [])`,
-      },
-    ],
-  });
-
-  const raw = message.content
-    .filter((b) => b.type === "text")
-    .map((b) => (b as { type: "text"; text: string }).text)
-    .join("");
+    800
+  );
 
   try {
     const jsonMatch = raw.match(/\{[\s\S]*\}/);

@@ -8,6 +8,8 @@ import { extractKnowledgeGraph } from "./graphrag.js";
 import { AgentMemoryStore } from "./agentMemory.js";
 import { runRound } from "./roundEngine.js";
 import { generateSimulationInsights } from "./reportAgent.js";
+import { BeliefState, extractTopicsFromRequirement } from "./beliefState.js";
+import { SimulationTrajectory } from "./trajectoryTracker.js";
 import type {
   SimulationConfig,
   SimulationState,
@@ -29,6 +31,8 @@ export class SimulationOrchestrator {
   private memoryStore: AgentMemoryStore;
   private platform: Platform;
   private activeAgentRatio: number;
+  private agentBeliefs: Map<string, BeliefState> = new Map();
+  private trajectory: SimulationTrajectory = new SimulationTrajectory();
 
   // Callback called after each round completes (for SSE streaming)
   onRoundComplete?: (round: SimulationRound) => void;
@@ -62,9 +66,19 @@ export class SimulationOrchestrator {
 
     this.memoryStore = new AgentMemoryStore();
 
-    // Inicjuj opinie bazowe na 0
+    // Inicjuj opinie bazowe na 0 i BeliefState per persona
+    const topics = extractTopicsFromRequirement(
+      `${config.ad.headline} ${config.ad.body} ${config.ad.brandName ?? ""}`
+    );
     for (const persona of config.population) {
       this.state.agentOpinions[persona.id] = 0;
+      this.agentBeliefs.set(
+        persona.id,
+        BeliefState.fromProfile({
+          sentimentBias: ((persona.psychographic.traditionalism ?? 50) - 50) / 100,
+          topics,
+        })
+      );
     }
   }
 
@@ -100,6 +114,7 @@ export class SimulationOrchestrator {
       totalRounds: this.state.totalRounds,
       population: this.state.population,
       agentOpinions: this.state.agentOpinions,
+      agentBeliefs: this.agentBeliefs,
       memoryStore: this.memoryStore,
       knowledgeGraph: this.state.knowledgeGraph,
       previousActions,
@@ -112,6 +127,15 @@ export class SimulationOrchestrator {
     this.state.rounds.push(round);
     this.state.currentRound = roundNumber;
     this.state.agentMemory = this.memoryStore.serialize();
+    this.state.agentMemoryCompacted = this.memoryStore.serializeCompacted();
+
+    // Zaktualizuj trajectory
+    this.trajectory.recordRound(round, this.agentBeliefs);
+
+    // Memory compaction w tle (nie blokuje rundy)
+    this.memoryStore.compactAll(this.state.population).catch((err) =>
+      console.warn("⚠ Compaction error:", (err as Error).message)
+    );
 
     console.log(`✓ Runda ${roundNumber} zakończona. Avg opinia: ${round.avgOpinion.toFixed(2)}, viral paths: ${round.viralPaths.length}`);
 
@@ -135,6 +159,9 @@ export class SimulationOrchestrator {
     this.state.status = "running"; // Upewnij się, że status jest właściwy
     console.log("⚙ Generuję insights (ReportAgent)...");
     try {
+      // Zapisz trajectory do state przed generowaniem insights
+      this.state.trajectory = this.trajectory.toData(this.state.agentOpinions);
+
       const insights = await generateSimulationInsights(this.state);
       this.state.insights = insights;
       this.state.status = "complete";
@@ -146,6 +173,51 @@ export class SimulationOrchestrator {
       this.state.errorMessage = (err as Error).message;
       throw err;
     }
+  }
+
+  // Sklonuj symulację do nowego orchestratora (fork dla "what if")
+  // Opcjonalnie wstrzyknij dodatkowy event w momencie forka
+  fork(newStudyName: string, injectedEvent?: Omit<SimulationEvent, "id">): SimulationOrchestrator {
+    const forkedConfig: SimulationConfig = {
+      studyName: newStudyName,
+      ad: this.state.ad,
+      population: this.state.population,
+      totalRounds: this.state.totalRounds,
+      platform: this.platform,
+      activeAgentRatio: this.activeAgentRatio,
+    };
+
+    const forked = new SimulationOrchestrator(forkedConfig);
+
+    // Kopiuj stan symulacji
+    forked.state = {
+      ...JSON.parse(JSON.stringify(this.state)),
+      id: randomUUID(),
+      studyName: newStudyName,
+      status: "running",
+      completedAt: undefined,
+      errorMessage: undefined,
+    };
+
+    // Kopiuj pamięć agentów
+    forked.memoryStore = AgentMemoryStore.deserialize(
+      this.memoryStore.serialize(),
+      this.memoryStore.serializeCompacted()
+    );
+
+    // Kopiuj BeliefState per agent
+    forked.agentBeliefs = new Map();
+    for (const [id, bs] of this.agentBeliefs.entries()) {
+      forked.agentBeliefs.set(id, BeliefState.fromDict(bs.toDict()));
+    }
+
+    // Opcjonalny event przy forku
+    if (injectedEvent) {
+      forked.injectEvent(injectedEvent);
+    }
+
+    console.log(`🍴 Fork: ${this.state.studyName} → ${newStudyName} (od rundy ${forked.state.currentRound})`);
+    return forked;
   }
 
   // Wstrzyknij event do symulacji
@@ -217,15 +289,21 @@ Rekomendacje: ${this.state.insights?.recommendations?.join("; ") ?? "brak"}`;
   }
 
   serialize(): string {
+    // Serializuj BeliefState per agent
+    const agentBeliefsData: Record<string, ReturnType<BeliefState["toDict"]>> = {};
+    for (const [id, bs] of this.agentBeliefs.entries()) {
+      agentBeliefsData[id] = bs.toDict();
+    }
     return JSON.stringify({
       state: this.state,
       platform: this.platform,
       activeAgentRatio: this.activeAgentRatio,
+      agentBeliefsData,
     });
   }
 
   static deserialize(json: string): SimulationOrchestrator {
-    const { state, platform, activeAgentRatio } = JSON.parse(json);
+    const { state, platform, activeAgentRatio, agentBeliefsData } = JSON.parse(json);
     const orc = new SimulationOrchestrator({
       studyName: state.studyName,
       ad: state.ad,
@@ -235,7 +313,17 @@ Rekomendacje: ${this.state.insights?.recommendations?.join("; ") ?? "brak"}`;
       activeAgentRatio,
     });
     orc.state = state;
-    orc.memoryStore = AgentMemoryStore.deserialize(state.agentMemory ?? {});
+    orc.memoryStore = AgentMemoryStore.deserialize(
+      state.agentMemory ?? {},
+      state.agentMemoryCompacted ?? {}
+    );
+    // Przywróć BeliefState jeśli był zapisany
+    if (agentBeliefsData) {
+      orc.agentBeliefs = new Map();
+      for (const [id, data] of Object.entries(agentBeliefsData)) {
+        orc.agentBeliefs.set(id, BeliefState.fromDict(data as any));
+      }
+    }
     return orc;
   }
 }

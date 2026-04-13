@@ -1,14 +1,69 @@
 services:
-  swarm:
-    build: .
-    container_name: swarm
+  # ── PostgreSQL + pgvector ──────────────────────────────────────────────────
+  postgres:
+    image: pgvector/pgvector:pg16
+    container_name: legion-postgres
     restart: unless-stopped
-    ports:
-      - "3000:3000"
+    environment:
+      POSTGRES_DB: legion
+      POSTGRES_USER: legion
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?POSTGRES_PASSWORD required}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./scripts/db-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U legion -d legion"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ── Backend (Node.js) ──────────────────────────────────────────────────────
+  backend:
+    build: .
+    container_name: legion-backend
+    restart: unless-stopped
     env_file:
       - .env
+    environment:
+      PORT: 3000
+      DATABASE_URL: postgresql://legion:${POSTGRES_PASSWORD}@postgres:5432/legion
     volumes:
-      - swarm-results:/app/data/results
+      - legion-data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+    expose:
+      - "3000"
+
+  # ── Nginx (reverse proxy + static frontend) ────────────────────────────────
+  nginx:
+    image: nginx:alpine
+    container_name: legion-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
+      - legion-frontend:/usr/share/nginx/html:ro
+      - certbot-webroot:/var/www/certbot:ro
+      - certbot-certs:/etc/letsencrypt:ro
+    depends_on:
+      - backend
+
+  # ── Certbot (HTTPS, odpal raz manualnie) ──────────────────────────────────
+  certbot:
+    image: certbot/certbot
+    container_name: legion-certbot
+    volumes:
+      - certbot-webroot:/var/www/certbot
+      - certbot-certs:/etc/letsencrypt
+    profiles:
+      - certbot   # docker compose --profile certbot run certbot ...
 
 volumes:
-  swarm-results:
+  postgres-data:
+  legion-data:
+  legion-frontend:
+  certbot-webroot:
+  certbot-certs:

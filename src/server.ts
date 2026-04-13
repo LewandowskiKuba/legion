@@ -718,6 +718,13 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
     return;
   }
 
+  // ── Health check ───────────────────────────────────────────────────────────
+  if (url.pathname === "/api/health" && req.method === "GET") {
+    res.writeHead(200, { ...CORS_HEADERS, "Content-Type": "application/json" });
+    res.end(JSON.stringify({ status: "ok", uptime: Math.round(process.uptime()) }));
+    return;
+  }
+
   // ── Stary UI (legacy HTML) – wyłączony, zastąpiony przez React frontend ────
   // if (url.pathname === "/" && req.method === "GET") {
   //   res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });

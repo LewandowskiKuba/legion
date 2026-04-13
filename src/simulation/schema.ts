@@ -119,6 +119,40 @@ export interface SimulationInsights {
   recommendations: string[];
 }
 
+// ─── BeliefState snapshot ─────────────────────────────────────────────────────
+
+export interface BeliefStateSnapshot {
+  personaId: string;
+  positions: Record<string, number>;    // topic → stance (-1 to +1)
+  confidence: Record<string, number>;   // topic → certainty (0 to 1)
+  trust: Record<string, number>;        // agentId → trust (0 to 1)
+  exposureCount: number;
+}
+
+// ─── Simulation trajectory ────────────────────────────────────────────────────
+// Per-round belief snapshots + turning points + convergence metrics
+
+export interface TrajectoryRound {
+  roundNumber: number;
+  avgOpinion: number;
+  beliefSnapshots: BeliefStateSnapshot[];   // Subset of agents (to limit size)
+  convergenceScore: number;  // 0–1: how aligned agents are (higher = more consensus)
+}
+
+export interface TurningPoint {
+  roundNumber: number;
+  description: string;     // What changed
+  opinionDelta: number;    // Avg opinion change this round
+  triggerPersonaId?: string;
+}
+
+export interface SimulationTrajectoryData {
+  rounds: TrajectoryRound[];
+  turningPoints: TurningPoint[];
+  finalConvergence: number;   // 0–1
+  polarizationIndex: number;  // 0–1: how split the population is
+}
+
 // ─── Simulation state ─────────────────────────────────────────────────────────
 
 export type SimulationStatus = "initializing" | "running" | "paused" | "complete" | "error";
@@ -131,8 +165,11 @@ export interface SimulationState {
   knowledgeGraph: KnowledgeGraph;
   rounds: SimulationRound[];
   agentMemory: Record<string, MemoryEntry[]>;   // personaId → memory
+  agentMemoryCompacted?: Record<string, string>; // personaId → compacted summary
   agentOpinions: Record<string, number>;         // personaId → current opinion (-10 to +10)
+  agentBeliefs?: Record<string, BeliefStateSnapshot>; // personaId → current beliefs
   events: SimulationEvent[];
+  trajectory?: SimulationTrajectoryData;
   status: SimulationStatus;
   currentRound: number;
   totalRounds: number;
