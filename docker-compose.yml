@@ -37,15 +37,15 @@ services:
 
   # ── Nginx (reverse proxy + static frontend) ────────────────────────────────
   nginx:
-    image: nginx:alpine
+    build:
+      context: .
+      dockerfile: nginx/Dockerfile
     container_name: legion-nginx
     restart: unless-stopped
     ports:
       - "80:80"
       - "443:443"
     volumes:
-      - ./nginx/default.conf:/etc/nginx/conf.d/default.conf:ro
-      - legion-frontend:/usr/share/nginx/html:ro
       - certbot-webroot:/var/www/certbot:ro
       - certbot-certs:/etc/letsencrypt:ro
     depends_on:
@@ -64,6 +64,5 @@ services:
 volumes:
   postgres-data:
   legion-data:
-  legion-frontend:
   certbot-webroot:
   certbot-certs:
