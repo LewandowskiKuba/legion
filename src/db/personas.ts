@@ -11,6 +11,7 @@ import { readFileSync, writeFileSync, existsSync, mkdirSync } from "fs";
 import { join } from "path";
 import { query, isDbAvailable } from "./client.js";
 import { generatePopulation } from "../personas/generator.js";
+import { enrichPopulationWithBios } from "../personas/bioEnricher.js";
 import type { Persona } from "../personas/schema.js";
 
 const DATA_DIR = join(process.cwd(), "data");
@@ -40,9 +41,10 @@ export async function loadPersonas(): Promise<Persona[]> {
     return personas;
   }
 
-  // 3. Wygeneruj nowych agentów i zapisz
+  // 3. Wygeneruj nowych agentów z bio enrichment i zapisz
   console.log(`⚙ Generuję ${DEFAULT_SIZE} nowych agentów...`);
   const personas = generatePopulation(DEFAULT_SIZE);
+  await enrichPopulationWithBios(personas);
   await savePersonas(personas);
   return personas;
 }
@@ -89,6 +91,7 @@ export async function regeneratePersonas(size = DEFAULT_SIZE): Promise<Persona[]
   }
 
   const personas = generatePopulation(size);
+  await enrichPopulationWithBios(personas);
   await savePersonas(personas);
   console.log(`✓ Populacja zregenerowana: ${personas.length} agentów`);
   return personas;

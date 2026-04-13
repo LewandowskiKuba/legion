@@ -183,6 +183,8 @@ export interface BrandMemoryLayer {
 export interface Persona {
   id: string;
   name: string;                   // fikcyjne imię dla czytelności logów
+  zawod?: string;                 // zawód/rola zawodowa (LLM enrichment)
+  bio?: string;                   // 2-zdaniowy opis osoby (LLM enrichment)
   demographic: DemographicProfile;
   financial: FinancialProfile;
   psychographic: PsychographicProfile;

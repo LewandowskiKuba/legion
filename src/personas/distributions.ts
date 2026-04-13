@@ -86,6 +86,41 @@ export function sampleEducation(): EducationLevel {
   ]);
 }
 
+// Wykształcenie warunkowane wiekiem — structural zeros
+// age < 22: niemożliwe ukończenie studiów wyższych (min. 3 lata po maturze)
+// age < 19: w trakcie szkoły średniej, zazwyczaj bez zawodowego
+export function sampleEducationForAge(age: number): EducationLevel {
+  if (age < 19) {
+    return weightedRandom<EducationLevel>([
+      ["primary",    10],
+      ["secondary",  90],  // niemal wszyscy w toku szkoły średniej
+    ]);
+  }
+  if (age < 22) {
+    return weightedRandom<EducationLevel>([
+      ["primary",     8],
+      ["vocational",  20],
+      ["secondary",   72],  // structural zero: brak wyższego (za krótko na ukończenie)
+    ]);
+  }
+  if (age < 26) {
+    // Część może już kończyć studia licencjackie (3 lata)
+    return weightedRandom<EducationLevel>([
+      ["primary",     8],
+      ["vocational",  22],
+      ["secondary",   50],
+      ["higher",      20],
+    ]);
+  }
+  // 26+: pełna populacja GUS NSP 2021
+  return weightedRandom<EducationLevel>([
+    ["primary",    13],
+    ["vocational", 23],
+    ["secondary",  37],
+    ["higher",     27],
+  ]);
+}
+
 // Zamieszkanie: GUS BDL 2024 – wieś 40.6%, miasto 59.4% (var 60617/60633)
 // Podkategorie miejskie szacunkowe (BDL nie rozbija wg rozmiaru miasta):
 //   metropolis (500K+): Warszawa, Kraków + GZM ≈ 12%
@@ -102,27 +137,27 @@ export function sampleSettlementType(): SettlementType {
   ]);
 }
 
-// Wagi regionalne: GUS BDL API – ludność wg województw, rok 2024 (var 72305)
-// Suma: ~37.5M | mazowieckie 14.7%, śląskie 11.5%, wielkopolskie 9.3% ...
+// Wagi regionalne: GUS BDL API var 72305 – ludność wg województw, rok 2024
+// Kalibracja: scripts/calibrate-from-bdl.ts, snapshot 2026-04
 export function sampleRegion(): Region {
   return weightedRandom<Region>([
     ["mazowieckie",         15],   // 14.7% – 5.51M
-    ["slaskie",             11],   // 11.5% – 4.29M
+    ["slaskie",             11],   // 11.4% – 4.29M
     ["wielkopolskie",        9],   //  9.3% – 3.48M
-    ["malopolskie",          9],   //  9.2% – 3.43M
+    ["malopolskie",          9],   //  9.1% – 3.43M
     ["dolnoslaskie",         8],   //  7.7% – 2.87M
     ["lodzkie",              6],   //  6.3% – 2.35M
     ["pomorskie",            6],   //  6.3% – 2.36M
     ["kujawsko-pomorskie",   5],   //  5.3% – 1.98M
     ["lubelskie",            5],   //  5.3% – 2.00M
-    ["podkarpackie",         6],   //  5.5% – 2.06M
-    ["warminsko-mazurskie",  4],   //  3.6% – 1.35M
+    ["podkarpackie",         5],   //  5.5% – 2.06M  ↓ korekta z 6
     ["zachodniopomorskie",   4],   //  4.3% – 1.62M
+    ["warminsko-mazurskie",  4],   //  3.6% – 1.35M
     ["swietokrzyskie",       3],   //  3.1% – 1.16M
     ["podlaskie",            3],   //  3.0% – 1.13M
-    ["lubuskie",             3],   //  2.6% – 0.97M
-    ["opolskie",             2],   //  2.5% – 0.93M
-                                   // razem ~99%
+    ["opolskie",             3],   //  2.5% – 0.93M  ↑ korekta z 2
+    ["lubuskie",             2],   //  2.6% – 0.97M  ↓ korekta z 3
+                                   // razem ~98%
   ]);
 }
 
@@ -166,16 +201,18 @@ export function sampleHousehold(age: number, gender: Gender): HouseholdType {
 // Finansowe
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Dochody: GUS BDL API var 216973 – dochód rozporządzalny per capita 2024: ~3 103 PLN
-// Progi bracketów przeskalowane wg wzrostu dochodów (skrypt: calibrate-from-bdl.ts)
+// Dochody: GUS BDL API var 216973 – dochód rozporządzalny per capita 2024: 3 103 PLN (+18.3% YoY)
+// Płaca minimalna 2025: 4 666 PLN brutto (~3 200 PLN netto) → marginalizuje bracket below_2000
+// Progi bracketów (PLN netto/mc): <2400 | 2400-4100 | 4100-5900 | 5900-9500 | >9500
+// (kalibracja: scripts/calibrate-from-bdl.ts, snapshot: data/calibration/bdl_snapshot.json 2026-04)
 export function sampleIncomeLevel(education: EducationLevel, settlementType: SettlementType): IncomeLevel {
-  // Bazowy rozkład (GUS budżety gosp. domowych 2023)
+  // Bazowy rozkład – dostosowany do 2024/2025 (przesunięcie w prawo względem 2022)
   const base: [IncomeLevel, number][] = [
-    ["below_2000", 12],
-    ["2000_3500", 30],
-    ["3500_5000", 28],
-    ["5000_8000", 20],
-    ["above_8000", 10],
+    ["below_2000",  8],   // ~8%  – emerytury minimalne, długoterminowe bezrobocie
+    ["2000_3500",  24],   // ~24% – usługi, rolnicy, część budżetówki
+    ["3500_5000",  30],   // ~30% – core klasa średnia, najbardziej liczna
+    ["5000_8000",  25],   // ~25% – rosnący, specjaliści + część menedżerów
+    ["above_8000", 13],   // ~13% – kadra kierownicza, IT, wolne zawody
   ];
 
   // Korekty edukacyjne
@@ -201,21 +238,24 @@ export function sampleOwnsProperty(age: number, incomeLevel: IncomeLevel): boole
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Polityczne
-// Źródło: CBOS Komunikat BS/9/2025 „Preferencje partyjne w styczniu 2025"
-// Udziały wśród wszystkich dorosłych (w tym niezdecydowanych i niedeklarujących)
-// PiS 28%, KO 27%, TD 9%, Lewica 7%, Konfederacja 11%,
-// niezdecydowani 11%, apolityczni 7% (łącznie ~100%)
+// Źródło: CBOS grudzień 2025 (N=1000, CATI+CAWI) – przeliczone na wszystkich dorosłych
+// Wśród deklarujących głosowanie (77%): KO 30.3%, PiS 20.7%, Konf WiN 12.5%, Konf KP 7.0%,
+//   Lewica+Razem 9.0%, TD (PSL+P2050) 3.4%
+// Przeliczono × 0.77 + niezdecydowani 14.3% + apolityczni ~8.7%
+// PiS 20%, KO 27%, TD 4%, Lewica 8%, Konfederacja 15%,
+// niezdecydowani 16%, apolityczni 10% (łącznie ~100%)
+// Trend: PiS traci wyborców (28→20), Konfederacja zyskuje (11→15), TD prawie znika (9→4)
 // ─────────────────────────────────────────────────────────────────────────────
 
 export function samplePoliticalAffiliation(age: number, settlementType: SettlementType): PoliticalAffiliation {
   const base: [PoliticalAffiliation, number][] = [
-    ["pis",          28],
+    ["pis",          20],
     ["ko",           27],
-    ["td",            9],
-    ["lewica",        7],
-    ["konfederacja", 11],
-    ["undecided",    11],
-    ["apolitical",    7],
+    ["td",            4],
+    ["lewica",        8],
+    ["konfederacja", 15],
+    ["undecided",    16],
+    ["apolitical",   10],
   ];
 
   const adjusted: [PoliticalAffiliation, number][] = base.map(([party, w]) => {
