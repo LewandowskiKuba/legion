@@ -27,11 +27,7 @@ COPY --from=backend-builder /app/dist ./dist
 # Frontend dist trafia do nginx – kopiujemy tu żeby docker cp działał
 COPY --from=frontend-builder /frontend/dist ./frontend-dist
 
-# Dane statyczne (jeśli istnieją)
-COPY data/brands/ ./data/brands/ 2>/dev/null || true
-COPY data/calibration/ ./data/calibration/ 2>/dev/null || true
-
-RUN mkdir -p data/simulations data/results data/temp
+RUN mkdir -p data/simulations data/results data/temp data/brands data/calibration
 
 ENV NODE_ENV=production
 ENV PORT=3000
