@@ -10,6 +10,7 @@ import { runRound } from "./roundEngine.js";
 import { generateSimulationInsights } from "./reportAgent.js";
 import { BeliefState, extractTopicsFromRequirement } from "./beliefState.js";
 import { SimulationTrajectory } from "./trajectoryTracker.js";
+import { buildSocialGraph } from "./socialGraph.js";
 import type {
   SimulationConfig,
   SimulationState,
@@ -33,6 +34,7 @@ export class SimulationOrchestrator {
   private activeAgentRatio: number;
   private agentBeliefs: Map<string, BeliefState> = new Map();
   private trajectory: SimulationTrajectory = new SimulationTrajectory();
+  private socialGraph: Map<string, Set<string>> = new Map();
 
   // Callback called after each round completes (for SSE streaming)
   onRoundComplete?: (round: SimulationRound) => void;
@@ -88,6 +90,10 @@ export class SimulationOrchestrator {
         })
       );
     }
+
+    // Zbuduj graf społeczny Barabási-Albert raz dla całej symulacji
+    this.socialGraph = buildSocialGraph(config.population.map((p) => p.id));
+    console.log(`🕸 Graf społeczny: ${config.population.length} węzłów, BA m=3`);
   }
 
   // Faza init: wyciągnij KnowledgeGraph z seeda (reklama lub scenariusz)
@@ -119,7 +125,7 @@ export class SimulationOrchestrator {
     }
 
     const roundNumber = this.state.currentRound + 1;
-    const previousActions = this.state.rounds.at(-1)?.actions ?? [];
+    const allPastActions = this.state.rounds.flatMap((r) => r.actions);
 
     console.log(`▶ Runda ${roundNumber}/${this.state.totalRounds}...`);
 
@@ -131,7 +137,8 @@ export class SimulationOrchestrator {
       agentBeliefs: this.agentBeliefs,
       memoryStore: this.memoryStore,
       knowledgeGraph: this.state.knowledgeGraph,
-      previousActions,
+      allPastActions,
+      socialGraph: this.socialGraph,
       events: this.state.events,
       platform: this.platform,
       activeAgentRatio: this.activeAgentRatio,
@@ -228,6 +235,12 @@ export class SimulationOrchestrator {
       forked.agentBeliefs.set(id, BeliefState.fromDict(bs.toDict()));
     }
 
+    // Kopiuj graf społeczny (ta sama struktura co oryginał)
+    forked.socialGraph = new Map();
+    for (const [id, connections] of this.socialGraph.entries()) {
+      forked.socialGraph.set(id, new Set(connections));
+    }
+
     // Opcjonalny event przy forku
     if (injectedEvent) {
       forked.injectEvent(injectedEvent);
@@ -306,21 +319,26 @@ Rekomendacje: ${this.state.insights?.recommendations?.join("; ") ?? "brak"}`;
   }
 
   serialize(): string {
-    // Serializuj BeliefState per agent
     const agentBeliefsData: Record<string, ReturnType<BeliefState["toDict"]>> = {};
     for (const [id, bs] of this.agentBeliefs.entries()) {
       agentBeliefsData[id] = bs.toDict();
+    }
+    // Serialize socialGraph: Map<string, Set<string>> → Record<string, string[]>
+    const socialGraphData: Record<string, string[]> = {};
+    for (const [id, connections] of this.socialGraph.entries()) {
+      socialGraphData[id] = [...connections];
     }
     return JSON.stringify({
       state: this.state,
       platform: this.platform,
       activeAgentRatio: this.activeAgentRatio,
       agentBeliefsData,
+      socialGraphData,
     });
   }
 
   static deserialize(json: string): SimulationOrchestrator {
-    const { state, platform, activeAgentRatio, agentBeliefsData } = JSON.parse(json);
+    const { state, platform, activeAgentRatio, agentBeliefsData, socialGraphData } = JSON.parse(json);
     const orc = new SimulationOrchestrator({
       studyName: state.studyName,
       seedType: state.seedType ?? "ad",
@@ -336,11 +354,17 @@ Rekomendacje: ${this.state.insights?.recommendations?.join("; ") ?? "brak"}`;
       state.agentMemory ?? {},
       state.agentMemoryCompacted ?? {}
     );
-    // Przywróć BeliefState jeśli był zapisany
     if (agentBeliefsData) {
       orc.agentBeliefs = new Map();
       for (const [id, data] of Object.entries(agentBeliefsData)) {
         orc.agentBeliefs.set(id, BeliefState.fromDict(data as any));
+      }
+    }
+    // Restore social graph (overrides the one generated in constructor)
+    if (socialGraphData) {
+      orc.socialGraph = new Map();
+      for (const [id, connections] of Object.entries(socialGraphData)) {
+        orc.socialGraph.set(id, new Set(connections as string[]));
       }
     }
     return orc;

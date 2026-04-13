@@ -62,21 +62,51 @@ function parseAgentRoundResponse(
   }
 }
 
-// Buduje feed dla agenta: ostatnie posty innych agentów (nie siebie)
+// ─── Hot score feed ───────────────────────────────────────────────────────────
+// hotScore = (1 + reactions) / (ageInRounds + 1)^1.5
+// reactions = likes + comments + shares targeting the post's author after the round
+// Social connections get a 2× boost.
+
+function hotScore(
+  action: AgentAction,
+  allActions: AgentAction[],
+  currentRound: number,
+  isConnection: boolean
+): number {
+  const age = currentRound - action.round; // rounds since posted
+  const reactions = allActions.filter(
+    (a) =>
+      a.targetPersonaId === action.personaId &&
+      a.round > action.round &&
+      ["like", "comment", "share"].includes(a.actionType)
+  ).length;
+  const base = (1 + reactions) / Math.pow(age + 1, 1.5);
+  return isConnection ? base * 2 : base;
+}
+
+// Buduje feed dla agenta: top-8 postów wg hot score (z boostem dla połączeń społecznych)
 function buildFeedForPersona(
   personaId: string,
-  previousActions: AgentAction[],
-  personaMap: Map<string, string>   // id → name
+  allPastActions: AgentAction[],   // wszystkie akcje ze wszystkich rund
+  personaMap: Map<string, string>,  // id → name
+  socialConnections: Set<string>,   // kogo obserwuje agent
+  currentRound: number
 ): Array<{ personaName: string; content: string; actionType: string }> {
-  return previousActions
-    .filter(
-      (a) =>
-        a.personaId !== personaId &&
-        ["post", "comment", "share"].includes(a.actionType) &&
-        a.content.length > 0
-    )
-    .slice(-8)  // Max 8 wpisów w feedzie
+  const candidates = allPastActions.filter(
+    (a) =>
+      a.personaId !== personaId &&
+      ["post", "comment", "share"].includes(a.actionType) &&
+      a.content.length > 0
+  );
+
+  return candidates
     .map((a) => ({
+      action: a,
+      score: hotScore(a, allPastActions, currentRound, socialConnections.has(a.personaId)),
+    }))
+    .sort((x, y) => y.score - x.score)
+    .slice(0, 8)
+    .map(({ action: a }) => ({
       personaName: a.personaName,
       content: a.content,
       actionType: a.actionType,
@@ -102,7 +132,8 @@ export async function runRound(params: {
   agentBeliefs: Map<string, BeliefState>;
   memoryStore: AgentMemoryStore;
   knowledgeGraph: KnowledgeGraph;
-  previousActions: AgentAction[];
+  allPastActions: AgentAction[];      // wszystkie akcje ze wszystkich poprzednich rund
+  socialGraph: Map<string, Set<string>>; // Barabási-Albert: id → Set<followingId>
   events: SimulationEvent[];
   platform: Platform;
   activeAgentRatio: number;
@@ -117,7 +148,8 @@ export async function runRound(params: {
     agentBeliefs,
     memoryStore,
     knowledgeGraph,
-    previousActions,
+    allPastActions,
+    socialGraph,
     events,
     platform,
     activeAgentRatio,
@@ -143,7 +175,8 @@ export async function runRound(params: {
     (persona) => {
       const currentOpinion = agentOpinions[persona.id] ?? 0;
       const memorySummary = memoryStore.getSummary(persona.id);
-      const recentFeed = buildFeedForPersona(persona.id, previousActions, personaMap);
+      const connections = socialGraph.get(persona.id) ?? new Set<string>();
+      const recentFeed = buildFeedForPersona(persona.id, allPastActions, personaMap, connections, round);
 
       const beliefState = agentBeliefs.get(persona.id);
       const beliefText = beliefState?.toPromptText() ?? "";
@@ -211,7 +244,8 @@ export async function runRound(params: {
     const bs = agentBeliefs.get(persona.id);
     if (!bs) continue;
 
-    const feed = buildFeedForPersona(persona.id, previousActions, personaMap);
+    const connections = socialGraph.get(persona.id) ?? new Set<string>();
+    const feed = buildFeedForPersona(persona.id, allPastActions, personaMap, connections, round);
     const postsSeen: PostSeen[] = feed.map((f) => ({
       content: f.content,
       authorId: actions.find((a) => a.personaName === f.personaName)?.personaId,
