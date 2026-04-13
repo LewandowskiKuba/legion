@@ -1,22 +1,24 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router';
-import { Network, Loader2, Megaphone, Globe } from 'lucide-react';
-import { startSimulation, type SimulationFormData } from '../utils/api';
+import { Network, Loader2, Megaphone, Globe, MessageSquare, ImagePlus, X, Filter } from 'lucide-react';
+import { Button } from '../components/ui/button';
+import { Input } from '../components/ui/input';
+import { Textarea } from '../components/ui/textarea';
+import { Label } from '../components/ui/label';
+import { Switch } from '../components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
+import {
+  startSimulation,
+  startAbSimulation,
+  uploadCreative,
+  getBrands,
+  mockCategories,
+  type AdSimulationFormData,
+  type RumorSimulationFormData,
+  type TopicSimulationFormData,
+} from '../utils/api';
 
-const CATEGORIES = [
-  { value: '', label: '– dowolna –' },
-  { value: 'fmcg', label: 'FMCG' },
-  { value: 'electronics', label: 'Elektronika' },
-  { value: 'fashion', label: 'Moda' },
-  { value: 'financial_services', label: 'Usługi finansowe' },
-  { value: 'automotive', label: 'Motoryzacja' },
-  { value: 'food_delivery', label: 'Dostawa jedzenia' },
-  { value: 'travel', label: 'Podróże' },
-  { value: 'healthcare', label: 'Zdrowie' },
-  { value: 'entertainment', label: 'Rozrywka' },
-  { value: 'home_appliances', label: 'AGD/RTV' },
-  { value: 'beauty', label: 'Uroda' },
-];
+// ─── Stałe ───────────────────────────────────────────────────────────────────
 
 const TOPIC_EXAMPLES = [
   'Iran blokuje Cieśninę Ormuz, ceny ropy skaczą o 40%',
@@ -26,115 +28,470 @@ const TOPIC_EXAMPLES = [
   'Ogłoszono masowe zwolnienia w sektorze automotive — 50 000 etatów',
 ];
 
-type SeedType = 'ad' | 'topic';
+type SeedTab = 'ad' | 'rumor' | 'topic';
 
-interface CommonFields {
-  studyName: string;
+// ─── CreativeState & Uploader (poza komponentem – unika remount) ─────────────
+
+interface CreativeState {
+  file: File | null;
+  preview: string | null;
+  id: string | null;
+  uploading: boolean;
+  error: string | null;
+}
+
+const emptyCreative = (): CreativeState => ({
+  file: null, preview: null, id: null, uploading: false, error: null,
+});
+
+function CreativeUploader({
+  state,
+  onChange,
+  label = 'Kreacja graficzna',
+}: {
+  state: CreativeState;
+  onChange: (s: CreativeState | ((prev: CreativeState) => CreativeState)) => void;
+  label?: string;
+}) {
+  const handleSelect = async (file: File) => {
+    onChange({ ...emptyCreative(), file, preview: URL.createObjectURL(file), uploading: true });
+    try {
+      const id = await uploadCreative(file);
+      onChange((prev) => ({ ...prev, id, uploading: false }));
+    } catch (err: any) {
+      onChange((prev) => ({ ...prev, error: err.message ?? 'Błąd uploadu', uploading: false }));
+    }
+  };
+
+  const handleClear = () => onChange(emptyCreative());
+
+  return (
+    <div>
+      <div className="flex items-center gap-2 mb-3">
+        <ImagePlus className="w-4 h-4 text-[#6366f1]" />
+        <span className="text-sm font-semibold text-white">{label}</span>
+        <span className="text-xs text-[#52525b] ml-1">(opcjonalnie – JPG, PNG, WEBP)</span>
+      </div>
+
+      {!state.file ? (
+        <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-[#27272a] rounded-lg cursor-pointer hover:border-[#6366f1] transition-colors">
+          <ImagePlus className="w-5 h-5 text-[#52525b] mb-1" />
+          <span className="text-xs text-[#52525b]">Kliknij lub przeciągnij plik</span>
+          <input
+            type="file"
+            className="hidden"
+            accept="image/jpeg,image/png,image/gif,image/webp"
+            onChange={(e) => { const f = e.target.files?.[0]; if (f) handleSelect(f); }}
+          />
+        </label>
+      ) : (
+        <div className="flex items-start gap-3">
+          {state.preview && (
+            <img src={state.preview} alt="podgląd" className="h-20 rounded-lg object-contain bg-[#0f0f11]" />
+          )}
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-white truncate">{state.file.name}</span>
+              <button type="button" onClick={handleClear} className="text-[#52525b] hover:text-white flex-shrink-0">
+                <X className="w-3 h-3" />
+              </button>
+            </div>
+            {state.uploading && (
+              <div className="flex items-center gap-1 mt-1">
+                <Loader2 className="w-3 h-3 text-[#6366f1] animate-spin" />
+                <span className="text-xs text-[#a1a1aa]">Przesyłanie...</span>
+              </div>
+            )}
+            {state.id && !state.uploading && (
+              <span className="text-xs text-green-400 mt-1 block">Gotowe</span>
+            )}
+            {state.error && (
+              <span className="text-xs text-red-400 mt-1 block">{state.error}</span>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ─── BrandAutocomplete ───────────────────────────────────────────────────────
+
+function BrandAutocomplete({
+  value,
+  onChange,
+  options,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  options: string[];
+}) {
+  const [open, setOpen] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const filtered = value.trim().length > 0
+    ? options.filter((o) => o.toLowerCase().includes(value.toLowerCase())).slice(0, 8)
+    : [];
+
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
+
+  return (
+    <div ref={containerRef} className="relative">
+      <input
+        value={value}
+        onChange={(e) => { onChange(e.target.value); setOpen(true); }}
+        onFocus={() => setOpen(true)}
+        placeholder="np. T-Mobile"
+        autoComplete="off"
+        className="w-full bg-[#09090b] border border-[#3f3f46] rounded-lg text-white px-3 py-2 text-sm focus:outline-none focus:border-[#6366f1] placeholder:text-[#52525b]"
+      />
+      {open && filtered.length > 0 && (
+        <ul className="absolute z-20 mt-1 w-full bg-[#18181b] border border-[#27272a] rounded-lg shadow-lg overflow-hidden">
+          {filtered.map((brand) => (
+            <li
+              key={brand}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                onChange(brand);
+                setOpen(false);
+              }}
+              className="px-3 py-2 text-sm text-white cursor-pointer hover:bg-[#27272a] transition-colors"
+            >
+              {brand}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+// ─── TargetingFilters ─────────────────────────────────────────────────────────
+
+interface TargetingState {
+  gender: string;
+  ageMin: string;
+  ageMax: string;
+  location: string;
+  income: string;
+}
+
+function TargetingFilters({
+  value,
+  onChange,
+}: {
+  value: TargetingState;
+  onChange: (v: TargetingState) => void;
+}) {
+  return (
+    <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-5">
+      <div className="flex items-center gap-2 mb-4">
+        <Filter className="w-4 h-4 text-[#6366f1]" />
+        <h3 className="text-sm font-semibold text-white">Filtry segmentacji</h3>
+      </div>
+      <div className="grid grid-cols-5 gap-4">
+        <div className="space-y-2">
+          <Label className="text-white text-xs">Płeć</Label>
+          <Select value={value.gender} onValueChange={(v) => onChange({ ...value, gender: v })}>
+            <SelectTrigger className="bg-[#0f0f11] border-[#27272a] text-white text-sm rounded-lg h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-[#18181b] border-[#27272a]">
+              <SelectItem value="all" className="text-white text-sm">Wszyscy</SelectItem>
+              <SelectItem value="male" className="text-white text-sm">Mężczyźni</SelectItem>
+              <SelectItem value="female" className="text-white text-sm">Kobiety</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label className="text-white text-xs">Wiek min</Label>
+          <input
+            type="number"
+            value={value.ageMin}
+            onChange={(e) => onChange({ ...value, ageMin: e.target.value })}
+            placeholder="18"
+            className="w-full bg-[#0f0f11] border border-[#27272a] text-white text-sm rounded-lg h-9 px-3 focus:outline-none focus:border-[#6366f1]"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label className="text-white text-xs">Wiek max</Label>
+          <input
+            type="number"
+            value={value.ageMax}
+            onChange={(e) => onChange({ ...value, ageMax: e.target.value })}
+            placeholder="65"
+            className="w-full bg-[#0f0f11] border border-[#27272a] text-white text-sm rounded-lg h-9 px-3 focus:outline-none focus:border-[#6366f1]"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label className="text-white text-xs">Miejscowość</Label>
+          <Select value={value.location} onValueChange={(v) => onChange({ ...value, location: v })}>
+            <SelectTrigger className="bg-[#0f0f11] border-[#27272a] text-white text-sm rounded-lg h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-[#18181b] border-[#27272a]">
+              <SelectItem value="all" className="text-white text-sm">Wszystkie</SelectItem>
+              <SelectItem value="urban" className="text-white text-sm">Miasta &gt;500k</SelectItem>
+              <SelectItem value="suburban" className="text-white text-sm">Miasta 100-500k</SelectItem>
+              <SelectItem value="rural" className="text-white text-sm">Mniejsze miasta i wieś</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label className="text-white text-xs">Dochód</Label>
+          <Select value={value.income} onValueChange={(v) => onChange({ ...value, income: v })}>
+            <SelectTrigger className="bg-[#0f0f11] border-[#27272a] text-white text-sm rounded-lg h-9">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent className="bg-[#18181b] border-[#27272a]">
+              <SelectItem value="all" className="text-white text-sm">Wszystkie</SelectItem>
+              <SelectItem value="low" className="text-white text-sm">Niski</SelectItem>
+              <SelectItem value="medium" className="text-white text-sm">Średni</SelectItem>
+              <SelectItem value="high" className="text-white text-sm">Wysoki</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── SimulationParams (wspólne) ───────────────────────────────────────────────
+
+interface SimParams {
   totalRounds: number;
   platform: 'facebook' | 'twitter';
   activeAgentRatio: number;
 }
 
-interface AdFields {
-  headline: string;
-  body: string;
-  cta: string;
-  brand: string;
-  category: string;
+function SimulationParams({ value, onChange }: { value: SimParams; onChange: (v: SimParams) => void }) {
+  return (
+    <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-6 space-y-4">
+      <h2 className="text-white font-semibold">Parametry symulacji</h2>
+      <div>
+        <label className="block text-xs text-[#a1a1aa] mb-2">
+          Liczba rund: <span className="text-white font-semibold">{value.totalRounds}</span>
+        </label>
+        <input
+          type="range" min={3} max={15} value={value.totalRounds}
+          onChange={(e) => onChange({ ...value, totalRounds: Number(e.target.value) })}
+          className="w-full accent-[#6366f1]"
+        />
+        <div className="flex justify-between text-xs text-[#52525b] mt-1">
+          <span>3 rundy (szybko)</span>
+          <span>15 rund (szczegółowo)</span>
+        </div>
+      </div>
+      <div>
+        <label className="block text-xs text-[#a1a1aa] mb-2">Platforma</label>
+        <div className="flex gap-3">
+          {(['facebook', 'twitter'] as const).map((p) => (
+            <button
+              key={p} type="button"
+              onClick={() => onChange({ ...value, platform: p })}
+              className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${
+                value.platform === p
+                  ? 'bg-[#6366f1] border-[#6366f1] text-white'
+                  : 'bg-[#09090b] border-[#3f3f46] text-[#a1a1aa] hover:border-[#6366f1]'
+              }`}
+            >
+              {p === 'facebook' ? 'Facebook' : 'Twitter/X'}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div>
+        <label className="block text-xs text-[#a1a1aa] mb-2">
+          Aktywni agenci per runda:{' '}
+          <span className="text-white font-semibold">{Math.round(value.activeAgentRatio * 100)}%</span>
+        </label>
+        <input
+          type="range" min={30} max={100} step={10}
+          value={Math.round(value.activeAgentRatio * 100)}
+          onChange={(e) => onChange({ ...value, activeAgentRatio: Number(e.target.value) / 100 })}
+          className="w-full accent-[#6366f1]"
+        />
+      </div>
+    </div>
+  );
 }
 
-interface TopicFields {
-  query: string;
-  context: string;
-  expectedImpacts: string;
-}
+// ─── Główny komponent ─────────────────────────────────────────────────────────
+
+const emptyTargeting = (): TargetingState => ({
+  gender: 'all', ageMin: '', ageMax: '', location: 'all', income: 'all',
+});
+
+const defaultParams = (): SimParams => ({
+  totalRounds: 5, platform: 'facebook', activeAgentRatio: 0.7,
+});
 
 export function NewSimulation() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [seedType, setSeedType] = useState<SeedType>('ad');
+  const [tab, setTab] = useState<SeedTab>('ad');
+  const [brands, setBrands] = useState<string[]>([]);
 
-  const [common, setCommon] = useState<CommonFields>({
-    studyName: '',
-    totalRounds: 5,
-    platform: 'facebook',
-    activeAgentRatio: 0.7,
-  });
+  useEffect(() => {
+    getBrands().then(setBrands).catch(() => {});
+  }, []);
 
-  const [ad, setAd] = useState<AdFields>({
-    headline: '',
-    body: '',
-    cta: '',
-    brand: '',
-    category: '',
-  });
+  // Wspólne parametry
+  const [params, setParams] = useState<SimParams>(defaultParams());
 
-  const [topic, setTopic] = useState<TopicFields>({
-    query: '',
-    context: '',
-    expectedImpacts: '',
-  });
+  // ── Zakładka Reklama ──
+  const [adStudyName, setAdStudyName] = useState('');
+  const [adHeadline, setAdHeadline] = useState('');
+  const [adBody, setAdBody] = useState('');
+  const [adCta, setAdCta] = useState('');
+  const [adBrand, setAdBrand] = useState('');
+  const [adCategory, setAdCategory] = useState('');
+  const [adContext, setAdContext] = useState('');
+  const [adAbMode, setAdAbMode] = useState(false);
+  const [adTargeting, setAdTargeting] = useState(false);
+  const [adTargetingFilters, setAdTargetingFilters] = useState<TargetingState>(emptyTargeting());
+  const [creativeA, setCreativeA] = useState<CreativeState>(emptyCreative());
+  // Wariant B
+  const [adHeadlineB, setAdHeadlineB] = useState('');
+  const [adBodyB, setAdBodyB] = useState('');
+  const [adCtaB, setAdCtaB] = useState('');
+  const [creativeB, setCreativeB] = useState<CreativeState>(emptyCreative());
 
-  function setC(field: keyof CommonFields, value: any) {
-    setCommon((f) => ({ ...f, [field]: value }));
-  }
+  // ── Zakładka Komunikat/Plotka ──
+  const [rumorStudyName, setRumorStudyName] = useState('');
+  const [rumorHeadline, setRumorHeadline] = useState('');
+  const [rumorBody, setRumorBody] = useState('');
+  const [rumorBrand, setRumorBrand] = useState('');
+  const [rumorContext, setRumorContext] = useState('');
+  const [rumorTargeting, setRumorTargeting] = useState(false);
+  const [rumorTargetingFilters, setRumorTargetingFilters] = useState<TargetingState>(emptyTargeting());
+  const [rumorCreative, setRumorCreative] = useState<CreativeState>(emptyCreative());
+
+  // ── Zakładka Scenariusz ──
+  const [topicStudyName, setTopicStudyName] = useState('');
+  const [topicQuery, setTopicQuery] = useState('');
+  const [topicContext, setTopicContext] = useState('');
+  const [topicImpacts, setTopicImpacts] = useState('');
+
+  const anyUploading = creativeA.uploading || creativeB.uploading || rumorCreative.uploading;
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
 
-    if (seedType === 'ad') {
-      if (!ad.headline || !ad.body || !ad.cta) {
-        setError('Wypełnij wymagane pola: Headline, Body, CTA');
+    if (tab === 'ad') {
+      if (!adHeadline && !creativeA.id) {
+        setError('Podaj Headline lub wgraj kreację graficzną');
         return;
       }
+      setLoading(true);
+      try {
+        const baseAd: AdSimulationFormData = {
+          seedType: 'ad',
+          studyName: adStudyName || `${adBrand || 'Reklama'} – ${adHeadline.slice(0, 30)}`,
+          headline: adHeadline || undefined,
+          body: adBody || undefined,
+          cta: adCta || undefined,
+          brand: adBrand || undefined,
+          category: adCategory || undefined,
+          context: adContext || undefined,
+          creativeId: creativeA.id || undefined,
+          totalRounds: params.totalRounds,
+          platform: params.platform,
+          activeAgentRatio: params.activeAgentRatio,
+          filterGender: adTargeting ? adTargetingFilters.gender : undefined,
+          filterAgeMin: adTargeting ? adTargetingFilters.ageMin : undefined,
+          filterAgeMax: adTargeting ? adTargetingFilters.ageMax : undefined,
+          filterSettlement: adTargeting ? adTargetingFilters.location : undefined,
+          filterIncome: adTargeting ? adTargetingFilters.income : undefined,
+        };
+
+        if (adAbMode) {
+          const dataB: AdSimulationFormData = {
+            ...baseAd,
+            studyName: `${baseAd.studyName} – B`,
+            headline: adHeadlineB || adHeadline || undefined,
+            body: adBodyB || adBody || undefined,
+            cta: adCtaB || adCta || undefined,
+            creativeId: creativeB.id || creativeA.id || undefined,
+          };
+          const { idA, idB } = await startAbSimulation(baseAd, dataB);
+          navigate(`/simulation/compare/${idA}/${idB}`);
+        } else {
+          const id = await startSimulation(baseAd);
+          navigate(`/simulation/${id}`);
+        }
+      } catch (err: any) {
+        setError(err.message ?? 'Błąd startu symulacji');
+        setLoading(false);
+      }
+    } else if (tab === 'rumor') {
+      if (!rumorBody.trim()) {
+        setError('Treść komunikatu jest wymagana');
+        return;
+      }
+      setLoading(true);
+      try {
+        const data: RumorSimulationFormData = {
+          seedType: 'rumor',
+          studyName: rumorStudyName || rumorBody.slice(0, 50),
+          headline: rumorHeadline || undefined,
+          body: rumorBody,
+          brand: rumorBrand || undefined,
+          context: rumorContext || undefined,
+          creativeId: rumorCreative.id || undefined,
+          totalRounds: params.totalRounds,
+          platform: params.platform,
+          activeAgentRatio: params.activeAgentRatio,
+          filterGender: rumorTargeting ? rumorTargetingFilters.gender : undefined,
+          filterAgeMin: rumorTargeting ? rumorTargetingFilters.ageMin : undefined,
+          filterAgeMax: rumorTargeting ? rumorTargetingFilters.ageMax : undefined,
+          filterSettlement: rumorTargeting ? rumorTargetingFilters.location : undefined,
+          filterIncome: rumorTargeting ? rumorTargetingFilters.income : undefined,
+        };
+        const id = await startSimulation(data);
+        navigate(`/simulation/${id}`);
+      } catch (err: any) {
+        setError(err.message ?? 'Błąd startu symulacji');
+        setLoading(false);
+      }
     } else {
-      if (!topic.query.trim()) {
+      if (!topicQuery.trim()) {
         setError('Opisz scenariusz (pole Scenariusz jest wymagane)');
         return;
       }
-    }
-
-    setLoading(true);
-    try {
-      let data: SimulationFormData;
-      if (seedType === 'ad') {
-        data = {
-          seedType: 'ad',
-          studyName: common.studyName || `${ad.brand || 'Reklama'} – ${ad.headline.slice(0, 30)}`,
-          headline: ad.headline,
-          body: ad.body,
-          cta: ad.cta,
-          brand: ad.brand || undefined,
-          category: ad.category || undefined,
-          totalRounds: common.totalRounds,
-          platform: common.platform,
-          activeAgentRatio: common.activeAgentRatio,
-        };
-      } else {
-        const impacts = topic.expectedImpacts
-          .split('\n')
-          .map((s) => s.trim())
-          .filter(Boolean);
-        data = {
+      setLoading(true);
+      try {
+        const impacts = topicImpacts.split('\n').map((s) => s.trim()).filter(Boolean);
+        const data: TopicSimulationFormData = {
           seedType: 'topic',
-          studyName: common.studyName || topic.query.slice(0, 50),
-          query: topic.query,
-          context: topic.context || undefined,
+          studyName: topicStudyName || topicQuery.slice(0, 50),
+          query: topicQuery,
+          context: topicContext || undefined,
           expectedImpacts: impacts.length ? impacts : undefined,
-          totalRounds: common.totalRounds,
-          platform: common.platform,
-          activeAgentRatio: common.activeAgentRatio,
+          totalRounds: params.totalRounds,
+          platform: params.platform,
+          activeAgentRatio: params.activeAgentRatio,
         };
+        const id = await startSimulation(data);
+        navigate(`/simulation/${id}`);
+      } catch (err: any) {
+        setError(err.message ?? 'Błąd startu symulacji');
+        setLoading(false);
       }
-      const id = await startSimulation(data);
-      navigate(`/simulation/${id}`);
-    } catch (err: any) {
-      setError(err.message ?? 'Błąd startu symulacji');
-      setLoading(false);
     }
   }
+
+  const inputCls = "w-full bg-[#09090b] border border-[#3f3f46] rounded-lg text-white px-3 py-2 text-sm focus:outline-none focus:border-[#6366f1] placeholder:text-[#52525b]";
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -144,119 +501,331 @@ export function NewSimulation() {
           <h1 className="text-2xl font-bold text-white">Nowa symulacja</h1>
         </div>
         <p className="text-[#a1a1aa] text-sm">
-          Multi-rundowa symulacja społeczna. Testuj reklamy lub analizuj jak polskie społeczeństwo
-          reaguje na dowolne wydarzenie — gospodarcze, polityczne, społeczne.
+          Multi-rundowa symulacja społeczna. Testuj reklamy, komunikaty lub analizuj jak polskie
+          społeczeństwo reaguje na dowolne wydarzenie.
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-6">
 
-        {/* Toggle: Reklama / Scenariusz */}
+        {/* Toggle zakładek */}
         <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-2 flex gap-2">
-          <button
-            type="button"
-            onClick={() => setSeedType('ad')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-              seedType === 'ad'
-                ? 'bg-[#6366f1] text-white'
-                : 'text-[#a1a1aa] hover:text-white'
-            }`}
-          >
-            <Megaphone className="w-4 h-4" />
-            Reklama
-          </button>
-          <button
-            type="button"
-            onClick={() => setSeedType('topic')}
-            className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-              seedType === 'topic'
-                ? 'bg-[#6366f1] text-white'
-                : 'text-[#a1a1aa] hover:text-white'
-            }`}
-          >
-            <Globe className="w-4 h-4" />
-            Scenariusz / Event
-          </button>
+          {([
+            { key: 'ad' as SeedTab, icon: Megaphone, label: 'Reklama' },
+            { key: 'rumor' as SeedTab, icon: MessageSquare, label: 'Komunikat / Plotka' },
+            { key: 'topic' as SeedTab, icon: Globe, label: 'Scenariusz / Event' },
+          ]).map(({ key, icon: Icon, label }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => setTab(key)}
+              className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                tab === key
+                  ? 'bg-[#6366f1] text-white'
+                  : 'text-[#a1a1aa] hover:text-white'
+              }`}
+            >
+              <Icon className="w-4 h-4" />
+              {label}
+            </button>
+          ))}
         </div>
 
-        {/* Pola dla trybu "Reklama" */}
-        {seedType === 'ad' && (
-          <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-6 space-y-4">
-            <h2 className="text-white font-semibold">Materiał reklamowy</h2>
-
-            <div>
-              <label className="block text-xs text-[#a1a1aa] mb-1">Nazwa badania</label>
-              <input
-                type="text"
-                value={common.studyName}
-                onChange={(e) => setC('studyName', e.target.value)}
-                placeholder="np. Kampania T-Mobile Q2 2026"
-                className="w-full bg-[#09090b] border border-[#3f3f46] rounded-lg text-white px-3 py-2 text-sm focus:outline-none focus:border-[#6366f1]"
-              />
+        {/* ── Zakładka: Reklama ── */}
+        {tab === 'ad' && (
+          <>
+            {/* Opcje: A/B, targeting */}
+            <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-5">
+              <div className="flex items-center gap-8 flex-wrap">
+                <div className="flex items-center gap-3">
+                  <Switch checked={adAbMode} onCheckedChange={setAdAbMode} className="data-[state=checked]:bg-[#6366f1]" />
+                  <div>
+                    <div className="text-sm font-medium text-white">Tryb A/B</div>
+                    <div className="text-xs text-[#a1a1aa]">Porównaj dwie wersje kreacji</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <Switch checked={adTargeting} onCheckedChange={setAdTargeting} className="data-[state=checked]:bg-[#6366f1]" />
+                  <div>
+                    <div className="text-sm font-medium text-white">Targeting</div>
+                    <div className="text-xs text-[#a1a1aa]">Ogranicz do wybranej grupy</div>
+                  </div>
+                </div>
+              </div>
             </div>
 
-            <div>
-              <label className="block text-xs text-[#a1a1aa] mb-1">Headline *</label>
-              <input
-                type="text"
-                value={ad.headline}
-                onChange={(e) => setAd((f) => ({ ...f, headline: e.target.value }))}
-                placeholder="Główny nagłówek reklamy"
-                className="w-full bg-[#09090b] border border-[#3f3f46] rounded-lg text-white px-3 py-2 text-sm focus:outline-none focus:border-[#6366f1]"
-              />
+            {adTargeting && (
+              <TargetingFilters value={adTargetingFilters} onChange={setAdTargetingFilters} />
+            )}
+
+            {/* Panele wariantów */}
+            {!adAbMode ? (
+              <>
+                {/* Kreacja */}
+                <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-5">
+                  <CreativeUploader state={creativeA} onChange={setCreativeA} />
+                </div>
+
+                {/* Pola wariantu A */}
+                <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-6 space-y-4">
+                  <h2 className="text-white font-semibold">Materiał reklamowy</h2>
+
+                  <div>
+                    <label className="block text-xs text-[#a1a1aa] mb-1">Nazwa badania</label>
+                    <input
+                      type="text" value={adStudyName} onChange={(e) => setAdStudyName(e.target.value)}
+                      placeholder="np. Kampania T-Mobile Q2 2026" className={inputCls}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-[#a1a1aa] mb-1">
+                      Headline{creativeA.id && !adHeadline && (
+                        <span className="text-[#52525b] font-normal ml-1">(opcjonalnie — KV wystarczy do testu)</span>
+                      )}
+                    </label>
+                    <input
+                      type="text" value={adHeadline} onChange={(e) => setAdHeadline(e.target.value)}
+                      placeholder={creativeA.id ? 'Opcjonalnie – KV wystarczy...' : 'Główny nagłówek reklamy'}
+                      className={inputCls}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-[#a1a1aa] mb-1">Body</label>
+                    <textarea
+                      value={adBody} onChange={(e) => setAdBody(e.target.value)}
+                      placeholder="Treść reklamy" rows={4}
+                      className={`${inputCls} resize-none`}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-[#a1a1aa] mb-1">CTA</label>
+                    <input
+                      type="text" value={adCta} onChange={(e) => setAdCta(e.target.value)}
+                      placeholder="Call to action" className={inputCls}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs text-[#a1a1aa] mb-1">Marka</label>
+                      <BrandAutocomplete value={adBrand} onChange={setAdBrand} options={brands} />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-[#a1a1aa] mb-1">Kategoria</label>
+                      <select
+                        value={adCategory} onChange={(e) => setAdCategory(e.target.value)}
+                        className="w-full bg-[#09090b] border border-[#3f3f46] rounded-lg text-white px-3 py-2 text-sm focus:outline-none focus:border-[#6366f1]"
+                      >
+                        <option value="">– dowolna –</option>
+                        {mockCategories.map((c) => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-[#a1a1aa] mb-1">Kontekst ekspozycji</label>
+                    <input
+                      type="text" value={adContext} onChange={(e) => setAdContext(e.target.value)}
+                      placeholder="np. Facebook Feed, Ocena ogólna KV..."
+                      list="contexts-datalist" className={inputCls}
+                    />
+                    <datalist id="contexts-datalist">
+                      <option value="Ocena ogólna KV" />
+                      <option value="Billboard / outdoor" />
+                      <option value="Opakowanie produktu" />
+                      <option value="Facebook Feed" />
+                      <option value="Instagram Stories" />
+                      <option value="YouTube Pre-roll" />
+                      <option value="TikTok In-Feed" />
+                      <option value="Desktop Display" />
+                      <option value="Mobile Banner" />
+                      <option value="LinkedIn Sponsored" />
+                      <option value="Pre-roll radio online" />
+                    </datalist>
+                  </div>
+                </div>
+              </>
+            ) : (
+              /* Tryb A/B: dwie kolumny */
+              <div className="grid grid-cols-2 gap-6">
+                {/* Wariant A */}
+                <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-6 space-y-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-3 h-3 rounded-full bg-[#6366f1]" />
+                    <span className="text-sm font-semibold text-white">Wariant A</span>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-[#a1a1aa] mb-1">Nazwa badania</label>
+                    <input
+                      type="text" value={adStudyName} onChange={(e) => setAdStudyName(e.target.value)}
+                      placeholder="np. Kampania T-Mobile Q2 2026" className={inputCls}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-[#a1a1aa] mb-1">Headline A</label>
+                    <input
+                      type="text" value={adHeadline} onChange={(e) => setAdHeadline(e.target.value)}
+                      placeholder="Nagłówek wariantu A" className={inputCls}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-[#a1a1aa] mb-1">Body A</label>
+                    <textarea
+                      value={adBody} onChange={(e) => setAdBody(e.target.value)}
+                      placeholder="Treść wariantu A" rows={3}
+                      className={`${inputCls} resize-none`}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-[#a1a1aa] mb-1">CTA A</label>
+                    <input
+                      type="text" value={adCta} onChange={(e) => setAdCta(e.target.value)}
+                      placeholder="CTA wariantu A" className={inputCls}
+                    />
+                  </div>
+                  <div className="pt-2 border-t border-[#27272a]">
+                    <CreativeUploader state={creativeA} onChange={setCreativeA} label="KV / Grafika A" />
+                  </div>
+                </div>
+
+                {/* Wariant B */}
+                <div className="bg-[#18181b] border border-[#f59e0b]/30 rounded-xl p-6 space-y-4">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="w-3 h-3 rounded-full bg-[#f59e0b]" />
+                    <span className="text-sm font-semibold text-white">Wariant B</span>
+                  </div>
+                  <div>
+                    <label className="block text-xs text-[#a1a1aa] mb-1">Marka</label>
+                    <BrandAutocomplete value={adBrand} onChange={setAdBrand} options={brands} />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-[#a1a1aa] mb-1">Headline B</label>
+                    <input
+                      type="text" value={adHeadlineB} onChange={(e) => setAdHeadlineB(e.target.value)}
+                      placeholder="Nagłówek wariantu B" className={inputCls}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-[#a1a1aa] mb-1">Body B</label>
+                    <textarea
+                      value={adBodyB} onChange={(e) => setAdBodyB(e.target.value)}
+                      placeholder="Treść wariantu B" rows={3}
+                      className={`${inputCls} resize-none`}
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-[#a1a1aa] mb-1">CTA B</label>
+                    <input
+                      type="text" value={adCtaB} onChange={(e) => setAdCtaB(e.target.value)}
+                      placeholder="CTA wariantu B" className={inputCls}
+                    />
+                  </div>
+                  <div className="pt-2 border-t border-[#27272a]">
+                    <CreativeUploader state={creativeB} onChange={setCreativeB} label="KV / Grafika B" />
+                  </div>
+                </div>
+
+                {/* Wspólne pola dla A/B */}
+                <div className="col-span-2 bg-[#18181b] border border-[#27272a] rounded-xl p-6 space-y-4">
+                  <h3 className="text-sm font-semibold text-white text-[#a1a1aa]">Wspólne ustawienia</h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-xs text-[#a1a1aa] mb-1">Kategoria</label>
+                      <select
+                        value={adCategory} onChange={(e) => setAdCategory(e.target.value)}
+                        className="w-full bg-[#09090b] border border-[#3f3f46] rounded-lg text-white px-3 py-2 text-sm focus:outline-none focus:border-[#6366f1]"
+                      >
+                        <option value="">– dowolna –</option>
+                        {mockCategories.map((c) => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                    <div className="col-span-2">
+                      <label className="block text-xs text-[#a1a1aa] mb-1">Kontekst ekspozycji</label>
+                      <input
+                        type="text" value={adContext} onChange={(e) => setAdContext(e.target.value)}
+                        placeholder="np. Facebook Feed..." list="contexts-datalist-ab" className={inputCls}
+                      />
+                      <datalist id="contexts-datalist-ab">
+                        <option value="Facebook Feed" />
+                        <option value="Instagram Stories" />
+                        <option value="YouTube Pre-roll" />
+                        <option value="TikTok In-Feed" />
+                        <option value="Desktop Display" />
+                        <option value="Mobile Banner" />
+                      </datalist>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </>
+        )}
+
+        {/* ── Zakładka: Komunikat / Plotka ── */}
+        {tab === 'rumor' && (
+          <>
+            <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-5">
+              <div className="flex items-center gap-3">
+                <Switch checked={rumorTargeting} onCheckedChange={setRumorTargeting} className="data-[state=checked]:bg-[#6366f1]" />
+                <div>
+                  <div className="text-sm font-medium text-white">Targeting</div>
+                  <div className="text-xs text-[#a1a1aa]">Ogranicz do wybranej grupy</div>
+                </div>
+              </div>
             </div>
 
-            <div>
-              <label className="block text-xs text-[#a1a1aa] mb-1">Body *</label>
-              <textarea
-                value={ad.body}
-                onChange={(e) => setAd((f) => ({ ...f, body: e.target.value }))}
-                placeholder="Treść reklamy"
-                rows={4}
-                className="w-full bg-[#09090b] border border-[#3f3f46] rounded-lg text-white px-3 py-2 text-sm focus:outline-none focus:border-[#6366f1] resize-none"
-              />
+            {rumorTargeting && (
+              <TargetingFilters value={rumorTargetingFilters} onChange={setRumorTargetingFilters} />
+            )}
+
+            <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-5">
+              <CreativeUploader state={rumorCreative} onChange={setRumorCreative} label="Ilustracja / zrzut ekranu (opcjonalnie)" />
             </div>
 
-            <div>
-              <label className="block text-xs text-[#a1a1aa] mb-1">CTA *</label>
-              <input
-                type="text"
-                value={ad.cta}
-                onChange={(e) => setAd((f) => ({ ...f, cta: e.target.value }))}
-                placeholder="Call to action"
-                className="w-full bg-[#09090b] border border-[#3f3f46] rounded-lg text-white px-3 py-2 text-sm focus:outline-none focus:border-[#6366f1]"
-              />
-            </div>
+            <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-6 space-y-4">
+              <h2 className="text-white font-semibold">Komunikat / Plotka</h2>
+              <p className="text-[#71717a] text-xs">
+                Zasymuluj jak agenci reagują na komunikat, plotkę lub fake news w sieci społecznej.
+              </p>
 
-            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs text-[#a1a1aa] mb-1">Marka</label>
+                <label className="block text-xs text-[#a1a1aa] mb-1">Nazwa badania</label>
                 <input
-                  type="text"
-                  value={ad.brand}
-                  onChange={(e) => setAd((f) => ({ ...f, brand: e.target.value }))}
-                  placeholder="np. T-Mobile"
-                  className="w-full bg-[#09090b] border border-[#3f3f46] rounded-lg text-white px-3 py-2 text-sm focus:outline-none focus:border-[#6366f1]"
+                  type="text" value={rumorStudyName} onChange={(e) => setRumorStudyName(e.target.value)}
+                  placeholder="np. Plotka o bankructwie banku X" className={inputCls}
                 />
               </div>
               <div>
-                <label className="block text-xs text-[#a1a1aa] mb-1">Kategoria</label>
-                <select
-                  value={ad.category}
-                  onChange={(e) => setAd((f) => ({ ...f, category: e.target.value }))}
-                  className="w-full bg-[#09090b] border border-[#3f3f46] rounded-lg text-white px-3 py-2 text-sm focus:outline-none focus:border-[#6366f1]"
-                >
-                  {CATEGORIES.map((c) => (
-                    <option key={c.value} value={c.value}>{c.label}</option>
-                  ))}
-                </select>
+                <label className="block text-xs text-[#a1a1aa] mb-1">Nagłówek / Źródło (opcjonalnie)</label>
+                <input
+                  type="text" value={rumorHeadline} onChange={(e) => setRumorHeadline(e.target.value)}
+                  placeholder='np. "Anonimowe źródło twierdzi...", "Viral w sieci:"'
+                  className={inputCls}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-[#a1a1aa] mb-1">Treść komunikatu *</label>
+                <textarea
+                  value={rumorBody} onChange={(e) => setRumorBody(e.target.value)}
+                  placeholder="Wpisz treść komunikatu, plotki lub fake newsa..."
+                  rows={5} className={`${inputCls} resize-none`}
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-[#a1a1aa] mb-1">Marka / podmiot (opcjonalnie)</label>
+                <BrandAutocomplete value={rumorBrand} onChange={setRumorBrand} options={brands} />
+              </div>
+              <div>
+                <label className="block text-xs text-[#a1a1aa] mb-1">Kontekst (opcjonalnie)</label>
+                <input
+                  type="text" value={rumorContext} onChange={(e) => setRumorContext(e.target.value)}
+                  placeholder="Dodatkowy kontekst..." className={inputCls}
+                />
               </div>
             </div>
-          </div>
+          </>
         )}
 
-        {/* Pola dla trybu "Scenariusz" */}
-        {seedType === 'topic' && (
+        {/* ── Zakładka: Scenariusz / Event ── */}
+        {tab === 'topic' && (
           <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-6 space-y-4">
             <h2 className="text-white font-semibold">Scenariusz / Wydarzenie</h2>
             <p className="text-[#71717a] text-xs">
@@ -267,29 +836,23 @@ export function NewSimulation() {
             <div>
               <label className="block text-xs text-[#a1a1aa] mb-1">Nazwa symulacji</label>
               <input
-                type="text"
-                value={common.studyName}
-                onChange={(e) => setC('studyName', e.target.value)}
-                placeholder="np. Scenariusz: blokada Ormuz"
-                className="w-full bg-[#09090b] border border-[#3f3f46] rounded-lg text-white px-3 py-2 text-sm focus:outline-none focus:border-[#6366f1]"
+                type="text" value={topicStudyName} onChange={(e) => setTopicStudyName(e.target.value)}
+                placeholder="np. Scenariusz: blokada Ormuz" className={inputCls}
               />
             </div>
 
             <div>
               <label className="block text-xs text-[#a1a1aa] mb-1">Scenariusz *</label>
               <textarea
-                value={topic.query}
-                onChange={(e) => setTopic((f) => ({ ...f, query: e.target.value }))}
-                placeholder="Opisz wydarzenie. Np.: Iran blokuje Cieśninę Ormuz. Ceny ropy skaczą o 40% w ciągu tygodnia. Eksperci przewidują recesję w EU."
-                rows={4}
-                className="w-full bg-[#09090b] border border-[#3f3f46] rounded-lg text-white px-3 py-2 text-sm focus:outline-none focus:border-[#6366f1] resize-none"
+                value={topicQuery} onChange={(e) => setTopicQuery(e.target.value)}
+                placeholder="Opisz wydarzenie. Np.: Iran blokuje Cieśninę Ormuz. Ceny ropy skaczą o 40% w ciągu tygodnia..."
+                rows={4} className={`${inputCls} resize-none`}
               />
               <div className="mt-2 flex flex-wrap gap-2">
                 {TOPIC_EXAMPLES.map((ex) => (
                   <button
-                    key={ex}
-                    type="button"
-                    onClick={() => setTopic((f) => ({ ...f, query: ex }))}
+                    key={ex} type="button"
+                    onClick={() => setTopicQuery(ex)}
                     className="text-xs bg-[#27272a] hover:bg-[#3f3f46] text-[#a1a1aa] hover:text-white px-2 py-1 rounded transition-colors"
                   >
                     {ex.slice(0, 40)}…
@@ -301,11 +864,9 @@ export function NewSimulation() {
             <div>
               <label className="block text-xs text-[#a1a1aa] mb-1">Kontekst (opcjonalnie)</label>
               <textarea
-                value={topic.context}
-                onChange={(e) => setTopic((f) => ({ ...f, context: e.target.value }))}
+                value={topicContext} onChange={(e) => setTopicContext(e.target.value)}
                 placeholder="Dodatkowy kontekst historyczny, dane, tło wydarzenia..."
-                rows={2}
-                className="w-full bg-[#09090b] border border-[#3f3f46] rounded-lg text-white px-3 py-2 text-sm focus:outline-none focus:border-[#6366f1] resize-none"
+                rows={2} className={`${inputCls} resize-none`}
               />
             </div>
 
@@ -314,74 +875,16 @@ export function NewSimulation() {
                 Przewidywane skutki (opcjonalnie, jeden per linię)
               </label>
               <textarea
-                value={topic.expectedImpacts}
-                onChange={(e) => setTopic((f) => ({ ...f, expectedImpacts: e.target.value }))}
+                value={topicImpacts} onChange={(e) => setTopicImpacts(e.target.value)}
                 placeholder={"Wzrost cen paliw o 30%\nZwolnienia w transporcie\nInflacja powróci do 15%"}
-                rows={3}
-                className="w-full bg-[#09090b] border border-[#3f3f46] rounded-lg text-white px-3 py-2 text-sm focus:outline-none focus:border-[#6366f1] resize-none font-mono"
+                rows={3} className={`${inputCls} resize-none font-mono`}
               />
             </div>
           </div>
         )}
 
-        {/* Parametry symulacji */}
-        <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-6 space-y-4">
-          <h2 className="text-white font-semibold">Parametry symulacji</h2>
-
-          <div>
-            <label className="block text-xs text-[#a1a1aa] mb-2">
-              Liczba rund: <span className="text-white font-semibold">{common.totalRounds}</span>
-            </label>
-            <input
-              type="range"
-              min={3}
-              max={15}
-              value={common.totalRounds}
-              onChange={(e) => setC('totalRounds', Number(e.target.value))}
-              className="w-full accent-[#6366f1]"
-            />
-            <div className="flex justify-between text-xs text-[#52525b] mt-1">
-              <span>3 rundy (szybko)</span>
-              <span>15 rund (szczegółowo)</span>
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs text-[#a1a1aa] mb-2">Platforma</label>
-            <div className="flex gap-3">
-              {(['facebook', 'twitter'] as const).map((p) => (
-                <button
-                  key={p}
-                  type="button"
-                  onClick={() => setC('platform', p)}
-                  className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${
-                    common.platform === p
-                      ? 'bg-[#6366f1] border-[#6366f1] text-white'
-                      : 'bg-[#09090b] border-[#3f3f46] text-[#a1a1aa] hover:border-[#6366f1]'
-                  }`}
-                >
-                  {p === 'facebook' ? 'Facebook' : 'Twitter/X'}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div>
-            <label className="block text-xs text-[#a1a1aa] mb-2">
-              Aktywni agenci per runda:{' '}
-              <span className="text-white font-semibold">{Math.round(common.activeAgentRatio * 100)}%</span>
-            </label>
-            <input
-              type="range"
-              min={30}
-              max={100}
-              step={10}
-              value={Math.round(common.activeAgentRatio * 100)}
-              onChange={(e) => setC('activeAgentRatio', Number(e.target.value) / 100)}
-              className="w-full accent-[#6366f1]"
-            />
-          </div>
-        </div>
+        {/* Parametry symulacji — wspólne */}
+        <SimulationParams value={params} onChange={setParams} />
 
         {error && (
           <div className="bg-red-900/20 border border-red-800 rounded-lg px-4 py-3 text-red-400 text-sm">
@@ -391,7 +894,7 @@ export function NewSimulation() {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || anyUploading}
           className="w-full flex items-center justify-center gap-2 bg-[#6366f1] hover:bg-[#4f46e5] disabled:opacity-50 text-white font-semibold py-3 rounded-xl transition-colors"
         >
           {loading ? (
@@ -399,10 +902,21 @@ export function NewSimulation() {
               <Loader2 className="w-4 h-4 animate-spin" />
               Inicjalizuję symulację...
             </>
+          ) : anyUploading ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              Przesyłam kreację...
+            </>
           ) : (
             <>
               <Network className="w-4 h-4" />
-              {seedType === 'topic' ? 'Uruchom predykcję społeczną' : 'Uruchom symulację reklamy'}
+              {tab === 'topic'
+                ? 'Uruchom predykcję społeczną'
+                : tab === 'rumor'
+                ? 'Uruchom symulację komunikatu'
+                : adAbMode
+                ? 'Uruchom test A/B'
+                : 'Uruchom symulację reklamy'}
             </>
           )}
         </button>

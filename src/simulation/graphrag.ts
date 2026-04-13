@@ -1,27 +1,26 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // GraphRAG-lite – wyciąga encje i relacje z materiału reklamowego LUB scenariusza
 // Używa Tier 2 (Smart Model) — konfigurowalny przez env, domyślnie Claude Sonnet
+// Gdy materiał zawiera obraz, używa bezpośredniego klienta Anthropic z multimodal content.
 // ─────────────────────────────────────────────────────────────────────────────
 
+import Anthropic from "@anthropic-ai/sdk";
 import type { AdMaterial } from "../personas/schema.js";
 import type { KnowledgeGraph, TopicSeed } from "./schema.js";
 import { callSmartModel } from "../engine/runner.js";
 
-export async function extractKnowledgeGraph(ad: AdMaterial): Promise<KnowledgeGraph> {
-  const adText = [
-    `HEADLINE: ${ad.headline}`,
-    `BODY: ${ad.body}`,
-    `CTA: ${ad.cta}`,
-    ad.brandName ? `MARKA: ${ad.brandName}` : null,
-    ad.productCategory ? `KATEGORIA: ${ad.productCategory}` : null,
-    ad.context ? `KONTEKST: ${ad.context}` : null,
-  ]
-    .filter(Boolean)
-    .join("\n");
+let _anthropicClient: Anthropic | null = null;
+function getAnthropicClient(): Anthropic {
+  if (!_anthropicClient) {
+    _anthropicClient = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+  }
+  return _anthropicClient;
+}
 
-  const raw = await callSmartModel(
-    `Jesteś analitykiem reklamy. Analizujesz materiały reklamowe i wyciągasz kluczowe informacje w formacie JSON. Odpowiadaj WYŁĄCZNIE poprawnym JSON, bez markdown ani komentarzy.`,
-    `Przeanalizuj poniższy materiał reklamowy i wyciągnij kluczowe informacje.
+const GRAPHRAG_SYSTEM = `Jesteś analitykiem reklamy. Analizujesz materiały reklamowe i wyciągasz kluczowe informacje w formacie JSON. Odpowiadaj WYŁĄCZNIE poprawnym JSON, bez markdown ani komentarzy.`;
+
+function buildGraphragPrompt(adText: string): string {
+  return `Przeanalizuj poniższy materiał reklamowy i wyciągnij kluczowe informacje.
 
 ${adText}
 
@@ -40,10 +39,10 @@ Zasady:
 - values: wartości, które marka chce komunikować (max 4)
 - competitors: tylko jeśli wyraźnie lub pośrednio wspomniani (może być [])
 - emotionalAnchors: słowa/obrazy wywołujące emocje (max 4)
-- controversialElements: elementy, które mogą polaryzować lub irytować (max 3, może być [])`,
-    800
-  );
+- controversialElements: elementy, które mogą polaryzować lub irytować (max 3, może być [])`;
+}
 
+function parseGraphragResponse(raw: string, ad: AdMaterial): KnowledgeGraph {
   try {
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error("Brak JSON w odpowiedzi");
@@ -61,13 +60,64 @@ Zasady:
     console.warn("⚠ GraphRAG: nie udało się sparsować JSON, używam fallbacku");
     return {
       brand: ad.brandName ?? "nieznana",
-      claims: [ad.headline],
+      claims: ad.headline ? [ad.headline] : [],
       values: [],
       competitors: [],
       emotionalAnchors: [],
       controversialElements: [],
     };
   }
+}
+
+export async function extractKnowledgeGraph(ad: AdMaterial): Promise<KnowledgeGraph> {
+  const adText = [
+    ad.headline ? `HEADLINE: ${ad.headline}` : null,
+    ad.body ? `BODY: ${ad.body}` : null,
+    ad.cta ? `CTA: ${ad.cta}` : null,
+    ad.brandName ? `MARKA: ${ad.brandName}` : null,
+    ad.productCategory ? `KATEGORIA: ${ad.productCategory}` : null,
+    ad.context ? `KONTEKST: ${ad.context}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  // Gdy jest obraz — użyj bezpośredniego klienta Anthropic z multimodal content
+  if (ad.imageBase64 && ad.imageMimeType) {
+    const client = getAnthropicClient();
+    const content: Anthropic.MessageParam["content"] = [];
+    content.push({
+      type: "image",
+      source: {
+        type: "base64",
+        media_type: ad.imageMimeType,
+        data: ad.imageBase64,
+      },
+    });
+    content.push({ type: "text", text: buildGraphragPrompt(adText) });
+
+    const response = await client.messages.create({
+      model: process.env.SMART_MODEL ?? "claude-sonnet-4-5",
+      max_tokens: 800,
+      system: GRAPHRAG_SYSTEM,
+      messages: [{ role: "user", content }],
+    });
+
+    const raw = response.content
+      .filter((b): b is Anthropic.TextBlock => b.type === "text")
+      .map((b) => b.text)
+      .join("");
+
+    return parseGraphragResponse(raw, ad);
+  }
+
+  // Bez obrazu — użyj callSmartModel jak dotychczas
+  const raw = await callSmartModel(
+    GRAPHRAG_SYSTEM,
+    buildGraphragPrompt(adText),
+    800
+  );
+
+  return parseGraphragResponse(raw, ad);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

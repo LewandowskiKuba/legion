@@ -1,5 +1,5 @@
 import { Outlet, Link, useLocation } from 'react-router';
-import { BarChart3, Users, FlaskConical, Home, History, Network } from 'lucide-react';
+import { BarChart3, Users, Home, History, Network } from 'lucide-react';
 
 export function Layout() {
   const location = useLocation();
@@ -8,8 +8,6 @@ export function Layout() {
     { path: '/', label: 'Dashboard', icon: Home },
     { path: '/new-simulation', label: 'Nowa symulacja', icon: Network },
     { path: '/simulations', label: 'Symulacje', icon: History },
-    { path: '/new-study', label: 'Ad testing', icon: FlaskConical },
-    { path: '/studies', label: 'Historia badań', icon: History },
     { path: '/population', label: 'Populacja', icon: Users },
   ];
 

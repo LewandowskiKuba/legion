@@ -464,15 +464,41 @@ export type SimulationSeedType = "ad" | "topic";
 export interface AdSimulationFormData {
   seedType: "ad";
   studyName: string;
-  headline: string;
-  body: string;
-  cta: string;
+  headline?: string;       // opcjonalny gdy jest kreacja
+  body?: string;
+  cta?: string;
   brand?: string;
   category?: string;
   context?: string;
+  creativeId?: string;
   totalRounds: number;
   platform: "facebook" | "twitter";
   activeAgentRatio?: number;
+  abMode?: boolean;
+  // targeting
+  filterGender?: string;
+  filterAgeMin?: string;
+  filterAgeMax?: string;
+  filterSettlement?: string;
+  filterIncome?: string;
+}
+
+export interface RumorSimulationFormData {
+  seedType: "rumor";
+  studyName: string;
+  headline?: string;       // tytuł/źródło komunikatu
+  body: string;            // treść komunikatu/plotki (wymagane)
+  brand?: string;          // opcjonalna marka/podmiot
+  context?: string;
+  creativeId?: string;
+  totalRounds: number;
+  platform: "facebook" | "twitter";
+  activeAgentRatio?: number;
+  filterGender?: string;
+  filterAgeMin?: string;
+  filterAgeMax?: string;
+  filterSettlement?: string;
+  filterIncome?: string;
 }
 
 export interface TopicSimulationFormData {
@@ -486,7 +512,10 @@ export interface TopicSimulationFormData {
   activeAgentRatio?: number;
 }
 
-export type SimulationFormData = AdSimulationFormData | TopicSimulationFormData;
+export type SimulationFormData =
+  | AdSimulationFormData
+  | RumorSimulationFormData
+  | TopicSimulationFormData;
 
 export interface SimulationSummary {
   id: string;
@@ -505,25 +534,48 @@ export async function listSimulations(): Promise<SimulationSummary[]> {
 }
 
 export async function startSimulation(data: SimulationFormData): Promise<string> {
-  const body: any = {
+  const bodyObj: any = {
     studyName: data.studyName,
-    seedType: data.seedType,
     totalRounds: data.totalRounds,
     platform: data.platform,
     activeAgentRatio: data.activeAgentRatio ?? 0.7,
   };
 
   if (data.seedType === "ad") {
-    body.ad = {
-      headline: data.headline,
-      body: data.body,
-      cta: data.cta,
+    bodyObj.seedType = "ad";
+    bodyObj.creativeId = data.creativeId || undefined;
+    bodyObj.filterGender = data.filterGender;
+    bodyObj.filterAgeMin = data.filterAgeMin;
+    bodyObj.filterAgeMax = data.filterAgeMax;
+    bodyObj.filterSettlement = data.filterSettlement;
+    bodyObj.filterIncome = data.filterIncome;
+    bodyObj.ad = {
+      headline: data.headline || "",
+      body: data.body || "",
+      cta: data.cta || "",
       brandName: data.brand || undefined,
       productCategory: data.category || undefined,
       context: data.context || undefined,
     };
+  } else if (data.seedType === "rumor") {
+    // Rumor is sent as seedType 'ad' to the backend, without CTA
+    bodyObj.seedType = "ad";
+    bodyObj.creativeId = data.creativeId || undefined;
+    bodyObj.filterGender = data.filterGender;
+    bodyObj.filterAgeMin = data.filterAgeMin;
+    bodyObj.filterAgeMax = data.filterAgeMax;
+    bodyObj.filterSettlement = data.filterSettlement;
+    bodyObj.filterIncome = data.filterIncome;
+    bodyObj.ad = {
+      headline: data.headline || "",
+      body: data.body,
+      cta: "",
+      brandName: data.brand || undefined,
+      context: data.context || undefined,
+    };
   } else {
-    body.topic = {
+    bodyObj.seedType = "topic";
+    bodyObj.topic = {
       query: data.query,
       context: data.context || undefined,
       expectedImpacts: data.expectedImpacts?.length ? data.expectedImpacts : undefined,
@@ -533,7 +585,7 @@ export async function startSimulation(data: SimulationFormData): Promise<string>
   const res = await fetch(`${BASE}/api/simulation`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
+    body: JSON.stringify(bodyObj),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: "Błąd startu symulacji" }));
@@ -541,6 +593,14 @@ export async function startSimulation(data: SimulationFormData): Promise<string>
   }
   const { simulationId } = await res.json();
   return simulationId as string;
+}
+
+export async function startAbSimulation(
+  dataA: AdSimulationFormData,
+  dataB: AdSimulationFormData
+): Promise<{ idA: string; idB: string }> {
+  const [idA, idB] = await Promise.all([startSimulation(dataA), startSimulation(dataB)]);
+  return { idA, idB };
 }
 
 export async function getSimulation(id: string): Promise<any> {
