@@ -5,6 +5,6 @@ echo "◆ Deploy Synthetic Population Sandbox"
 git pull origin main
 docker compose build --no-cache
 docker compose up -d
-docker compose logs --tail=20 swarm
+docker compose logs --tail=20 backend
 
 echo "✓ Deployed → http://$(curl -s ifconfig.me):3000"
