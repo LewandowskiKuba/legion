@@ -52,7 +52,8 @@ function buildGraph(
 
   for (const paths of viralPathsByRound) {
     for (const p of paths) {
-      const key = `${p.from}→${p.to}`;
+      if (!p.from || !p.to) continue;
+      const key = `${p.from}||${p.to}`;
       edgeMap.set(key, (edgeMap.get(key) ?? 0) + 1);
       influenceMap.set(p.from, (influenceMap.get(p.from) ?? 0) + 1);
     }
@@ -83,7 +84,10 @@ function buildGraph(
 
   const edges: GraphEdge[] = [];
   for (const [key, count] of edgeMap.entries()) {
-    const [source, target] = key.split('→');
+    const sep = key.indexOf('||');
+    if (sep === -1) continue;
+    const source = key.slice(0, sep);
+    const target = key.slice(sep + 2);
     edges.push({ source, target, count });
   }
 
@@ -264,7 +268,7 @@ export function SocialGraph({ population, agentOpinions, viralPathsByRound }: So
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" />{negativeCount} negat.</span>
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#71717a] inline-block" />{neutralCount} neutr.</span>
             <span className="text-[#3f3f46]">·</span>
-            <span>{totalEdges} przekazań</span>
+            <span>{totalEdges} przekazań · {edges.length} unikalnych połączeń</span>
           </div>
           {/* Kontrolki zoom */}
           <div className="flex items-center gap-1">
@@ -295,17 +299,16 @@ export function SocialGraph({ population, agentOpinions, viralPathsByRound }: So
           <g transform={`translate(${pan.x},${pan.y}) scale(${zoom})`} style={{ transformOrigin: `${dims.w / 2}px ${dims.h / 2}px` }}>
             {/* Krawędzie */}
             {edges.map((e, i) => {
-              const s = nodeMap.get(e.source), t = nodeMap.get(e.target);
+              const s = nodes.find(n => n.id === e.source);
+              const t = nodes.find(n => n.id === e.target);
               if (!s || !t) return null;
-              const opacity = 0.5 + (e.count / maxCount) * 0.4;
-              const strokeW = 1.2 + (e.count / maxCount) * 2.0;
               return (
                 <line
                   key={i}
                   x1={s.x} y1={s.y} x2={t.x} y2={t.y}
                   stroke="#ffffff"
-                  strokeWidth={strokeW}
-                  strokeOpacity={opacity}
+                  strokeWidth={2}
+                  strokeOpacity={0.6}
                 />
               );
             })}
