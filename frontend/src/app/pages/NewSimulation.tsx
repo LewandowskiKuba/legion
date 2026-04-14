@@ -70,13 +70,13 @@ function CreativeUploader({
       <div className="flex items-center gap-2 mb-3">
         <ImagePlus className="w-4 h-4 text-[#6366f1]" />
         <span className="text-sm font-semibold text-white">{label}</span>
-        <span className="text-xs text-[#52525b] ml-1">(opcjonalnie – JPG, PNG, WEBP)</span>
+        <span className="text-xs text-[#6b6b78] ml-1">(opcjonalnie – JPG, PNG, WEBP)</span>
       </div>
 
       {!state.file ? (
-        <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-[#27272a] rounded-lg cursor-pointer hover:border-[#6366f1] transition-colors">
-          <ImagePlus className="w-5 h-5 text-[#52525b] mb-1" />
-          <span className="text-xs text-[#52525b]">Kliknij lub przeciągnij plik</span>
+        <label className="flex flex-col items-center justify-center w-full h-24 border-2 border-dashed border-[#52525a] rounded-lg cursor-pointer hover:border-[#6366f1] transition-colors">
+          <ImagePlus className="w-5 h-5 text-[#9898a8] mb-1" />
+          <span className="text-xs text-[#9898a8]">Kliknij lub przeciągnij plik</span>
           <input
             type="file"
             className="hidden"
@@ -92,14 +92,14 @@ function CreativeUploader({
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
               <span className="text-xs text-white truncate">{state.file.name}</span>
-              <button type="button" onClick={handleClear} className="text-[#52525b] hover:text-white flex-shrink-0">
+              <button type="button" onClick={handleClear} className="text-[#6b6b78] hover:text-white flex-shrink-0">
                 <X className="w-3 h-3" />
               </button>
             </div>
             {state.uploading && (
               <div className="flex items-center gap-1 mt-1">
                 <Loader2 className="w-3 h-3 text-[#6366f1] animate-spin" />
-                <span className="text-xs text-[#a1a1aa]">Przesyłanie...</span>
+                <span className="text-xs text-[#c0c0cc]">Przesyłanie...</span>
               </div>
             )}
             {state.id && !state.uploading && (
@@ -151,10 +151,10 @@ function BrandAutocomplete({
         onFocus={() => setOpen(true)}
         placeholder="np. T-Mobile"
         autoComplete="off"
-        className="w-full bg-[#09090b] border border-[#3f3f46] rounded-lg text-white px-3 py-2 text-sm focus:outline-none focus:border-[#6366f1] placeholder:text-[#52525b]"
+        className="w-full bg-[#111113] border border-[#6b6b78] rounded-lg text-white px-3 py-2 text-sm focus:outline-none focus:border-[#6366f1] placeholder:text-[#9898a8]"
       />
       {open && filtered.length > 0 && (
-        <ul className="absolute z-20 mt-1 w-full bg-[#18181b] border border-[#27272a] rounded-lg shadow-lg overflow-hidden">
+        <ul className="absolute z-20 mt-1 w-full bg-[#1f1f25] border border-[#38383f] rounded-lg shadow-lg overflow-hidden">
           {filtered.map((brand) => (
             <li
               key={brand}
@@ -163,7 +163,7 @@ function BrandAutocomplete({
                 onChange(brand);
                 setOpen(false);
               }}
-              className="px-3 py-2 text-sm text-white cursor-pointer hover:bg-[#27272a] transition-colors"
+              className="px-3 py-2 text-sm text-white cursor-pointer hover:bg-[#38383f] transition-colors"
             >
               {brand}
             </li>
@@ -192,7 +192,7 @@ function TargetingFilters({
   onChange: (v: TargetingState) => void;
 }) {
   return (
-    <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-5">
+    <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-5">
       <div className="flex items-center gap-2 mb-4">
         <Filter className="w-4 h-4 text-[#6366f1]" />
         <h3 className="text-sm font-semibold text-white">Filtry segmentacji</h3>
@@ -201,10 +201,10 @@ function TargetingFilters({
         <div className="space-y-2">
           <Label className="text-white text-xs">Płeć</Label>
           <Select value={value.gender} onValueChange={(v) => onChange({ ...value, gender: v })}>
-            <SelectTrigger className="bg-[#0f0f11] border-[#27272a] text-white text-sm rounded-lg h-9">
+            <SelectTrigger className="bg-[#111113] border-[#6b6b78] text-white text-sm rounded-lg h-9">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="bg-[#18181b] border-[#27272a]">
+            <SelectContent className="bg-[#1f1f25] border-[#38383f]">
               <SelectItem value="all" className="text-white text-sm">Wszyscy</SelectItem>
               <SelectItem value="male" className="text-white text-sm">Mężczyźni</SelectItem>
               <SelectItem value="female" className="text-white text-sm">Kobiety</SelectItem>
@@ -218,7 +218,7 @@ function TargetingFilters({
             value={value.ageMin}
             onChange={(e) => onChange({ ...value, ageMin: e.target.value })}
             placeholder="18"
-            className="w-full bg-[#0f0f11] border border-[#27272a] text-white text-sm rounded-lg h-9 px-3 focus:outline-none focus:border-[#6366f1]"
+            className="w-full bg-[#111113] border border-[#6b6b78] text-white text-sm rounded-lg h-9 px-3 focus:outline-none focus:border-[#6366f1]"
           />
         </div>
         <div className="space-y-2">
@@ -228,16 +228,16 @@ function TargetingFilters({
             value={value.ageMax}
             onChange={(e) => onChange({ ...value, ageMax: e.target.value })}
             placeholder="65"
-            className="w-full bg-[#0f0f11] border border-[#27272a] text-white text-sm rounded-lg h-9 px-3 focus:outline-none focus:border-[#6366f1]"
+            className="w-full bg-[#111113] border border-[#6b6b78] text-white text-sm rounded-lg h-9 px-3 focus:outline-none focus:border-[#6366f1]"
           />
         </div>
         <div className="space-y-2">
           <Label className="text-white text-xs">Miejscowość</Label>
           <Select value={value.location} onValueChange={(v) => onChange({ ...value, location: v })}>
-            <SelectTrigger className="bg-[#0f0f11] border-[#27272a] text-white text-sm rounded-lg h-9">
+            <SelectTrigger className="bg-[#111113] border-[#6b6b78] text-white text-sm rounded-lg h-9">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="bg-[#18181b] border-[#27272a]">
+            <SelectContent className="bg-[#1f1f25] border-[#38383f]">
               <SelectItem value="all" className="text-white text-sm">Wszystkie</SelectItem>
               <SelectItem value="urban" className="text-white text-sm">Miasta &gt;500k</SelectItem>
               <SelectItem value="suburban" className="text-white text-sm">Miasta 100-500k</SelectItem>
@@ -248,10 +248,10 @@ function TargetingFilters({
         <div className="space-y-2">
           <Label className="text-white text-xs">Dochód</Label>
           <Select value={value.income} onValueChange={(v) => onChange({ ...value, income: v })}>
-            <SelectTrigger className="bg-[#0f0f11] border-[#27272a] text-white text-sm rounded-lg h-9">
+            <SelectTrigger className="bg-[#111113] border-[#6b6b78] text-white text-sm rounded-lg h-9">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent className="bg-[#18181b] border-[#27272a]">
+            <SelectContent className="bg-[#1f1f25] border-[#38383f]">
               <SelectItem value="all" className="text-white text-sm">Wszystkie</SelectItem>
               <SelectItem value="low" className="text-white text-sm">Niski</SelectItem>
               <SelectItem value="medium" className="text-white text-sm">Średni</SelectItem>
@@ -274,10 +274,10 @@ interface SimParams {
 
 function SimulationParams({ value, onChange }: { value: SimParams; onChange: (v: SimParams) => void }) {
   return (
-    <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-6 space-y-4">
+    <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-6 space-y-4">
       <h2 className="text-white font-semibold">Parametry symulacji</h2>
       <div>
-        <label className="block text-xs text-[#a1a1aa] mb-2">
+        <label className="block text-xs text-[#c0c0cc] mb-2">
           Liczba rund: <span className="text-white font-semibold">{value.totalRounds}</span>
         </label>
         <input
@@ -285,13 +285,13 @@ function SimulationParams({ value, onChange }: { value: SimParams; onChange: (v:
           onChange={(e) => onChange({ ...value, totalRounds: Number(e.target.value) })}
           className="w-full accent-[#6366f1]"
         />
-        <div className="flex justify-between text-xs text-[#52525b] mt-1">
+        <div className="flex justify-between text-xs text-[#6b6b78] mt-1">
           <span>3 rundy (szybko)</span>
           <span>15 rund (szczegółowo)</span>
         </div>
       </div>
       <div>
-        <label className="block text-xs text-[#a1a1aa] mb-2">Platforma</label>
+        <label className="block text-xs text-[#c0c0cc] mb-2">Platforma</label>
         <div className="flex gap-3">
           {(['facebook', 'twitter'] as const).map((p) => (
             <button
@@ -300,7 +300,7 @@ function SimulationParams({ value, onChange }: { value: SimParams; onChange: (v:
               className={`flex-1 py-2 rounded-lg text-sm font-medium border transition-colors ${
                 value.platform === p
                   ? 'bg-[#6366f1] border-[#6366f1] text-white'
-                  : 'bg-[#09090b] border-[#3f3f46] text-[#a1a1aa] hover:border-[#6366f1]'
+                  : 'bg-[#111113] border-[#6b6b78] text-[#c0c0cc] hover:border-[#6366f1]'
               }`}
             >
               {p === 'facebook' ? 'Facebook' : 'Twitter/X'}
@@ -309,7 +309,7 @@ function SimulationParams({ value, onChange }: { value: SimParams; onChange: (v:
         </div>
       </div>
       <div>
-        <label className="block text-xs text-[#a1a1aa] mb-2">
+        <label className="block text-xs text-[#c0c0cc] mb-2">
           Aktywni agenci per runda:{' '}
           <span className="text-white font-semibold">{Math.round(value.activeAgentRatio * 100)}%</span>
         </label>
@@ -491,7 +491,7 @@ export function NewSimulation() {
     }
   }
 
-  const inputCls = "w-full bg-[#09090b] border border-[#3f3f46] rounded-lg text-white px-3 py-2 text-sm focus:outline-none focus:border-[#6366f1] placeholder:text-[#52525b]";
+  const inputCls = "w-full bg-[#111113] border border-[#6b6b78] rounded-lg text-white px-3 py-2 text-sm focus:outline-none focus:border-[#6366f1] placeholder:text-[#9898a8]";
 
   return (
     <div className="max-w-2xl mx-auto">
@@ -500,7 +500,7 @@ export function NewSimulation() {
           <Network className="w-7 h-7 text-[#6366f1]" />
           <h1 className="text-2xl font-bold text-white">Nowa symulacja</h1>
         </div>
-        <p className="text-[#a1a1aa] text-sm">
+        <p className="text-[#c0c0cc] text-sm">
           Multi-rundowa symulacja społeczna. Testuj reklamy, komunikaty lub analizuj jak polskie
           społeczeństwo reaguje na dowolne wydarzenie.
         </p>
@@ -509,7 +509,7 @@ export function NewSimulation() {
       <form onSubmit={handleSubmit} className="space-y-6">
 
         {/* Toggle zakładek */}
-        <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-2 flex gap-2">
+        <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-2 flex gap-2">
           {([
             { key: 'ad' as SeedTab, icon: Megaphone, label: 'Reklama' },
             { key: 'rumor' as SeedTab, icon: MessageSquare, label: 'Komunikat / Plotka' },
@@ -522,7 +522,7 @@ export function NewSimulation() {
               className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                 tab === key
                   ? 'bg-[#6366f1] text-white'
-                  : 'text-[#a1a1aa] hover:text-white'
+                  : 'text-[#c0c0cc] hover:text-white'
               }`}
             >
               <Icon className="w-4 h-4" />
@@ -535,20 +535,20 @@ export function NewSimulation() {
         {tab === 'ad' && (
           <>
             {/* Opcje: A/B, targeting */}
-            <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-5">
+            <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-5">
               <div className="flex items-center gap-8 flex-wrap">
                 <div className="flex items-center gap-3">
                   <Switch checked={adAbMode} onCheckedChange={setAdAbMode} className="data-[state=checked]:bg-[#6366f1]" />
                   <div>
                     <div className="text-sm font-medium text-white">Tryb A/B</div>
-                    <div className="text-xs text-[#a1a1aa]">Porównaj dwie wersje kreacji</div>
+                    <div className="text-xs text-[#c0c0cc]">Porównaj dwie wersje kreacji</div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <Switch checked={adTargeting} onCheckedChange={setAdTargeting} className="data-[state=checked]:bg-[#6366f1]" />
                   <div>
                     <div className="text-sm font-medium text-white">Targeting</div>
-                    <div className="text-xs text-[#a1a1aa]">Ogranicz do wybranej grupy</div>
+                    <div className="text-xs text-[#c0c0cc]">Ogranicz do wybranej grupy</div>
                   </div>
                 </div>
               </div>
@@ -562,25 +562,25 @@ export function NewSimulation() {
             {!adAbMode ? (
               <>
                 {/* Kreacja */}
-                <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-5">
+                <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-5">
                   <CreativeUploader state={creativeA} onChange={setCreativeA} />
                 </div>
 
                 {/* Pola wariantu A */}
-                <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-6 space-y-4">
+                <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-6 space-y-4">
                   <h2 className="text-white font-semibold">Materiał reklamowy</h2>
 
                   <div>
-                    <label className="block text-xs text-[#a1a1aa] mb-1">Nazwa badania</label>
+                    <label className="block text-xs text-[#c0c0cc] mb-1">Nazwa badania</label>
                     <input
                       type="text" value={adStudyName} onChange={(e) => setAdStudyName(e.target.value)}
                       placeholder="np. Kampania T-Mobile Q2 2026" className={inputCls}
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-[#a1a1aa] mb-1">
+                    <label className="block text-xs text-[#c0c0cc] mb-1">
                       Headline{creativeA.id && !adHeadline && (
-                        <span className="text-[#52525b] font-normal ml-1">(opcjonalnie — KV wystarczy do testu)</span>
+                        <span className="text-[#6b6b78] font-normal ml-1">(opcjonalnie — KV wystarczy do testu)</span>
                       )}
                     </label>
                     <input
@@ -590,7 +590,7 @@ export function NewSimulation() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-[#a1a1aa] mb-1">Body</label>
+                    <label className="block text-xs text-[#c0c0cc] mb-1">Body</label>
                     <textarea
                       value={adBody} onChange={(e) => setAdBody(e.target.value)}
                       placeholder="Treść reklamy" rows={4}
@@ -598,7 +598,7 @@ export function NewSimulation() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-[#a1a1aa] mb-1">CTA</label>
+                    <label className="block text-xs text-[#c0c0cc] mb-1">CTA</label>
                     <input
                       type="text" value={adCta} onChange={(e) => setAdCta(e.target.value)}
                       placeholder="Call to action" className={inputCls}
@@ -606,14 +606,14 @@ export function NewSimulation() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-xs text-[#a1a1aa] mb-1">Marka</label>
+                      <label className="block text-xs text-[#c0c0cc] mb-1">Marka</label>
                       <BrandAutocomplete value={adBrand} onChange={setAdBrand} options={brands} />
                     </div>
                     <div>
-                      <label className="block text-xs text-[#a1a1aa] mb-1">Kategoria</label>
+                      <label className="block text-xs text-[#c0c0cc] mb-1">Kategoria</label>
                       <select
                         value={adCategory} onChange={(e) => setAdCategory(e.target.value)}
-                        className="w-full bg-[#09090b] border border-[#3f3f46] rounded-lg text-white px-3 py-2 text-sm focus:outline-none focus:border-[#6366f1]"
+                        className="w-full bg-[#111113] border border-[#6b6b78] rounded-lg text-white px-3 py-2 text-sm focus:outline-none focus:border-[#6366f1]"
                       >
                         <option value="">– dowolna –</option>
                         {mockCategories.map((c) => <option key={c} value={c}>{c}</option>)}
@@ -621,7 +621,7 @@ export function NewSimulation() {
                     </div>
                   </div>
                   <div>
-                    <label className="block text-xs text-[#a1a1aa] mb-1">Kontekst ekspozycji</label>
+                    <label className="block text-xs text-[#c0c0cc] mb-1">Kontekst ekspozycji</label>
                     <input
                       type="text" value={adContext} onChange={(e) => setAdContext(e.target.value)}
                       placeholder="np. Facebook Feed, Ocena ogólna KV..."
@@ -647,27 +647,27 @@ export function NewSimulation() {
               /* Tryb A/B: dwie kolumny */
               <div className="grid grid-cols-2 gap-6">
                 {/* Wariant A */}
-                <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-6 space-y-4">
+                <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-6 space-y-4">
                   <div className="flex items-center gap-2 mb-1">
                     <div className="w-3 h-3 rounded-full bg-[#6366f1]" />
                     <span className="text-sm font-semibold text-white">Wariant A</span>
                   </div>
                   <div>
-                    <label className="block text-xs text-[#a1a1aa] mb-1">Nazwa badania</label>
+                    <label className="block text-xs text-[#c0c0cc] mb-1">Nazwa badania</label>
                     <input
                       type="text" value={adStudyName} onChange={(e) => setAdStudyName(e.target.value)}
                       placeholder="np. Kampania T-Mobile Q2 2026" className={inputCls}
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-[#a1a1aa] mb-1">Headline A</label>
+                    <label className="block text-xs text-[#c0c0cc] mb-1">Headline A</label>
                     <input
                       type="text" value={adHeadline} onChange={(e) => setAdHeadline(e.target.value)}
                       placeholder="Nagłówek wariantu A" className={inputCls}
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-[#a1a1aa] mb-1">Body A</label>
+                    <label className="block text-xs text-[#c0c0cc] mb-1">Body A</label>
                     <textarea
                       value={adBody} onChange={(e) => setAdBody(e.target.value)}
                       placeholder="Treść wariantu A" rows={3}
@@ -675,36 +675,36 @@ export function NewSimulation() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-[#a1a1aa] mb-1">CTA A</label>
+                    <label className="block text-xs text-[#c0c0cc] mb-1">CTA A</label>
                     <input
                       type="text" value={adCta} onChange={(e) => setAdCta(e.target.value)}
                       placeholder="CTA wariantu A" className={inputCls}
                     />
                   </div>
-                  <div className="pt-2 border-t border-[#27272a]">
+                  <div className="pt-2 border-t border-[#38383f]">
                     <CreativeUploader state={creativeA} onChange={setCreativeA} label="KV / Grafika A" />
                   </div>
                 </div>
 
                 {/* Wariant B */}
-                <div className="bg-[#18181b] border border-[#f59e0b]/30 rounded-xl p-6 space-y-4">
+                <div className="bg-[#1f1f25] border border-[#f59e0b]/30 rounded-xl p-6 space-y-4">
                   <div className="flex items-center gap-2 mb-1">
                     <div className="w-3 h-3 rounded-full bg-[#f59e0b]" />
                     <span className="text-sm font-semibold text-white">Wariant B</span>
                   </div>
                   <div>
-                    <label className="block text-xs text-[#a1a1aa] mb-1">Marka</label>
+                    <label className="block text-xs text-[#c0c0cc] mb-1">Marka</label>
                     <BrandAutocomplete value={adBrand} onChange={setAdBrand} options={brands} />
                   </div>
                   <div>
-                    <label className="block text-xs text-[#a1a1aa] mb-1">Headline B</label>
+                    <label className="block text-xs text-[#c0c0cc] mb-1">Headline B</label>
                     <input
                       type="text" value={adHeadlineB} onChange={(e) => setAdHeadlineB(e.target.value)}
                       placeholder="Nagłówek wariantu B" className={inputCls}
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-[#a1a1aa] mb-1">Body B</label>
+                    <label className="block text-xs text-[#c0c0cc] mb-1">Body B</label>
                     <textarea
                       value={adBodyB} onChange={(e) => setAdBodyB(e.target.value)}
                       placeholder="Treść wariantu B" rows={3}
@@ -712,33 +712,33 @@ export function NewSimulation() {
                     />
                   </div>
                   <div>
-                    <label className="block text-xs text-[#a1a1aa] mb-1">CTA B</label>
+                    <label className="block text-xs text-[#c0c0cc] mb-1">CTA B</label>
                     <input
                       type="text" value={adCtaB} onChange={(e) => setAdCtaB(e.target.value)}
                       placeholder="CTA wariantu B" className={inputCls}
                     />
                   </div>
-                  <div className="pt-2 border-t border-[#27272a]">
+                  <div className="pt-2 border-t border-[#38383f]">
                     <CreativeUploader state={creativeB} onChange={setCreativeB} label="KV / Grafika B" />
                   </div>
                 </div>
 
                 {/* Wspólne pola dla A/B */}
-                <div className="col-span-2 bg-[#18181b] border border-[#27272a] rounded-xl p-6 space-y-4">
-                  <h3 className="text-sm font-semibold text-white text-[#a1a1aa]">Wspólne ustawienia</h3>
+                <div className="col-span-2 bg-[#1f1f25] border border-[#38383f] rounded-xl p-6 space-y-4">
+                  <h3 className="text-sm font-semibold text-white text-[#c0c0cc]">Wspólne ustawienia</h3>
                   <div className="grid grid-cols-3 gap-4">
                     <div>
-                      <label className="block text-xs text-[#a1a1aa] mb-1">Kategoria</label>
+                      <label className="block text-xs text-[#c0c0cc] mb-1">Kategoria</label>
                       <select
                         value={adCategory} onChange={(e) => setAdCategory(e.target.value)}
-                        className="w-full bg-[#09090b] border border-[#3f3f46] rounded-lg text-white px-3 py-2 text-sm focus:outline-none focus:border-[#6366f1]"
+                        className="w-full bg-[#111113] border border-[#6b6b78] rounded-lg text-white px-3 py-2 text-sm focus:outline-none focus:border-[#6366f1]"
                       >
                         <option value="">– dowolna –</option>
                         {mockCategories.map((c) => <option key={c} value={c}>{c}</option>)}
                       </select>
                     </div>
                     <div className="col-span-2">
-                      <label className="block text-xs text-[#a1a1aa] mb-1">Kontekst ekspozycji</label>
+                      <label className="block text-xs text-[#c0c0cc] mb-1">Kontekst ekspozycji</label>
                       <input
                         type="text" value={adContext} onChange={(e) => setAdContext(e.target.value)}
                         placeholder="np. Facebook Feed..." list="contexts-datalist-ab" className={inputCls}
@@ -762,12 +762,12 @@ export function NewSimulation() {
         {/* ── Zakładka: Komunikat / Plotka ── */}
         {tab === 'rumor' && (
           <>
-            <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-5">
+            <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-5">
               <div className="flex items-center gap-3">
                 <Switch checked={rumorTargeting} onCheckedChange={setRumorTargeting} className="data-[state=checked]:bg-[#6366f1]" />
                 <div>
                   <div className="text-sm font-medium text-white">Targeting</div>
-                  <div className="text-xs text-[#a1a1aa]">Ogranicz do wybranej grupy</div>
+                  <div className="text-xs text-[#c0c0cc]">Ogranicz do wybranej grupy</div>
                 </div>
               </div>
             </div>
@@ -776,25 +776,25 @@ export function NewSimulation() {
               <TargetingFilters value={rumorTargetingFilters} onChange={setRumorTargetingFilters} />
             )}
 
-            <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-5">
+            <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-5">
               <CreativeUploader state={rumorCreative} onChange={setRumorCreative} label="Ilustracja / zrzut ekranu (opcjonalnie)" />
             </div>
 
-            <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-6 space-y-4">
+            <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-6 space-y-4">
               <h2 className="text-white font-semibold">Komunikat / Plotka</h2>
-              <p className="text-[#71717a] text-xs">
+              <p className="text-[#9898a8] text-xs">
                 Zasymuluj jak agenci reagują na komunikat, plotkę lub fake news w sieci społecznej.
               </p>
 
               <div>
-                <label className="block text-xs text-[#a1a1aa] mb-1">Nazwa badania</label>
+                <label className="block text-xs text-[#c0c0cc] mb-1">Nazwa badania</label>
                 <input
                   type="text" value={rumorStudyName} onChange={(e) => setRumorStudyName(e.target.value)}
                   placeholder="np. Plotka o bankructwie banku X" className={inputCls}
                 />
               </div>
               <div>
-                <label className="block text-xs text-[#a1a1aa] mb-1">Nagłówek / Źródło (opcjonalnie)</label>
+                <label className="block text-xs text-[#c0c0cc] mb-1">Nagłówek / Źródło (opcjonalnie)</label>
                 <input
                   type="text" value={rumorHeadline} onChange={(e) => setRumorHeadline(e.target.value)}
                   placeholder='np. "Anonimowe źródło twierdzi...", "Viral w sieci:"'
@@ -802,7 +802,7 @@ export function NewSimulation() {
                 />
               </div>
               <div>
-                <label className="block text-xs text-[#a1a1aa] mb-1">Treść komunikatu *</label>
+                <label className="block text-xs text-[#c0c0cc] mb-1">Treść komunikatu *</label>
                 <textarea
                   value={rumorBody} onChange={(e) => setRumorBody(e.target.value)}
                   placeholder="Wpisz treść komunikatu, plotki lub fake newsa..."
@@ -810,11 +810,11 @@ export function NewSimulation() {
                 />
               </div>
               <div>
-                <label className="block text-xs text-[#a1a1aa] mb-1">Marka / podmiot (opcjonalnie)</label>
+                <label className="block text-xs text-[#c0c0cc] mb-1">Marka / podmiot (opcjonalnie)</label>
                 <BrandAutocomplete value={rumorBrand} onChange={setRumorBrand} options={brands} />
               </div>
               <div>
-                <label className="block text-xs text-[#a1a1aa] mb-1">Kontekst (opcjonalnie)</label>
+                <label className="block text-xs text-[#c0c0cc] mb-1">Kontekst (opcjonalnie)</label>
                 <input
                   type="text" value={rumorContext} onChange={(e) => setRumorContext(e.target.value)}
                   placeholder="Dodatkowy kontekst..." className={inputCls}
@@ -826,15 +826,15 @@ export function NewSimulation() {
 
         {/* ── Zakładka: Scenariusz / Event ── */}
         {tab === 'topic' && (
-          <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-6 space-y-4">
+          <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-6 space-y-4">
             <h2 className="text-white font-semibold">Scenariusz / Wydarzenie</h2>
-            <p className="text-[#71717a] text-xs">
+            <p className="text-[#9898a8] text-xs">
               Opisz wydarzenie — gospodarcze, polityczne, społeczne. Agenci zareagują z perspektywy
               swojej sytuacji życiowej, wartości i poglądów.
             </p>
 
             <div>
-              <label className="block text-xs text-[#a1a1aa] mb-1">Nazwa symulacji</label>
+              <label className="block text-xs text-[#c0c0cc] mb-1">Nazwa symulacji</label>
               <input
                 type="text" value={topicStudyName} onChange={(e) => setTopicStudyName(e.target.value)}
                 placeholder="np. Scenariusz: blokada Ormuz" className={inputCls}
@@ -842,7 +842,7 @@ export function NewSimulation() {
             </div>
 
             <div>
-              <label className="block text-xs text-[#a1a1aa] mb-1">Scenariusz *</label>
+              <label className="block text-xs text-[#c0c0cc] mb-1">Scenariusz *</label>
               <textarea
                 value={topicQuery} onChange={(e) => setTopicQuery(e.target.value)}
                 placeholder="Opisz wydarzenie. Np.: Iran blokuje Cieśninę Ormuz. Ceny ropy skaczą o 40% w ciągu tygodnia..."
@@ -853,7 +853,7 @@ export function NewSimulation() {
                   <button
                     key={ex} type="button"
                     onClick={() => setTopicQuery(ex)}
-                    className="text-xs bg-[#27272a] hover:bg-[#3f3f46] text-[#a1a1aa] hover:text-white px-2 py-1 rounded transition-colors"
+                    className="text-xs bg-[#38383f] hover:bg-[#52525a] text-[#c0c0cc] hover:text-white px-2 py-1 rounded transition-colors"
                   >
                     {ex.slice(0, 40)}…
                   </button>
@@ -862,7 +862,7 @@ export function NewSimulation() {
             </div>
 
             <div>
-              <label className="block text-xs text-[#a1a1aa] mb-1">Kontekst (opcjonalnie)</label>
+              <label className="block text-xs text-[#c0c0cc] mb-1">Kontekst (opcjonalnie)</label>
               <textarea
                 value={topicContext} onChange={(e) => setTopicContext(e.target.value)}
                 placeholder="Dodatkowy kontekst historyczny, dane, tło wydarzenia..."
@@ -871,7 +871,7 @@ export function NewSimulation() {
             </div>
 
             <div>
-              <label className="block text-xs text-[#a1a1aa] mb-1">
+              <label className="block text-xs text-[#c0c0cc] mb-1">
                 Przewidywane skutki (opcjonalnie, jeden per linię)
               </label>
               <textarea
