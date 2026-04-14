@@ -21,11 +21,9 @@ import type {
   Platform,
 } from "./schema.js";
 
-// Post-simulation chat
-import Anthropic from "@anthropic-ai/sdk";
 import { buildSystemPrompt } from "../engine/prompt.js";
-
-const anthropicClient = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+import { callSmartModel, callModelRaw } from "../engine/runner.js";
+import { selectModel } from "../engine/modelRouter.js";
 
 export class SimulationOrchestrator {
   private state: SimulationState;
@@ -276,13 +274,7 @@ ${this.state.insights?.reportAgentSynthesis ?? "Symulacja w toku"}
 
 Rekomendacje: ${this.state.insights?.recommendations?.join("; ") ?? "brak"}`;
 
-      const resp = await anthropicClient.messages.create({
-        model: "claude-sonnet-4-6",
-        max_tokens: 512,
-        system: systemPrompt,
-        messages: [{ role: "user", content: message }],
-      });
-      return resp.content.filter((b) => b.type === "text").map((b) => (b as any).text).join("");
+      return callSmartModel(systemPrompt, message, 512);
     }
 
     // Chat z konkretną personą (personaId jest string, sprawdzono wyżej)
@@ -301,13 +293,12 @@ Rekomendacje: ${this.state.insights?.recommendations?.join("; ") ?? "brak"}`;
       activeEvents: [],
     });
 
-    const resp = await anthropicClient.messages.create({
-      model: "claude-sonnet-4-6",
-      max_tokens: 512,
-      system: systemPrompt + "\n\nKtoś rozmawia z Tobą bezpośrednio. Odpowiadaj jako ta persona – po polsku, naturalnie.",
-      messages: [{ role: "user", content: message }],
-    });
-    return resp.content.filter((b) => b.type === "text").map((b) => (b as any).text).join("");
+    return callModelRaw(
+      selectModel(persona),
+      systemPrompt + "\n\nKtoś rozmawia z Tobą bezpośrednio. Odpowiadaj jako ta persona – po polsku, naturalnie.",
+      message,
+      512,
+    );
   }
 
   getState(): SimulationState {

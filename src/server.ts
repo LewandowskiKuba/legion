@@ -8,7 +8,7 @@ import { readFileSync, existsSync, writeFileSync, mkdirSync, statSync, unlinkSyn
 import { join } from "path";
 import { randomUUID } from "crypto";
 import { generatePopulation } from "./personas/generator.js";
-import { runStudy } from "./engine/runner.js";
+import { runStudy, callSmartModel } from "./engine/runner.js";
 import { runSpreadSimulation } from "./engine/spread.js";
 import { aggregateResults, type StudyReport } from "./reports/aggregator.js";
 import { generatePDF } from "./reports/pdf.js";
@@ -947,7 +947,6 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
 
   // ── API: Executive Summary ────────────────────────────────────────────────
   if (url.pathname === "/api/summarize" && req.method === "POST") {
-    if (!process.env.ANTHROPIC_API_KEY) { res.writeHead(500, CORS_HEADERS); res.end(); return; }
     const body = await readBody(req);
     const { reportA, reportB, adA, filterDesc } = JSON.parse(body) as {
       reportA: StudyReport;
@@ -956,8 +955,6 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
       filterDesc?: string;
     };
     try {
-      const Anthropic = (await import("@anthropic-ai/sdk")).default;
-      const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
       const agg = reportA.aggregate;
       const segAge = Object.values(reportA.byAgeGroup ?? {}) as Array<{ label: string; attentionScore: number }>;
@@ -997,12 +994,11 @@ ${abSection}
 
 Napisz analizę po polsku. Wyjaśnij przyczyny wyników (np. niska świadomość marki, niedopasowanie grupy docelowej, siła/słabość komunikatu). Bądź konkretny – odwołuj się do liczb i segmentów. Zakończ jednym zdaniem z rekomendacją.`;
 
-      const msg = await client.messages.create({
-        model: process.env.MODEL ?? "claude-sonnet-4-6",
-        max_tokens: 600,
-        messages: [{ role: "user", content: prompt }],
-      });
-      const summary = (msg.content[0] as { type: "text"; text: string }).text;
+      const summary = await callSmartModel(
+        "Jesteś analitykiem badań reklamowych. Piszesz po polsku.",
+        prompt,
+        600,
+      );
       json(res, { summary });
     } catch (err) {
       json(res, { error: String(err) }, 500);

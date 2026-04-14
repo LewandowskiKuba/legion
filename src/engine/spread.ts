@@ -4,12 +4,10 @@
 // Seed (top spreader z badania) → Hop 1 (3 osoby) → Hop 2 (te co willShare)
 // ─────────────────────────────────────────────────────────────────────────────
 
-import Anthropic from "@anthropic-ai/sdk";
 import type { Persona, BotResponse } from "../personas/schema.js";
 import { buildSystemPrompt } from "./prompt.js";
-
-const MODEL = process.env.MODEL ?? "claude-sonnet-4-6";
-const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+import { callModelRaw } from "./runner.js";
+import { selectModel } from "./modelRouter.js";
 
 export interface SpreadNode {
   personaId: string;
@@ -56,18 +54,12 @@ Reagujesz zgodnie ze swoim profilem. Odpowiedz WYŁĄCZNIE w formacie JSON:
 }`;
 
   try {
-    const resp = await client.messages.create({
-      model: MODEL,
-      max_tokens: 200,
-      temperature: 1.1,
-      system: buildSystemPrompt(persona),
-      messages: [{ role: "user", content: userPrompt }],
-    });
-
-    const raw = resp.content
-      .filter((b) => b.type === "text")
-      .map((b) => (b as { type: "text"; text: string }).text)
-      .join("");
+    const raw = await callModelRaw(
+      selectModel(persona),
+      buildSystemPrompt(persona),
+      userPrompt,
+      200,
+    );
 
     const jsonMatch = raw.match(/\{[\s\S]*\}/);
     if (!jsonMatch) throw new Error("Brak JSON");
