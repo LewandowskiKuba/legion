@@ -390,7 +390,11 @@ export function NewSimulation() {
 
     if (tab === 'ad') {
       if (!adHeadline && !creativeA.id) {
-        setError('Podaj Headline lub wgraj kreację graficzną');
+        setError(adAbMode ? 'Wariant A: podaj Headline lub wgraj kreację graficzną' : 'Podaj Headline lub wgraj kreację graficzną');
+        return;
+      }
+      if (adAbMode && !adHeadlineB && !creativeB.id) {
+        setError('Wariant B: podaj Headline lub wgraj kreację graficzną');
         return;
       }
       setLoading(true);
@@ -652,37 +656,37 @@ export function NewSimulation() {
                     <div className="w-3 h-3 rounded-full bg-[#6366f1]" />
                     <span className="text-sm font-semibold text-white">Wariant A</span>
                   </div>
-                  <div>
-                    <label className="block text-xs text-[#c0c0cc] mb-1">Nazwa badania</label>
-                    <input
-                      type="text" value={adStudyName} onChange={(e) => setAdStudyName(e.target.value)}
-                      placeholder="np. Kampania T-Mobile Q2 2026" className={inputCls}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-[#c0c0cc] mb-1">Headline A</label>
-                    <input
-                      type="text" value={adHeadline} onChange={(e) => setAdHeadline(e.target.value)}
-                      placeholder="Nagłówek wariantu A" className={inputCls}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-[#c0c0cc] mb-1">Body A</label>
-                    <textarea
-                      value={adBody} onChange={(e) => setAdBody(e.target.value)}
-                      placeholder="Treść wariantu A" rows={3}
-                      className={`${inputCls} resize-none`}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-[#c0c0cc] mb-1">CTA A</label>
-                    <input
-                      type="text" value={adCta} onChange={(e) => setAdCta(e.target.value)}
-                      placeholder="CTA wariantu A" className={inputCls}
-                    />
-                  </div>
-                  <div className="pt-2 border-t border-[#38383f]">
-                    <CreativeUploader state={creativeA} onChange={setCreativeA} label="KV / Grafika A" />
+                  <CreativeUploader state={creativeA} onChange={setCreativeA} label="KV / Grafika A" />
+                  <div className="border-t border-[#38383f] pt-4 space-y-4">
+                    <div>
+                      <label className="block text-xs text-[#c0c0cc] mb-1">Nazwa badania</label>
+                      <input
+                        type="text" value={adStudyName} onChange={(e) => setAdStudyName(e.target.value)}
+                        placeholder="np. Kampania T-Mobile Q2 2026" className={inputCls}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-[#c0c0cc] mb-1">Headline A</label>
+                      <input
+                        type="text" value={adHeadline} onChange={(e) => setAdHeadline(e.target.value)}
+                        placeholder="Nagłówek wariantu A" className={inputCls}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-[#c0c0cc] mb-1">Body A</label>
+                      <textarea
+                        value={adBody} onChange={(e) => setAdBody(e.target.value)}
+                        placeholder="Treść wariantu A" rows={3}
+                        className={`${inputCls} resize-none`}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-[#c0c0cc] mb-1">CTA A</label>
+                      <input
+                        type="text" value={adCta} onChange={(e) => setAdCta(e.target.value)}
+                        placeholder="CTA wariantu A" className={inputCls}
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -692,34 +696,34 @@ export function NewSimulation() {
                     <div className="w-3 h-3 rounded-full bg-[#f59e0b]" />
                     <span className="text-sm font-semibold text-white">Wariant B</span>
                   </div>
-                  <div>
-                    <label className="block text-xs text-[#c0c0cc] mb-1">Marka</label>
-                    <BrandAutocomplete value={adBrand} onChange={setAdBrand} options={brands} />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-[#c0c0cc] mb-1">Headline B</label>
-                    <input
-                      type="text" value={adHeadlineB} onChange={(e) => setAdHeadlineB(e.target.value)}
-                      placeholder="Nagłówek wariantu B" className={inputCls}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-[#c0c0cc] mb-1">Body B</label>
-                    <textarea
-                      value={adBodyB} onChange={(e) => setAdBodyB(e.target.value)}
-                      placeholder="Treść wariantu B" rows={3}
-                      className={`${inputCls} resize-none`}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-xs text-[#c0c0cc] mb-1">CTA B</label>
-                    <input
-                      type="text" value={adCtaB} onChange={(e) => setAdCtaB(e.target.value)}
-                      placeholder="CTA wariantu B" className={inputCls}
-                    />
-                  </div>
-                  <div className="pt-2 border-t border-[#38383f]">
-                    <CreativeUploader state={creativeB} onChange={setCreativeB} label="KV / Grafika B" />
+                  <CreativeUploader state={creativeB} onChange={setCreativeB} label="KV / Grafika B" />
+                  <div className="border-t border-[#38383f] pt-4 space-y-4">
+                    <div>
+                      <label className="block text-xs text-[#c0c0cc] mb-1">Marka</label>
+                      <BrandAutocomplete value={adBrand} onChange={setAdBrand} options={brands} />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-[#c0c0cc] mb-1">Headline B</label>
+                      <input
+                        type="text" value={adHeadlineB} onChange={(e) => setAdHeadlineB(e.target.value)}
+                        placeholder="Nagłówek wariantu B" className={inputCls}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-[#c0c0cc] mb-1">Body B</label>
+                      <textarea
+                        value={adBodyB} onChange={(e) => setAdBodyB(e.target.value)}
+                        placeholder="Treść wariantu B" rows={3}
+                        className={`${inputCls} resize-none`}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-[#c0c0cc] mb-1">CTA B</label>
+                      <input
+                        type="text" value={adCtaB} onChange={(e) => setAdCtaB(e.target.value)}
+                        placeholder="CTA wariantu B" className={inputCls}
+                      />
+                    </div>
                   </div>
                 </div>
 
