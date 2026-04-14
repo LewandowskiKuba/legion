@@ -236,21 +236,35 @@ export function SocialGraph({ population, agentOpinions, viralPathsByRound }: So
   const totalEdges = viralPathsByRound.flat().length;
   const positiveCount = nodes.filter(n => n.opinion > 2).length;
   const negativeCount = nodes.filter(n => n.opinion < -2).length;
+  const neutralCount = nodes.length - positiveCount - negativeCount;
+
+  // Dominujący sentyment → komentarz
+  const dominant =
+    positiveCount > negativeCount && positiveCount > neutralCount ? 'positive' :
+    negativeCount > positiveCount && negativeCount > neutralCount ? 'negative' : 'neutral';
+  const dominantLabel =
+    dominant === 'positive' ? `Treść rozprzestrzeniała się głównie wśród agentów pozytywnych (${positiveCount} os.)` :
+    dominant === 'negative' ? `Treść wywołała głównie negatywny oddźwięk wśród ${negativeCount} agentów` :
+    `Opinie rozłożyły się równomiernie – brak wyraźnej dominacji sentymentu`;
 
   return (
     <div className="bg-[#18181b] border border-[#27272a] rounded-xl overflow-hidden">
       {/* Nagłówek */}
       <div className="flex items-center justify-between px-5 py-3 border-b border-[#27272a]">
-        <div className="flex items-center gap-4">
+        <div>
           <h2 className="text-white font-semibold text-sm">Graf społeczny</h2>
-          <span className="text-xs text-[#52525b]">{nodes.length} agentów · {totalEdges} przekazań</span>
+          <p className="text-[#52525b] text-xs mt-0.5">
+            Każdy węzeł to agent, każda linia — przekazanie treści. Kolor = opinia końcowa, rozmiar = zasięg.
+          </p>
         </div>
         <div className="flex items-center gap-3">
           {/* Legenda */}
           <div className="flex items-center gap-3 text-xs text-[#71717a]">
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" /> {positiveCount} pozyt.</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" /> {negativeCount} negat.</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#71717a] inline-block" /> {nodes.length - positiveCount - negativeCount} neutr.</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" />{positiveCount} pozyt.</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" />{negativeCount} negat.</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#71717a] inline-block" />{neutralCount} neutr.</span>
+            <span className="text-[#3f3f46]">·</span>
+            <span>{totalEdges} przekazań</span>
           </div>
           {/* Kontrolki zoom */}
           <div className="flex items-center gap-1">
@@ -283,13 +297,15 @@ export function SocialGraph({ population, agentOpinions, viralPathsByRound }: So
             {edges.map((e, i) => {
               const s = nodeMap.get(e.source), t = nodeMap.get(e.target);
               if (!s || !t) return null;
-              const opacity = 0.15 + (e.count / maxCount) * 0.5;
-              const strokeW = 0.5 + (e.count / maxCount) * 1.5;
+              const t_opinion = nodeMap.get(e.target)?.opinion ?? 0;
+              const edgeColor = t_opinion > 2 ? '#22c55e' : t_opinion < -2 ? '#ef4444' : '#6366f1';
+              const opacity = 0.35 + (e.count / maxCount) * 0.5;
+              const strokeW = 1.0 + (e.count / maxCount) * 2.0;
               return (
                 <line
                   key={i}
                   x1={s.x} y1={s.y} x2={t.x} y2={t.y}
-                  stroke="#6366f1"
+                  stroke={edgeColor}
                   strokeWidth={strokeW}
                   strokeOpacity={opacity}
                 />
@@ -354,6 +370,12 @@ export function SocialGraph({ population, agentOpinions, viralPathsByRound }: So
             </div>
           );
         })()}
+      </div>
+
+      {/* Komentarz */}
+      <div className="px-5 py-3 border-t border-[#27272a] flex items-center gap-2">
+        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dominant === 'positive' ? 'bg-green-500' : dominant === 'negative' ? 'bg-red-500' : 'bg-[#71717a]'}`} />
+        <p className="text-xs text-[#a1a1aa]">{dominantLabel}</p>
       </div>
     </div>
   );
