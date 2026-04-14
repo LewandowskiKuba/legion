@@ -297,15 +297,13 @@ export function SocialGraph({ population, agentOpinions, viralPathsByRound }: So
             {edges.map((e, i) => {
               const s = nodeMap.get(e.source), t = nodeMap.get(e.target);
               if (!s || !t) return null;
-              const t_opinion = nodeMap.get(e.target)?.opinion ?? 0;
-              const edgeColor = t_opinion > 2 ? '#22c55e' : t_opinion < -2 ? '#ef4444' : '#6366f1';
-              const opacity = 0.35 + (e.count / maxCount) * 0.5;
-              const strokeW = 1.0 + (e.count / maxCount) * 2.0;
+              const opacity = 0.5 + (e.count / maxCount) * 0.4;
+              const strokeW = 1.2 + (e.count / maxCount) * 2.0;
               return (
                 <line
                   key={i}
                   x1={s.x} y1={s.y} x2={t.x} y2={t.y}
-                  stroke={edgeColor}
+                  stroke="#ffffff"
                   strokeWidth={strokeW}
                   strokeOpacity={opacity}
                 />
