@@ -10,6 +10,7 @@ import {
 import {
   streamSimulation, injectSimulationEvent, chatWithSimulationAgent
 } from '../utils/api';
+import { SocialGraph } from '../components/SocialGraph';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -442,6 +443,15 @@ export function SimulationView() {
           ))}
         </div>
       ) : null}
+
+      {/* Social graph */}
+      {state && state.rounds.length > 0 && (
+        <SocialGraph
+          population={state.population.map(p => ({ id: p.id, name: p.name }))}
+          agentOpinions={state.agentOpinions}
+          viralPathsByRound={state.rounds.map(r => r.viralPaths)}
+        />
+      )}
 
       {/* Opinion chart */}
       {chartData.length > 0 && (
