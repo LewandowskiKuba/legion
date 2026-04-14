@@ -296,7 +296,10 @@ export function SocialGraph({ population, agentOpinions, viralPathsByRound }: So
           onMouseUp={onMouseUp}
           onMouseLeave={onMouseUp}
         >
-          <g transform={`translate(${pan.x},${pan.y}) scale(${zoom})`} style={{ transformOrigin: `${dims.w / 2}px ${dims.h / 2}px` }}>
+          {/* Test: statyczna linia diagnostyczna */}
+          <line x1={50} y1={50} x2={dims.w - 50} y2={dims.h - 50} stroke="#ff0000" strokeWidth={4} strokeOpacity={1} />
+
+          <g transform={`translate(${pan.x},${pan.y}) scale(${zoom})`}>
             {/* Krawędzie */}
             {edges.map((e, i) => {
               const s = nodes.find(n => n.id === e.source);
