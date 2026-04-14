@@ -6,6 +6,8 @@ RUN npm ci --ignore-scripts
 COPY tsconfig.json ./
 COPY src/ ./src/
 RUN npm run build
+# Kopiuj brands do dist/ (poza wolumen /app/data który go zasłania)
+COPY data/brands/ ./dist/brands/
 
 # ── Stage 2: Build frontend ───────────────────────────────────────────────────
 FROM node:22-alpine AS frontend-builder

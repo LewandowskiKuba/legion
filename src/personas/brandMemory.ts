@@ -4,7 +4,7 @@
 // Źródło słownika: data/brands/polish_brands.json
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { readFileSync } from "fs";
+import { readFileSync, existsSync } from "fs";
 import { join, dirname } from "path";
 import { fileURLToPath } from "url";
 import type { Persona, BrandMemoryLayer, BrandMemoryEntry } from "./schema.js";
@@ -25,7 +25,12 @@ let _brands: BrandDefinition[] | null = null;
 
 function loadBrands(): BrandDefinition[] {
   if (_brands) return _brands;
-  const filePath = join(dirname(fileURLToPath(import.meta.url)), "../../data", "brands", "polish_brands.json");
+  const __dir = dirname(fileURLToPath(import.meta.url));
+  // W Dockerze brands są kopiowane do dist/brands/ (poza wolumen /app/data)
+  const distPath = join(__dir, "../brands", "polish_brands.json");
+  // Fallback dla lokalnego devu (tsx uruchamia z src/, brands są w data/)
+  const dataPath = join(__dir, "../../data/brands", "polish_brands.json");
+  const filePath = existsSync(distPath) ? distPath : dataPath;
   _brands = JSON.parse(readFileSync(filePath, "utf8")) as BrandDefinition[];
   return _brands;
 }
