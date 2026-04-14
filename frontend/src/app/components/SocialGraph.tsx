@@ -182,12 +182,23 @@ export function SocialGraph({ population, agentOpinions, viralPathsByRound }: So
     ctx.scale(dpr, dpr);
 
     ctx.clearRect(0, 0, dims.w, dims.h);
+
+    // DEBUG: czerwony prostokąt żeby potwierdzić że canvas działa
+    ctx.fillStyle = '#ff0000';
+    ctx.fillRect(0, 0, 80, 30);
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '10px sans-serif';
+    ctx.fillText(`e:${edges.length} n:${nodes.length}`, 4, 20);
+
     ctx.save();
     ctx.translate(pan.x, pan.y);
     ctx.scale(zoom, zoom);
 
     const nodeMap = new Map(nodes.map(n => [n.id, n]));
     const maxCount = Math.max(1, ...edges.map(e => e.count));
+
+    console.log('[SocialGraph] draw edges:', edges.length, 'nodes:', nodes.length,
+      'sample edge:', edges[0], 'sample node id:', nodes[0]?.id);
 
     // Draw edges
     for (const e of edges) {
