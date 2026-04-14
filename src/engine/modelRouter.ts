@@ -35,6 +35,9 @@ export interface ModelConfig {
 
 // ── Tier 1: Default (bulk / rundy symulacji) ──────────────────────────────
 const MODEL_CENTER    = process.env.MODEL            ?? "claude-sonnet-4-6";
+const MODEL_PROVIDER  = (process.env.MODEL_PROVIDER  ?? "anthropic") as ModelProvider;
+const MODEL_API_KEY   = process.env.MODEL_API_KEY;   // undefined = użyj domyślnego
+const MODEL_BASE_URL  = process.env.MODEL_BASE_URL;  // undefined = domyślny endpoint
 const MODEL_FAR_LEFT  = process.env.MODEL_FAR_LEFT   ?? "gpt-5.4-mini";
 const MODEL_RIGHT     = process.env.MODEL_RIGHT      ?? "llama-3.3-70b-versatile";
 const MODEL_FAR_RIGHT = process.env.MODEL_FAR_RIGHT  ?? "meta-llama/llama-4-scout-17b-16e-instruct";
@@ -97,12 +100,14 @@ export function selectModel(persona: Persona): ModelConfig {
     };
   }
 
-  // Centrum + Lewica – Claude Sonnet (Anthropic): zbalansowany, dobry w polskim
+  // Centrum + Lewica – domyślnie Claude Sonnet (Anthropic), konfigurowalny przez env
   return {
-    provider: "anthropic",
+    provider: MODEL_PROVIDER,
     modelId: MODEL_CENTER,
     hasVision: true,
-    label: `Anthropic·${MODEL_CENTER}`,
+    label: `${MODEL_PROVIDER}·${MODEL_CENTER}`,
+    apiKey: MODEL_API_KEY,
+    baseURL: MODEL_BASE_URL,
   };
 }
 
