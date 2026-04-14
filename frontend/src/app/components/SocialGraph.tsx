@@ -129,7 +129,7 @@ function buildLayout(
 function nodeColor(opinion: number): string {
   if (opinion > 2)  return '#22c55e';
   if (opinion < -2) return '#ef4444';
-  return '#71717a';
+  return '#9898a8';
 }
 
 // ── Komponent ─────────────────────────────────────────────────────────────────
@@ -183,22 +183,12 @@ export function SocialGraph({ population, agentOpinions, viralPathsByRound }: So
 
     ctx.clearRect(0, 0, dims.w, dims.h);
 
-    // DEBUG: czerwony prostokąt żeby potwierdzić że canvas działa
-    ctx.fillStyle = '#ff0000';
-    ctx.fillRect(0, 0, 80, 30);
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '10px sans-serif';
-    ctx.fillText(`e:${edges.length} n:${nodes.length}`, 4, 20);
-
     ctx.save();
     ctx.translate(pan.x, pan.y);
     ctx.scale(zoom, zoom);
 
     const nodeMap = new Map(nodes.map(n => [n.id, n]));
     const maxCount = Math.max(1, ...edges.map(e => e.count));
-
-    console.log('[SocialGraph] draw edges:', edges.length, 'nodes:', nodes.length,
-      'sample edge:', edges[0], 'sample node id:', nodes[0]?.id);
 
     // Draw edges
     for (const e of edges) {
@@ -282,27 +272,27 @@ export function SocialGraph({ population, agentOpinions, viralPathsByRound }: So
     : `Opinie rozłożyły się równomiernie – brak wyraźnej dominacji sentymentu`;
 
   return (
-    <div className="bg-[#18181b] border border-[#27272a] rounded-xl overflow-hidden">
+    <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl overflow-hidden">
       {/* Header */}
-      <div className="flex items-center justify-between px-5 py-3 border-b border-[#27272a]">
+      <div className="flex items-center justify-between px-5 py-3 border-b border-[#38383f]">
         <div>
           <h2 className="text-white font-semibold text-sm">Graf społeczny</h2>
-          <p className="text-[#52525b] text-xs mt-0.5">
+          <p className="text-[#6b6b78] text-xs mt-0.5">
             Każdy węzeł to agent, każda linia — przekazanie treści. Kolor = opinia końcowa, rozmiar = zasięg.
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-3 text-xs text-[#71717a]">
+          <div className="flex items-center gap-3 text-xs text-[#9898a8]">
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" />{positiveCount} pozyt.</span>
             <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" />{negativeCount} negat.</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#71717a] inline-block" />{neutralCount} neutr.</span>
-            <span className="text-[#3f3f46]">·</span>
+            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#9898a8] inline-block" />{neutralCount} neutr.</span>
+            <span className="text-[#52525a]">·</span>
             <span>{edges.length} połączeń</span>
           </div>
           <div className="flex items-center gap-1">
-            <button onClick={() => setZoom(z => Math.min(3, z * 1.25))} className="p-1 text-[#71717a] hover:text-white rounded"><ZoomIn className="w-3.5 h-3.5" /></button>
-            <button onClick={() => setZoom(z => Math.max(0.3, z / 1.25))} className="p-1 text-[#71717a] hover:text-white rounded"><ZoomOut className="w-3.5 h-3.5" /></button>
-            <button onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }} className="p-1 text-[#71717a] hover:text-white rounded"><Maximize2 className="w-3.5 h-3.5" /></button>
+            <button onClick={() => setZoom(z => Math.min(3, z * 1.25))} className="p-1 text-[#9898a8] hover:text-white rounded"><ZoomIn className="w-3.5 h-3.5" /></button>
+            <button onClick={() => setZoom(z => Math.max(0.3, z / 1.25))} className="p-1 text-[#9898a8] hover:text-white rounded"><ZoomOut className="w-3.5 h-3.5" /></button>
+            <button onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }} className="p-1 text-[#9898a8] hover:text-white rounded"><Maximize2 className="w-3.5 h-3.5" /></button>
           </div>
         </div>
       </div>
@@ -321,26 +311,26 @@ export function SocialGraph({ population, agentOpinions, viralPathsByRound }: So
         {/* Tooltip */}
         {hovered && (
           <div
-            className="absolute pointer-events-none bg-[#09090b] border border-[#27272a] rounded-lg px-3 py-2 shadow-xl z-10"
+            className="absolute pointer-events-none bg-[#111113] border border-[#38383f] rounded-lg px-3 py-2 shadow-xl z-10"
             style={{ left: Math.min(tooltipPos.x + 12, dims.w - 170), top: Math.max(tooltipPos.y - 48, 4), maxWidth: 164 }}
           >
             <p className="text-white text-xs font-semibold truncate">{hovered.name}</p>
-            <p className="text-[#71717a] text-xs">
-              Opinia: <span className={hovered.opinion > 2 ? 'text-green-400' : hovered.opinion < -2 ? 'text-red-400' : 'text-[#71717a]'}>
+            <p className="text-[#9898a8] text-xs">
+              Opinia: <span className={hovered.opinion > 2 ? 'text-green-400' : hovered.opinion < -2 ? 'text-red-400' : 'text-[#9898a8]'}>
                 {hovered.opinion > 0 ? '+' : ''}{hovered.opinion.toFixed(1)}
               </span>
             </p>
             {hovered.influenceScore > 0 && (
-              <p className="text-[#52525b] text-xs">Influence: {Math.round(hovered.influenceScore * 100)}%</p>
+              <p className="text-[#6b6b78] text-xs">Influence: {Math.round(hovered.influenceScore * 100)}%</p>
             )}
           </div>
         )}
       </div>
 
       {/* Footer */}
-      <div className="px-5 py-3 border-t border-[#27272a] flex items-center gap-2">
-        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dominant === 'positive' ? 'bg-green-500' : dominant === 'negative' ? 'bg-red-500' : 'bg-[#71717a]'}`} />
-        <p className="text-xs text-[#a1a1aa]">{dominantLabel}</p>
+      <div className="px-5 py-3 border-t border-[#38383f] flex items-center gap-2">
+        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dominant === 'positive' ? 'bg-green-500' : dominant === 'negative' ? 'bg-red-500' : 'bg-[#9898a8]'}`} />
+        <p className="text-xs text-[#c0c0cc]">{dominantLabel}</p>
       </div>
     </div>
   );
