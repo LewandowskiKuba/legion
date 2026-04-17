@@ -28,13 +28,13 @@ export interface DietSource extends NewsSource {
 // ─── Wszystkie źródła ─────────────────────────────────────────────────────────
 
 export const ALL_SOURCES: NewsSource[] = [
-  { name: "wPolityce",   rssUrl: "https://wpolityce.pl/rss",                              tonality: -0.25 },
+  { name: "wPolityce",   rssUrl: "https://feeds.feedburner.com/wPolitycepl",              tonality: -0.25 },
   { name: "DoRzeczy",    rssUrl: "https://dorzeczy.pl/feed/",                             tonality: -0.30 },
   { name: "Niezalezna",  rssUrl: "https://niezalezna.pl/feed/",                           tonality: -0.30 },
-  { name: "Gazeta",      rssUrl: "https://rss.gazeta.pl/pub/rss/najnowsze_kraj.xml",      tonality: -0.15 },
-  { name: "TVN24",       rssUrl: "https://tvn24.pl/najnowsze.xml",                        tonality: -0.15 },
+  { name: "Gazeta",      rssUrl: "https://www.gazeta.pl/pub/rss/wiadomosci.xml",          tonality: -0.15 },
+  { name: "TVN24",       rssUrl: "https://tvn24.pl/najwazniejsze.xml",                    tonality: -0.15 },
   { name: "OKO",         rssUrl: "https://oko.press/feed/",                               tonality: -0.20 },
-  { name: "Onet",        rssUrl: "https://wiadomosci.onet.pl/.feed/rss",                  tonality: -0.10 },
+  { name: "Onet",        rssUrl: "https://wiadomosci.onet.pl/.feed",                      tonality: -0.10 },
   { name: "WP",          rssUrl: "https://wiadomosci.wp.pl/rss.xml",                      tonality: -0.10 },
   { name: "Interia",     rssUrl: "https://fakty.interia.pl/feed",                         tonality: -0.10 },
   { name: "Polsat",      rssUrl: "https://www.polsatnews.pl/rss/wszystkie.xml",           tonality: -0.10 },
