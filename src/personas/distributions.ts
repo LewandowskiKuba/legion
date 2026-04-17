@@ -20,6 +20,16 @@ import type {
   CommunicationStyle,
   ProductCategory,
 } from "./schema.js";
+
+// Fisher-Yates shuffle (poprawny, unbiased)
+export function fisherYates<T>(arr: T[]): T[] {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
 import { calibration } from "./calibration.js";
 
 // Losuje element z tablicy ważonej [wartość, waga]
@@ -183,9 +193,24 @@ export function sampleHousehold(age: number, gender: Gender): HouseholdType {
 // Płaca minimalna 2025: 4 666 PLN brutto (~3 200 PLN netto) → marginalizuje bracket below_2000
 // Progi bracketów (PLN netto/mc): <2400 | 2400-4100 | 4100-5900 | 5900-9500 | >9500
 // (kalibracja: scripts/calibrate-from-bdl.ts, snapshot: data/calibration/bdl_snapshot.json 2026-04)
-export function sampleIncomeLevel(education: EducationLevel, settlementType: SettlementType): IncomeLevel {
+//
+// Korekty wiekowe (GUS BAEL 2024 – mediana wg grup wiekowych):
+//   18-24: mediana ~3 200 PLN → near-structural zero dla above_8000 (realne: <2% grupy)
+//   25-34: rosnąca — young professionals, IT, startupy
+//   35-54: szczyt zarobków (peak earnings)
+//   55-64: lekki spadek (restrukturyzacje, część na świadczeniach)
+//   65+:   emerytura — silne przesunięcie w lewo (ZUS avg ~2800 PLN netto 2024)
+//
+// Luka płacowa GUS 2024: kobiety zarabiają ~84% mediany mężczyzn dla tego samego stanowiska
+// Implementacja: multiplikatory per bracket dla gender === 'female'
+export function sampleIncomeLevel(
+  education: EducationLevel,
+  settlementType: SettlementType,
+  age: number,
+  gender: Gender,
+): IncomeLevel {
   // Bazowy rozkład – dostosowany do 2024/2025 (przesunięcie w prawo względem 2022)
-  const base: [IncomeLevel, number][] = [
+  let base: [IncomeLevel, number][] = [
     ["below_2000",  8],   // ~8%  – emerytury minimalne, długoterminowe bezrobocie
     ["2000_3500",  24],   // ~24% – usługi, rolnicy, część budżetówki
     ["3500_5000",  30],   // ~30% – core klasa średnia, najbardziej liczna
@@ -193,15 +218,57 @@ export function sampleIncomeLevel(education: EducationLevel, settlementType: Set
     ["above_8000", 13],   // ~13% – kadra kierownicza, IT, wolne zawody
   ];
 
-  // Korekty edukacyjne
+  // ── Korekty wiekowe (kondycjonowanie na wiek) ───────────────────────────────
+  if (age < 24) {
+    // Near-structural zero: powyżej 8k to <2% grupy wiekowej (GUS BAEL 2024)
+    // Wyjątki istnieją (IT, freelancerzy, sportowcy), ale są marginalne
+    base = base.map(([l, w]): [IncomeLevel, number] => {
+      if (l === "above_8000")  return [l, w * 0.12]; // 13 → ~1.6%
+      if (l === "5000_8000")   return [l, w * 0.35]; // 25 → ~8.8%
+      if (l === "3500_5000")   return [l, w * 0.75]; // 30 → ~22.5%
+      if (l === "2000_3500")   return [l, w * 1.35]; // 24 → ~32.4%
+      return [l, w * 1.30];                           // below_2000: 8 → ~10.4%
+    });
+  } else if (age < 30) {
+    // Wczesna kariera: entry-level, część kończy studia
+    base = base.map(([l, w]): [IncomeLevel, number] => {
+      if (l === "above_8000")  return [l, w * 0.55];
+      if (l === "5000_8000")   return [l, w * 0.70];
+      if (l === "3500_5000")   return [l, w * 1.15];
+      if (l === "2000_3500")   return [l, w * 1.20];
+      return [l, w * 1.10];
+    });
+  } else if (age >= 65) {
+    // Emerytura: ZUS avg 2024 ~2 800 PLN netto → silne przesunięcie w lewo
+    base = base.map(([l, w]): [IncomeLevel, number] => {
+      if (l === "above_8000")  return [l, w * 0.40];
+      if (l === "5000_8000")   return [l, w * 0.50];
+      if (l === "3500_5000")   return [l, w * 0.80];
+      if (l === "2000_3500")   return [l, w * 1.30];
+      return [l, w * 1.60]; // below_2000: emerytury minimalne i renty
+    });
+  }
+
+  // ── Luka płacowa: kobiety ~84% mediany mężczyzn (GUS 2024) ─────────────────
+  if (gender === "female") {
+    base = base.map(([l, w]): [IncomeLevel, number] => {
+      if (l === "above_8000")  return [l, w * 0.72]; // silna luka na szczycie (glass ceiling)
+      if (l === "5000_8000")   return [l, w * 0.85];
+      if (l === "3500_5000")   return [l, w * 0.96];
+      if (l === "2000_3500")   return [l, w * 1.18]; // więcej kobiet w budżetówce/usługach
+      return [l, w * 1.28];
+    });
+  }
+
+  // ── Korekty edukacyjne ──────────────────────────────────────────────────────
   const eduBoost = { primary: -2, vocational: -1, secondary: 0, higher: 2 }[education];
-  // Korekty geograficzne
+  // ── Korekty geograficzne ────────────────────────────────────────────────────
   const geoBoost = { village: -1, small_city: -1, medium_city: 0, large_city: 1, metropolis: 2 }[settlementType];
 
   // Przesuń wagi proporcjonalnie
   const adjusted = base.map(([level, w], i): [IncomeLevel, number] => {
     const shift = (i - 2) * (eduBoost + geoBoost) * 0.5;
-    return [level, Math.max(1, w + shift)];
+    return [level, Math.max(0.5, w + shift)];
   });
 
   return weightedRandom(adjusted);
@@ -315,10 +382,9 @@ export function sampleCommunicationStyles(): CommunicationStyle[] {
     "emotional", "rational", "humorous", "authority",
     "social_proof", "aspirational", "fear_of_missing",
   ];
-  // 2–4 style per persona
+  // 2–4 style per persona — Fisher-Yates (unbiased, brak biasu sort-shuffle)
   const count = 2 + Math.floor(Math.random() * 3);
-  const shuffled = all.sort(() => Math.random() - 0.5);
-  return shuffled.slice(0, count);
+  return fisherYates(all).slice(0, count);
 }
 
 export function sampleProductCategories(): ProductCategory[] {

@@ -185,6 +185,7 @@ export interface Persona {
   name: string;                   // fikcyjne imię dla czytelności logów
   zawod?: string;                 // zawód/rola zawodowa (LLM enrichment)
   bio?: string;                   // 2-zdaniowy opis osoby (LLM enrichment)
+  householdId?: string;           // wspólny UUID dla osób z tego samego gosp. domowego
   demographic: DemographicProfile;
   financial: FinancialProfile;
   psychographic: PsychographicProfile;

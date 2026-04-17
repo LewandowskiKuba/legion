@@ -8,6 +8,7 @@ import type { Persona } from "./schema.js";
 import {
   weightedRandom,
   normalInt,
+  fisherYates,
   sampleAge,
   sampleGender,
   sampleEducationForAge,
@@ -23,6 +24,7 @@ import {
   sampleName,
 } from "./distributions.js";
 import { assignBrandMemory } from "./brandMemory.js";
+import { calibration } from "./calibration.js";
 
 // ─── Macierze korelacji warunkowych ──────────────────────────────────────────
 
@@ -55,6 +57,14 @@ const OPENNESS_AGE = (age: number) => age > 65 ? -12 : age > 50 ? -5 : age < 30 
 // Sumienność OCEAN: wiek (doświadczenie zawodowe)
 const CONSCIENTIOUSNESS_AGE = (age: number) => age > 55 ? 10 : age < 25 ? -8 : 0;
 
+// Płeć → OCEAN: meta-analizy (Costa et al. 2001, Schmitt et al. 2008)
+// Kobiety: wyższa ugodowość (d≈0.5, +7 pkt) i neurotyczność (d≈0.4, +5 pkt)
+// Mężczyźni: wyższy apetyt na ryzyko (d≈0.5, +8 pkt riskTolerance)
+const GENDER_OCEAN = {
+  female: { agreeableness: +7, neuroticism: +5, riskTolerance: -8 },
+  male:   { agreeableness:  0, neuroticism:  0, riskTolerance: +8 },
+};
+
 // Postawy polityczne warunkowane na afilicję i wykształcenie
 const EU_EDU: Record<string, number> = { primary: -12, vocational: -6, secondary: 0, higher: 15 };
 const EU_SETTLEMENT: Record<string, number> = {
@@ -77,7 +87,7 @@ function generatePersona(): Persona {
   const settlementType = sampleSettlementType();
   const region = sampleRegion();
   const householdType = sampleHousehold(age, gender);
-  const incomeLevel = sampleIncomeLevel(education, settlementType);
+  const incomeLevel = sampleIncomeLevel(education, settlementType, age, gender);
   const affiliation = samplePoliticalAffiliation(age, settlementType);
 
   // Korelacje warunkowe
@@ -96,6 +106,22 @@ function generatePersona(): Persona {
   );
   const migrationAttitude = normalInt(50 + (MIGRATION_AFFILIATION[affiliation] ?? 0), 18, 0, 100);
 
+  // Korekty OCEAN wg płci (Costa et al. 2001, Schmitt et al. 2008)
+  const genderMod = GENDER_OCEAN[gender];
+
+  // Dług: korelacja z dochodem (nie tylko wiekiem) — GUS Finanse gosp. domowych 2023
+  // Logika: wysokie dochody → łatwiejszy dostęp do kredytu, ale też szybsza spłata
+  // Niskie dochody → kredyty konsumpcyjne na życie bieżące (wyższe wskaźniki zadłużenia relatywnie)
+  const debtBaseByIncome: Record<string, number> = {
+    below_2000: 0.60,   // pożyczki gotówkowe, chwilówki
+    "2000_3500": 0.52,  // kredyt konsumpcyjny powszechny
+    "3500_5000": 0.47,  // kredyt hipoteczny + konsumpcyjny
+    "5000_8000": 0.38,  // głównie hipoteka, szybsza spłata długów
+    above_8000:  0.22,  // hipoteka ewentualnie, brak kredytów konsumpcyjnych
+  };
+  const debtAgeMult = (age > 28 && age < 55) ? 1.15 : 0.82; // szczyt zadłużenia 28–55
+  const hasDebtProb = Math.min(0.85, (debtBaseByIncome[incomeLevel] ?? 0.45) * debtAgeMult);
+
   const persona: Persona = {
     id: randomUUID(),
     name: sampleName(gender),
@@ -111,7 +137,7 @@ function generatePersona(): Persona {
       incomeLevel,
       ownsProperty: sampleOwnsProperty(age, incomeLevel),
       hasSavings: Math.random() < (incomeLevel === "below_2000" ? 0.15 : incomeLevel === "above_8000" ? 0.82 : 0.45),
-      hasDebt: Math.random() < (age > 30 && age < 55 ? 0.45 : 0.25),
+      hasDebt: Math.random() < hasDebtProb,
       creditAttitude: weightedRandom([["positive", 25], ["neutral", 40], ["negative", 35]]),
       priceSensitivity: normalInt(
         incomeLevel === "below_2000" ? 80 : incomeLevel === "above_8000" ? 30 : 55,
@@ -123,10 +149,10 @@ function generatePersona(): Persona {
         openness: normalInt(50 + (OPENNESS_EDU[education] ?? 0) + OPENNESS_AGE(age), 15, 0, 100),
         conscientiousness: normalInt(55 + CONSCIENTIOUSNESS_AGE(age), 15, 0, 100),
         extraversion: normalInt(50, 20, 0, 100),
-        agreeableness: normalInt(55, 17, 0, 100),
-        neuroticism: normalInt(age > 50 ? 40 : age < 30 ? 50 : 45, 16, 0, 100),
+        agreeableness: normalInt(55 + genderMod.agreeableness, 17, 0, 100),
+        neuroticism: normalInt((age > 50 ? 40 : age < 30 ? 50 : 45) + genderMod.neuroticism, 16, 0, 100),
       },
-      riskTolerance: normalInt(age < 35 ? 55 : 40, 17, 0, 100),
+      riskTolerance: normalInt((age < 35 ? 55 : 40) + genderMod.riskTolerance, 17, 0, 100),
       traditionalism,
       collectivism,
       institutionalTrust,
@@ -158,8 +184,126 @@ function generatePersona(): Persona {
   return persona;
 }
 
+// ─── V&V: walidacja rozkładów post-generacji ─────────────────────────────────
+// Porównuje wygenerowane marginale z celami kalibracyjnymi
+// Metryki: SRMSE (Standardised Root Mean Square Error) per segment
+// Próg ostrzeżenia: SRMSE > 0.05 (5% odchylenie względne)
+
+function validateAndLog(personas: Persona[]): void {
+  const n = personas.length;
+  if (n === 0) return;
+
+  const genderF   = personas.filter(p => p.demographic.gender === "female").length / n;
+  const above8k   = personas.filter(p => p.financial.incomeLevel === "above_8000").length / n;
+  const higher    = personas.filter(p => p.demographic.education === "higher").length / n;
+  const urban     = personas.filter(p => ["large_city", "metropolis"].includes(p.demographic.settlementType)).length / n;
+  const meanAge   = personas.reduce((s, p) => s + p.demographic.age, 0) / n;
+
+  // Cele kalibracyjne dla populacji 18-80 lat (GUS BDL 2024)
+  // Uwaga: wartości różnią się od ogólnopolskich przez wykluczenie 0-17 i włączenie 65+
+  const TARGET_GENDER_F = 0.52;
+  // meanAge dla rozkładu 18-80 GUS: ~48.1 (wynika z 21% udziału 65+, nie 43.5 dla wszystkich Polaków)
+  const TARGET_MEAN_AGE = 48.1;
+  // above_8000: GUS 13% dla aktywnych zawodowo; po uwzględnieniu 65+ emerytów (~21% pop)
+  // i luki płacowej kobiet (84% mediany) → oczekiwane ~9-10% dla pop 18-80
+  const TARGET_ABOVE8K  = 0.095;
+  // Wyższe wykształcenie: GUS NSP 27%, ale structural zeros dla 18-21 obniżają do ~25%
+  // (4/7 grupy 18-24 nie może mieć wyższego → oczekiwane 0.087 × 8.6% + rest × 27% ≈ 25%)
+  const TARGET_HIGHER   = 0.25;
+  const TARGET_URBAN    = 0.22;  // metropolis (12%) + large_city (10%)
+
+  // SRMSE (względne odchylenia)
+  const relErrors = [
+    (genderF   - TARGET_GENDER_F) / TARGET_GENDER_F,
+    (above8k   - TARGET_ABOVE8K)  / TARGET_ABOVE8K,
+    (higher    - TARGET_HIGHER)   / TARGET_HIGHER,
+    (urban     - TARGET_URBAN)    / TARGET_URBAN,
+    (meanAge   - TARGET_MEAN_AGE) / TARGET_MEAN_AGE,
+  ];
+  const srmse = Math.sqrt(relErrors.reduce((s, e) => s + e * e, 0) / relErrors.length);
+
+  const warn = srmse > 0.05 ? " ⚠ SRMSE przekracza 5%" : "";
+  console.log(
+    `[V&V] n=${n} | SRMSE=${(srmse * 100).toFixed(2)}%${warn}` +
+    ` | gender_F=${(genderF * 100).toFixed(1)}% (cel:${(TARGET_GENDER_F * 100).toFixed(0)}%)` +
+    ` | above8k=${(above8k * 100).toFixed(1)}% (cel:${(TARGET_ABOVE8K * 100).toFixed(1)}%)` +
+    ` | higher=${(higher * 100).toFixed(1)}% (cel:${(TARGET_HIGHER * 100).toFixed(0)}%)` +
+    ` | urban=${(urban * 100).toFixed(1)}% (cel:${(TARGET_URBAN * 100).toFixed(0)}%)` +
+    ` | meanAge=${meanAge.toFixed(1)} (cel:${TARGET_MEAN_AGE})`,
+  );
+}
+
+// ─── Household clustering (uproszczone hMCMC) ────────────────────────────────
+// Przypisuje wspólny householdId do person z kompatybilnych typów gosp. domowych.
+// Parowanie: para adultstów (różnica wieku ≤ 12 lat), trójki multigeneracyjne.
+// Pokrycie: ~55% populacji (single i niepasujące pary pozostają bez householdId).
+
+function clusterHouseholds(personas: Persona[]): void {
+  // Przetasuj losowo (Fisher-Yates) aby uniknąć systematycznych par wg kolejności generacji
+  const shuffled = fisherYates(personas);
+
+  // ── Pary (couple_no_kids, family_*) ────────────────────────────────────────
+  const couplePool = shuffled.filter(p =>
+    ["couple_no_kids", "family_young_kids", "family_teen_kids", "family_adult_kids"].includes(p.demographic.householdType)
+  );
+
+  // Sortuj wg wieku dla lepszej kompatybilności par (zbliżony wiek w małżeństwach PL)
+  couplePool.sort((a, b) => a.demographic.age - b.demographic.age);
+
+  for (let i = 0; i + 1 < couplePool.length; i += 2) {
+    const a = couplePool[i];
+    const b = couplePool[i + 1];
+    if (a.householdId || b.householdId) continue; // już sparowane
+    const ageDiff = Math.abs(a.demographic.age - b.demographic.age);
+    if (ageDiff <= 12) {
+      const hhId = randomUUID();
+      a.householdId = hhId;
+      b.householdId = hhId;
+    }
+  }
+
+  // ── Trójki multigeneracyjne ─────────────────────────────────────────────────
+  const multiPool = shuffled.filter(p =>
+    p.demographic.householdType === "multigenerational" && !p.householdId
+  );
+  // Posortuj: wymieszaj, żeby trójki były zróżnicowane wiekowo
+  // (starszy, średni, młodszy dorosły w tym samym gosp. domowym)
+  const seniors   = multiPool.filter(p => p.demographic.age >= 55);
+  const midAge    = multiPool.filter(p => p.demographic.age >= 30 && p.demographic.age < 55);
+  const young     = multiPool.filter(p => p.demographic.age < 30);
+
+  const tripleCount = Math.min(seniors.length, midAge.length, young.length);
+  for (let i = 0; i < tripleCount; i++) {
+    const hhId = randomUUID();
+    seniors[i].householdId = hhId;
+    midAge[i].householdId = hhId;
+    young[i].householdId = hhId;
+  }
+
+  // ── single_parent: para (rodzic + dorosłe dziecko) ─────────────────────────
+  const singleParentPool = shuffled.filter(p =>
+    p.demographic.householdType === "single_parent" && !p.householdId
+  );
+  for (let i = 0; i + 1 < singleParentPool.length; i += 2) {
+    const parent = singleParentPool[i];
+    const child  = singleParentPool[i + 1];
+    if (parent.householdId || child.householdId) continue;
+    // Rodzic musi być starszy o co najmniej 15 lat
+    const [older, younger] = parent.demographic.age > child.demographic.age
+      ? [parent, child] : [child, parent];
+    if (older.demographic.age - younger.demographic.age >= 15) {
+      const hhId = randomUUID();
+      older.householdId = hhId;
+      younger.householdId = hhId;
+    }
+  }
+}
+
 export function generatePopulation(size: number = 50): Persona[] {
-  return Array.from({ length: size }, generatePersona);
+  const personas = Array.from({ length: size }, generatePersona);
+  clusterHouseholds(personas);
+  validateAndLog(personas);
+  return personas;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
