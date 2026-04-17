@@ -32,7 +32,7 @@ export const ALL_SOURCES: NewsSource[] = [
   { name: "DoRzeczy",    rssUrl: "https://dorzeczy.pl/feed/",                             tonality: -0.30 },
   { name: "Niezalezna",  rssUrl: "https://niezalezna.pl/feed/",                           tonality: -0.30 },
   { name: "Gazeta",      rssUrl: "https://www.gazeta.pl/pub/rss/wiadomosci.xml",          tonality: -0.15 },
-  { name: "TVN24",       rssUrl: "https://tvn24.pl/najwazniejsze.xml",                    tonality: -0.15 },
+  { name: "RMF24",       rssUrl: "https://www.rmf24.pl/feed",                             tonality: -0.12 },
   { name: "OKO",         rssUrl: "https://oko.press/feed/",                               tonality: -0.20 },
   { name: "Onet",        rssUrl: "https://wiadomosci.onet.pl/.feed",                      tonality: -0.10 },
   { name: "WP",          rssUrl: "https://wiadomosci.wp.pl/rss.xml",                      tonality: -0.10 },
@@ -47,7 +47,7 @@ type RawDiet = Array<{ name: string; weight: number }>;
 
 const DIET_BY_AFFILIATION: Record<PoliticalAffiliation, RawDiet> = {
   pis:          [ { name: "wPolityce", weight: 3 }, { name: "DoRzeczy", weight: 2 }, { name: "Niezalezna", weight: 2 }, { name: "Onet", weight: 1 } ],
-  ko:           [ { name: "Gazeta",    weight: 3 }, { name: "TVN24",    weight: 3 }, { name: "Onet",       weight: 2 }, { name: "WP",    weight: 1 } ],
+  ko:           [ { name: "Gazeta",    weight: 3 }, { name: "RMF24",    weight: 3 }, { name: "Onet",       weight: 2 }, { name: "WP",    weight: 1 } ],
   td:           [ { name: "Onet",      weight: 3 }, { name: "WP",       weight: 3 }, { name: "Interia",    weight: 2 }, { name: "Gazeta", weight: 2 } ],
   lewica:       [ { name: "OKO",       weight: 4 }, { name: "Gazeta",   weight: 3 }, { name: "TVN24",      weight: 2 }, { name: "Onet",  weight: 1 } ],
   konfederacja: [ { name: "DoRzeczy",  weight: 2 }, { name: "Niezalezna", weight: 2 }, { name: "WP",       weight: 2 }, { name: "Onet",  weight: 1 } ],
@@ -59,9 +59,9 @@ const DIET_BY_AFFILIATION: Record<PoliticalAffiliation, RawDiet> = {
 // Młodsi → bardziej online (Gazeta, OKO), starsi → TV-style (Polsat, TVN24)
 
 const AGE_WEIGHT_MULT: Record<AgeSegment, Record<string, number>> = {
-  young:  { OKO: 1.6, Gazeta: 1.3, WP: 1.2, TVN24: 0.7, Polsat: 0.5, wPolityce: 0.7, DoRzeczy: 0.7 },
+  young:  { OKO: 1.6, Gazeta: 1.3, WP: 1.2, RMF24: 0.8, Polsat: 0.5, wPolityce: 0.7, DoRzeczy: 0.7 },
   mid:    {},  // baseline — bez korekt
-  senior: { TVN24: 1.5, Polsat: 1.6, Onet: 1.2, Interia: 1.3, OKO: 0.5, DoRzeczy: 0.7 },
+  senior: { RMF24: 1.3, Polsat: 1.6, Onet: 1.2, Interia: 1.3, OKO: 0.5, DoRzeczy: 0.7 },
 };
 
 // ─── Eksportowane helpery ─────────────────────────────────────────────────────
