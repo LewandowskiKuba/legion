@@ -81,7 +81,7 @@ function oceanDescription(ocean: Persona["psychographic"]["ocean"]): string {
   return parts.length > 0 ? parts.join("; ") : "o przeciętnym profilu osobowości";
 }
 
-export function buildSystemPrompt(persona: Persona, simulationCtx?: SimulationContext): string {
+export function buildSystemPrompt(persona: Persona, simulationCtx?: SimulationContext, polymarketContext?: string): string {
   const { demographic: d, financial: f, psychographic: ps, consumer: c, political: pol } = persona;
 
   const brandCtx = persona.brandMemory?.brands.length
@@ -147,7 +147,7 @@ ${simulationCtx?.seedType === "topic"
 - rejectionSignals: bądź konkretny. Zamiast „cena może być wysoka" napisz „35 zł to nadal dużo jak na sam internet".`}
 - Twoje odpowiedzi muszą być wewnętrznie spójne z profilem: wiekiem, sytuacją finansową, wartościami, używanymi mediami i historią z markami.${
     simulationCtx ? buildSimulationBlock(simulationCtx) : ""
-  }`;
+  }${polymarketContext ?? ""}`;
 }
 
 function buildSimulationBlock(ctx: SimulationContext): string {

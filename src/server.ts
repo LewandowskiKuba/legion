@@ -16,6 +16,7 @@ import type { AdMaterial, Persona, BotResponse } from "./personas/schema.js";
 import { simulationStore } from "./simulation/stateStore.js";
 import type { SimulationConfig, SimulationEventType, Platform } from "./simulation/schema.js";
 import { getCachedPersonas, regeneratePersonas, invalidatePersonasCache } from "./db/personas.js";
+import { fetchRelevantMarkets, getCachedMarkets, getCacheAge } from "./polymarket/index.js";
 
 const PORT = parseInt(process.env.PORT ?? "3000", 10);
 const DATA_DIR = join(process.cwd(), "data");
@@ -727,6 +728,15 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
     return;
   }
 
+  // ── API: Polymarket markets ────────────────────────────────────────────────
+  if (url.pathname === "/api/polymarket/markets" && req.method === "GET") {
+    const refresh = url.searchParams.get("refresh") === "1";
+    const markets = refresh ? await fetchRelevantMarkets() : getCachedMarkets();
+    const cacheAge = getCacheAge();
+    json(res, { markets, cacheAgeMs: cacheAge, count: markets.length });
+    return;
+  }
+
   // ── Stary UI (legacy HTML) – wyłączony, zastąpiony przez React frontend ────
   // if (url.pathname === "/" && req.method === "GET") {
   //   res.writeHead(200, { "Content-Type": "text/html; charset=utf-8" });
@@ -1250,4 +1260,7 @@ server.listen(PORT, () => {
   console.log(`\n◆ We Are Legion`);
   console.log(`  http://localhost:${PORT}\n`);
   if (!process.env.ANTHROPIC_API_KEY) console.warn("  ⚠ Brak ANTHROPIC_API_KEY");
+  fetchRelevantMarkets().then((m) => {
+    if (m.length > 0) console.log(`  ◇ Polymarket: załadowano ${m.length} rynków`);
+  }).catch(() => {});
 });

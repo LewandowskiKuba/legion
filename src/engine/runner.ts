@@ -6,6 +6,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import OpenAI from "openai";
 import type { Persona, AdMaterial, BotResponse } from "../personas/schema.js";
 import { buildSystemPrompt, buildUserPrompt, type SimulationContext } from "./prompt.js";
+import { getPolymarketContext } from "../polymarket/index.js";
 import { selectModel, selectSmartModel, selectNerModel, type ModelConfig, type ModelProvider } from "./modelRouter.js";
 
 const CONCURRENCY = parseInt(process.env.CONCURRENCY ?? "5", 10);
@@ -113,7 +114,8 @@ async function waitForRateLimit(provider: ModelProvider): Promise<void> {
 async function callAnthropic(
   persona: Persona,
   ad: AdMaterial,
-  modelId: string
+  modelId: string,
+  polyCtx = ""
 ): Promise<string> {
   const userContent: Anthropic.MessageParam["content"] =
     ad.imageBase64 && ad.imageMimeType
@@ -134,7 +136,7 @@ async function callAnthropic(
     model: modelId,
     max_tokens: 512,
     temperature: 1.0,
-    system: buildSystemPrompt(persona),
+    system: buildSystemPrompt(persona, undefined, polyCtx),
     messages: [{ role: "user", content: userContent }],
   });
 
@@ -153,11 +155,12 @@ async function callOpenAICompatible(
   persona: Persona,
   ad: AdMaterial,
   modelId: string,
-  hasVision: boolean
+  hasVision: boolean,
+  polyCtx = ""
 ): Promise<string> {
   const systemMsg: OpenAI.ChatCompletionMessageParam = {
     role: "system",
-    content: buildSystemPrompt(persona),
+    content: buildSystemPrompt(persona, undefined, polyCtx),
   };
 
   let userMsg: OpenAI.ChatCompletionMessageParam;
@@ -367,6 +370,7 @@ export async function runPersonaBatch<T>(
 async function queryPersona(
   persona: Persona,
   ad: AdMaterial,
+  polyCtx = "",
   attempt = 0
 ): Promise<BotResponse> {
   const model = selectModel(persona);
@@ -378,12 +382,12 @@ async function queryPersona(
     let raw: string;
 
     if (provider === "anthropic") {
-      raw = await callAnthropic(persona, ad, modelId);
+      raw = await callAnthropic(persona, ad, modelId, polyCtx);
     } else if (provider === "openai") {
-      raw = await callOpenAICompatible(getOpenAI(), persona, ad, modelId, hasVision);
+      raw = await callOpenAICompatible(getOpenAI(), persona, ad, modelId, hasVision, polyCtx);
     } else {
       // groq
-      raw = await callOpenAICompatible(getGroq(), persona, ad, modelId, hasVision);
+      raw = await callOpenAICompatible(getGroq(), persona, ad, modelId, hasVision, polyCtx);
     }
 
     return parseResponse(persona.id, raw);
@@ -396,14 +400,14 @@ async function queryPersona(
       console.warn(`⚠ Rate limit [${label}] – czekam ${Math.round(backoff / 1000)}s (attempt ${attempt + 1})`);
       if (attempt < MAX_RETRIES) {
         await sleep(backoff);
-        return queryPersona(persona, ad, attempt + 1);
+        return queryPersona(persona, ad, polyCtx, attempt + 1);
       }
     }
 
     if (attempt < MAX_RETRIES) {
       // Inne błędy – krótki backoff
       await sleep(1000 * (attempt + 1));
-      return queryPersona(persona, ad, attempt + 1);
+      return queryPersona(persona, ad, polyCtx, attempt + 1);
     }
 
     console.error(`✗ Błąd [${label}] persona ${persona.name} (${persona.id}):`, (err as Error).message ?? err);
@@ -434,12 +438,13 @@ export async function runStudy(
   const results: BotResponse[] = new Array(total);
   let nextIdx = 0;
   let doneCount = 0;
+  const polyCtx = await getPolymarketContext();
 
   async function worker(): Promise<void> {
     while (true) {
       const idx = nextIdx++;
       if (idx >= total) return;
-      results[idx] = await queryPersona(population[idx], ad);
+      results[idx] = await queryPersona(population[idx], ad, polyCtx);
       doneCount++;
       onProgress?.(doneCount, total);
     }

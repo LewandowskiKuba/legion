@@ -5,6 +5,7 @@
 import type { Persona } from "../personas/schema.js";
 import { buildSystemPrompt, buildSimulationUserPrompt, type SimulationContext } from "../engine/prompt.js";
 import { runPersonaBatch } from "../engine/runner.js";
+import { getPolymarketContext } from "../polymarket/index.js";
 import type {
   AgentAction,
   ActionType,
@@ -170,6 +171,7 @@ export async function runRound(params: {
     .map((e) => ({ type: e.type, content: e.content }));
 
   // Uruchom batch
+  const polyCtx = await getPolymarketContext();
   const actions = await runPersonaBatch<AgentAction>(
     activePersonas,
     (persona) => {
@@ -194,7 +196,7 @@ export async function runRound(params: {
       };
 
       return {
-        systemPrompt: buildSystemPrompt(persona, simCtx),
+        systemPrompt: buildSystemPrompt(persona, simCtx, polyCtx),
         userPrompt: buildSimulationUserPrompt(simCtx),
       };
     },
