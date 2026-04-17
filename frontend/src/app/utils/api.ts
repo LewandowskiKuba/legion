@@ -677,6 +677,59 @@ export async function getSimulation(id: string): Promise<any> {
   return res.json();
 }
 
+// ─── Bayesian A/B Analysis ────────────────────────────────────────────────────
+
+export interface SegmentPosterior {
+  label: string;
+  key: string;
+  n: number;
+  posteriorA: number;
+  posteriorB: number;
+  margin: number;
+  entropy: number;
+  needsAB: boolean;
+  winner: "A" | "B";
+  avgOpinionA: number;
+  avgOpinionB: number;
+}
+
+export interface DimensionResult {
+  dimension: string;
+  label: string;
+  segments: SegmentPosterior[];
+}
+
+export interface BayesianABResult {
+  globalPosteriorA: number;
+  globalPosteriorB: number;
+  globalMargin: number;
+  globalWinner: "A" | "B" | "uncertain";
+  globalNeedsAB: boolean;
+  confidenceLevel: "high" | "moderate" | "low";
+  totalPersonas: number;
+  dimensions: DimensionResult[];
+  priorityAB: Array<{
+    dimension: string;
+    dimensionLabel: string;
+    label: string;
+    entropy: number;
+    margin: number;
+    winner: "A" | "B";
+    winnerPosterior: number;
+    runnerUpPosterior: number;
+    n: number;
+  }>;
+}
+
+export async function getBayesianAB(idA: string, idB: string): Promise<BayesianABResult> {
+  const res = await fetch(`${BASE}/api/simulation/ab-bayesian?idA=${idA}&idB=${idB}`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: "Błąd analizy Bayesowskiej" }));
+    throw new Error(err.error ?? "Błąd analizy");
+  }
+  return res.json();
+}
+
 export function streamSimulation(
   id: string,
   handlers: {

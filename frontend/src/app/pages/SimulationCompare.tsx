@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { ArrowLeft, ExternalLink, Loader2, BarChart3 } from 'lucide-react';
-import { getSimulation } from '../utils/api';
+import { ArrowLeft, ExternalLink, Loader2, BarChart3, FlaskConical, AlertTriangle, CheckCircle2, HelpCircle } from 'lucide-react';
+import { getSimulation, getBayesianAB, type BayesianABResult, type DimensionResult } from '../utils/api';
 
 // ─── Typy lokalne ─────────────────────────────────────────────────────────────
 
@@ -174,6 +174,227 @@ function SimColumn({
   );
 }
 
+// ─── Bayesian helpers ─────────────────────────────────────────────────────────
+
+function posteriorBar(pA: number, pB: number) {
+  const pctA = Math.round(pA * 100);
+  const pctB = Math.round(pB * 100);
+  return (
+    <div className="flex h-5 rounded-full overflow-hidden w-full">
+      <div
+        className="h-full transition-all"
+        style={{ width: `${pctA}%`, background: '#6366f1' }}
+        title={`A: ${pctA}%`}
+      />
+      <div
+        className="h-full transition-all"
+        style={{ width: `${pctB}%`, background: '#f59e0b' }}
+        title={`B: ${pctB}%`}
+      />
+    </div>
+  );
+}
+
+function entropyBadge(entropy: number, needsAB: boolean) {
+  if (needsAB) return <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-900/30 border border-yellow-700/40 text-yellow-400 font-semibold">Live A/B</span>;
+  if (entropy < 0.5) return <span className="text-xs px-2 py-0.5 rounded-full bg-green-900/30 border border-green-700/40 text-green-400 font-semibold">Pewny</span>;
+  return <span className="text-xs px-2 py-0.5 rounded-full bg-orange-900/30 border border-orange-700/40 text-orange-400 font-semibold">Umiarkowany</span>;
+}
+
+function BayesianDimension({ dim, labelA, labelB }: { dim: DimensionResult; labelA: string; labelB: string }) {
+  return (
+    <div className="bg-[#18181b] border border-[#27272a] rounded-xl overflow-hidden">
+      <div className="px-4 py-2.5 border-b border-[#27272a] bg-[#0f0f12]">
+        <span className="text-xs font-semibold text-[#a1a1aa] uppercase tracking-widest">{dim.label}</span>
+      </div>
+      <div className="divide-y divide-[#27272a]">
+        {dim.segments.map((seg) => (
+          <div key={seg.key} className="px-4 py-3 flex items-center gap-3">
+            <div className="w-36 flex-shrink-0">
+              <div className="text-sm text-white font-medium leading-tight">{seg.label}</div>
+              <div className="text-xs text-[#52525b] mt-0.5">n={seg.n.toLocaleString('pl-PL')}</div>
+            </div>
+            <div className="flex-1 min-w-0 space-y-1">
+              {posteriorBar(seg.posteriorA, seg.posteriorB)}
+              <div className="flex justify-between text-xs text-[#71717a]">
+                <span style={{ color: '#6366f1' }}>{labelA} {Math.round(seg.posteriorA * 100)}%</span>
+                <span style={{ color: '#f59e0b' }}>{labelB} {Math.round(seg.posteriorB * 100)}%</span>
+              </div>
+            </div>
+            <div className="w-24 flex-shrink-0 text-right space-y-1">
+              {entropyBadge(seg.entropy, seg.needsAB)}
+              <div className="text-xs text-[#52525b]">H={seg.entropy.toFixed(2)}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function BayesianSection({ idA, idB, statusA, statusB }: {
+  idA: string; idB: string; statusA?: string; statusB?: string;
+}) {
+  const [result, setResult] = useState<BayesianABResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [labelA] = useState('Wariant A');
+  const [labelB] = useState('Wariant B');
+
+  const bothReady = statusA === 'complete' && statusB === 'complete';
+
+  useEffect(() => {
+    if (!bothReady) return;
+    setLoading(true);
+    getBayesianAB(idA, idB)
+      .then((r) => { setResult(r); setLoading(false); })
+      .catch((e) => { setError(e.message ?? 'Błąd'); setLoading(false); });
+  }, [idA, idB, bothReady]);
+
+  if (!bothReady) {
+    return (
+      <div className="mt-8 bg-[#18181b] border border-[#27272a] rounded-xl p-6 flex items-center gap-3 text-[#71717a] text-sm">
+        <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" />
+        Analiza Bayesowska dostępna po zakończeniu obu symulacji…
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="mt-8 bg-[#18181b] border border-[#27272a] rounded-xl p-6 flex items-center gap-3 text-[#a1a1aa] text-sm">
+        <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" />
+        Obliczam posteriors Bayesowskie…
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="mt-8 bg-red-900/10 border border-red-800/30 rounded-xl p-4 text-red-400 text-sm">
+        Błąd analizy: {error}
+      </div>
+    );
+  }
+
+  if (!result) return null;
+
+  const globalPctA = Math.round(result.globalPosteriorA * 100);
+  const globalPctB = Math.round(result.globalPosteriorB * 100);
+  const globalMarginPct = Math.round(result.globalMargin * 100);
+
+  const winnerColor = result.globalWinner === 'A' ? '#6366f1' : result.globalWinner === 'B' ? '#f59e0b' : '#71717a';
+  const winnerLabel = result.globalWinner === 'A' ? labelA : result.globalWinner === 'B' ? labelB : 'Remis / niepewne';
+
+  const confidenceIcon = result.confidenceLevel === 'high'
+    ? <CheckCircle2 className="w-4 h-4 text-green-400" />
+    : result.confidenceLevel === 'moderate'
+    ? <AlertTriangle className="w-4 h-4 text-yellow-400" />
+    : <HelpCircle className="w-4 h-4 text-orange-400" />;
+
+  const confidenceLabel = { high: 'Wysoka pewność', moderate: 'Umiarkowana pewność', low: 'Niska pewność — rekomenduj live A/B' }[result.confidenceLevel];
+
+  return (
+    <div className="mt-8 space-y-6">
+      {/* Nagłówek sekcji */}
+      <div className="flex items-center gap-3">
+        <FlaskConical className="w-5 h-5 text-[#6366f1]" />
+        <h2 className="text-lg font-semibold text-white">Analiza Bayesowska</h2>
+        <span className="text-xs text-[#52525b] ml-1">P(kreacja = najlepsza | evidence)</span>
+      </div>
+
+      {/* Global posterior */}
+      <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-6">
+        <div className="flex items-start justify-between mb-5">
+          <div>
+            <div className="text-xs text-[#71717a] uppercase tracking-widest mb-1">Globalny posterior</div>
+            <div className="text-2xl font-bold" style={{ color: winnerColor }}>{winnerLabel}</div>
+            <div className="flex items-center gap-1.5 mt-1">
+              {confidenceIcon}
+              <span className="text-sm text-[#a1a1aa]">{confidenceLabel}</span>
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-xs text-[#52525b] mb-1">Margin</div>
+            <div className="text-xl font-bold text-white">{globalMarginPct} pp</div>
+            <div className="text-xs text-[#52525b]">n={result.totalPersonas.toLocaleString('pl-PL')} person</div>
+          </div>
+        </div>
+
+        {/* Pasek globalny */}
+        <div className="space-y-2">
+          {posteriorBar(result.globalPosteriorA, result.globalPosteriorB)}
+          <div className="flex justify-between text-sm font-semibold">
+            <span style={{ color: '#6366f1' }}>{labelA} — {globalPctA}%</span>
+            <span style={{ color: '#f59e0b' }}>{labelB} — {globalPctB}%</span>
+          </div>
+        </div>
+
+        <div className="mt-4 text-xs text-[#52525b] border-t border-[#27272a] pt-3">
+          Średnia geometryczna posteriorów per segment (penalizuje niespójność między grupami). Próg A/B: margin &lt; 15%.
+        </div>
+      </div>
+
+      {/* Priority A/B list */}
+      {result.priorityAB.length > 0 && (
+        <div className="bg-[#1c1a0f] border border-yellow-800/30 rounded-xl p-5">
+          <div className="flex items-center gap-2 mb-4">
+            <AlertTriangle className="w-4 h-4 text-yellow-500" />
+            <span className="text-sm font-semibold text-yellow-400">
+              {result.priorityAB.length} {result.priorityAB.length === 1 ? 'segment wymaga' : 'segmentów wymaga'} live A/B testu
+            </span>
+          </div>
+          <div className="space-y-2">
+            {result.priorityAB.map((p, i) => (
+              <div key={`${p.dimension}-${p.label}`} className="flex items-center gap-3 py-2 border-b border-yellow-900/20 last:border-0">
+                <span className="text-xs font-bold text-yellow-600 w-5 text-center">{i + 1}</span>
+                <div className="flex-1">
+                  <span className="text-sm text-white font-medium">{p.label}</span>
+                  <span className="text-xs text-[#52525b] ml-2">{p.dimensionLabel}</span>
+                </div>
+                <div className="text-right">
+                  <div className="text-xs text-yellow-400">
+                    {p.winner === 'A' ? labelA : labelB} {Math.round(p.winnerPosterior * 100)}%
+                    <span className="text-[#52525b] ml-1">vs {Math.round(p.runnerUpPosterior * 100)}%</span>
+                  </div>
+                  <div className="text-xs text-[#52525b]">margin {Math.round(p.margin * 100)} pp · H={p.entropy.toFixed(2)}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {result.priorityAB.length === 0 && (
+        <div className="bg-green-900/10 border border-green-800/30 rounded-xl p-4 flex items-center gap-3">
+          <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0" />
+          <div className="text-sm text-green-400">
+            Brak segmentów wymagających live A/B — posterior jest rozstrzygnięty we wszystkich grupach demograficznych.
+          </div>
+        </div>
+      )}
+
+      {/* Heatmapa per wymiar */}
+      <div>
+        <h3 className="text-sm font-semibold text-[#a1a1aa] uppercase tracking-widest mb-4">Posterior per segment</h3>
+        <div className="space-y-4">
+          {result.dimensions.map((dim) => (
+            <BayesianDimension key={dim.dimension} dim={dim} labelA={labelA} labelB={labelB} />
+          ))}
+        </div>
+      </div>
+
+      {/* Legenda */}
+      <div className="flex flex-wrap gap-4 text-xs text-[#52525b] pt-2 border-t border-[#27272a]">
+        <span><span className="inline-block w-3 h-3 rounded-sm mr-1" style={{ background: '#6366f1' }} />Wariant A</span>
+        <span><span className="inline-block w-3 h-3 rounded-sm mr-1" style={{ background: '#f59e0b' }} />Wariant B</span>
+        <span>H = entropia Shannona (0 = pewny wynik, 1 = maksymalna niepewność)</span>
+        <span>Live A/B = margin &lt; 15 pp</span>
+      </div>
+    </div>
+  );
+}
+
 // ─── Główny komponent ─────────────────────────────────────────────────────────
 
 export function SimulationCompare() {
@@ -254,6 +475,16 @@ export function SimulationCompare() {
           onOpen={() => idB && navigate(`/simulation/${idB}`)}
         />
       </div>
+
+      {/* Analiza Bayesowska */}
+      {idA && idB && (
+        <BayesianSection
+          idA={idA}
+          idB={idB}
+          statusA={dataA?.status}
+          statusB={dataB?.status}
+        />
+      )}
     </div>
   );
 }

@@ -11,6 +11,7 @@ import { generatePopulation } from "./personas/generator.js";
 import { callSmartModel } from "./engine/runner.js";
 import { runSpreadSimulation } from "./engine/spread.js";
 import type { StudyReport } from "./reports/aggregator.js";
+import { computeBayesianAB } from "./reports/bayesian.js";
 import { generatePDF } from "./reports/pdf.js";
 import type { AdMaterial, Persona, BotResponse } from "./personas/schema.js";
 import { simulationStore } from "./simulation/stateStore.js";
@@ -518,6 +519,41 @@ Napisz analizę po polsku. Wyjaśnij przyczyny wyników (np. niska świadomość
       json(res, { idA: orcA.getId(), idB: orcB.getId(), sizeA: popA.length, sizeB: popB.length });
     } catch (err: any) {
       json(res, { error: String(err.message ?? err) }, 400);
+    }
+    return;
+  }
+
+  // ── API: Analiza Bayesowska dla pary A/B ────────────────────────────────
+  if (url.pathname === "/api/simulation/ab-bayesian" && req.method === "GET") {
+    const idA = url.searchParams.get("idA");
+    const idB = url.searchParams.get("idB");
+    if (!idA || !idB) { json(res, { error: "Wymagane parametry: idA i idB" }, 400); return; }
+
+    const orcA = simulationStore.get(idA);
+    const orcB = simulationStore.get(idB);
+    if (!orcA) { json(res, { error: `Symulacja A (${idA}) nie istnieje` }, 404); return; }
+    if (!orcB) { json(res, { error: `Symulacja B (${idB}) nie istnieje` }, 404); return; }
+
+    const stateA = orcA.getState();
+    const stateB = orcB.getState();
+
+    // Bayesian działa na zakończonych symulacjach; na running też — dane mogą być niepełne
+    if (stateA.status === "initializing") {
+      json(res, { error: "Symulacja A jeszcze się inicjalizuje" }, 202); return;
+    }
+    if (stateB.status === "initializing") {
+      json(res, { error: "Symulacja B jeszcze się inicjalizuje" }, 202); return;
+    }
+
+    try {
+      const result = computeBayesianAB(
+        stateA.population,
+        stateA.agentOpinions,
+        stateB.agentOpinions,
+      );
+      json(res, result);
+    } catch (err: any) {
+      json(res, { error: String(err.message ?? err) }, 500);
     }
     return;
   }
