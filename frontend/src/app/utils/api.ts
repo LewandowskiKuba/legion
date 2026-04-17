@@ -3,7 +3,7 @@
 // Proxy Vite → http://localhost:3000 (vite.config.ts)
 // ─────────────────────────────────────────────────────────────────────────────
 
-const BASE = "";
+export const BASE = "";
 
 // ─── Typy (zgodne z mockApi.ts – nie zmieniamy UI) ───────────────────────────
 
@@ -15,6 +15,7 @@ export interface PopulationStats {
   incomeDistribution: { low: number; medium: number; high: number };
   education: { basic: number; secondary: number; higher: number };
   politicalPreferences: { left: number; center: number; right: number };
+  ageDistribution: { segment: string; value: number }[];
 }
 
 export interface Campaign {
@@ -127,6 +128,10 @@ function mapPopulation(raw: any): PopulationStats {
       center: pct(td + undecided, total),
       right: pct(pis + konfederacja, total),
     },
+    ageDistribution: Object.entries(raw.ageBrackets ?? {}).map(([segment, count]) => ({
+      segment,
+      value: pct(count as number, total),
+    })),
   };
 }
 
