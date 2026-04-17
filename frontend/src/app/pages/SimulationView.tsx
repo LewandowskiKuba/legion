@@ -11,6 +11,16 @@ import {
   streamSimulation, injectSimulationEvent, chatWithSimulationAgent
 } from '../utils/api';
 import { SocialGraph } from '../components/SocialGraph';
+import { Progress } from '../components/ui/progress';
+
+function formatEta(ms: number): string {
+  if (ms <= 0) return '';
+  const s = Math.round(ms / 1000);
+  if (s < 60) return `${s}s`;
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m} min ${s % 60}s`;
+  return `${Math.floor(m / 60)}h ${m % 60}min`;
+}
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -330,10 +340,11 @@ export function SimulationView() {
   const { id } = useParams<{ id: string }>();
   const [state, setState] = useState<SimState | null>(null);
   const [status, setStatus] = useState<'initializing' | 'running' | 'complete' | 'error'>('initializing');
-  const [progress, setProgress] = useState({ current: 0, total: 0 });
+  const [progress, setProgress] = useState({ current: 0, total: 0, eta: '' });
   const [chatOpen, setChatOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const stopRef = useRef<(() => void) | null>(null);
+  const startTimeRef = useRef<number | null>(null);
 
   useEffect(() => {
     if (!id) return;
@@ -353,7 +364,11 @@ export function SimulationView() {
         setStatus('running');
       },
       onProgress: (current, total) => {
-        setProgress({ current, total });
+        if (!startTimeRef.current) startTimeRef.current = Date.now();
+        const elapsed = Date.now() - startTimeRef.current;
+        const rate = current / elapsed;
+        const eta = rate > 0 ? formatEta((total - current) / rate) : '';
+        setProgress({ current, total, eta });
         setStatus('running');
       },
       onComplete: (s) => {
@@ -416,6 +431,15 @@ export function SimulationView() {
             Runda {state?.currentRound ?? 0}/{state?.totalRounds ?? '?'}
             {isRunning && progress.total > 0 && ` · ${progress.current}/${progress.total} agentów`}
           </p>
+          {isRunning && progress.total > 0 && (
+            <div className="mt-2 space-y-1">
+              <Progress value={(progress.current / progress.total) * 100} className="h-1.5 w-64" />
+              <p className="text-xs text-[#52525b]">
+                {Math.round((progress.current / progress.total) * 100)}%
+                {progress.eta && ` · pozostało ~${progress.eta}`}
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center gap-2 relative">

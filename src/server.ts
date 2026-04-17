@@ -764,7 +764,7 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
   if (url.pathname === "/api/population/regenerate" && req.method === "POST") {
     try {
       const body = await readBody(req).then(JSON.parse).catch(() => ({}));
-      const size = Math.min(Math.max(Number(body.size ?? process.env.POPULATION_SIZE ?? 100), 10), 500);
+      const size = Math.min(Math.max(Number(body.size ?? process.env.POPULATION_SIZE ?? 7700), 10), 10000);
       const personas = await regeneratePersonas(size);
       invalidatePersonasCache();
       json(res, { success: true, count: personas.length });

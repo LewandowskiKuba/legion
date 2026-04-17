@@ -20,6 +20,7 @@ import type {
   CommunicationStyle,
   ProductCategory,
 } from "./schema.js";
+import { calibration } from "./calibration.js";
 
 // Losuje element z tablicy ważonej [wartość, waga]
 export function weightedRandom<T>(items: [T, number][]): T {
@@ -45,20 +46,17 @@ export function normalInt(mean: number, std: number, min: number, max: number): 
 // Demograficzne
 // ─────────────────────────────────────────────────────────────────────────────
 
-// Wiek: populacja 18–80 lat
-// Źródło: GUS BDL API – grupy 5-letnie ogółem (subj P2137), rok 2024
-//   18-24: 2 559K | 25-34: 4 485K | 35-44: 6 079K
-//   45-54: 5 527K | 55-64: 4 428K | 65-74: 4 663K | 75-80: ~1 609K
-// Łącznie populacja 18-80 = ~29.4M
+// Wiek: populacja 18–80 lat — wagi z bdl_snapshot.json (auto-kalibracja)
 export function sampleAge(): number {
+  const w = calibration.ageWeights;
   const group = weightedRandom<[number, number]>([
-    [[18, 24],  87],  //  8.7% – GUS 2024: 2 559K (18-19 estym. + 20-24)
-    [[25, 34], 153],  // 15.3% – GUS 2024: 4 485K (25-29 + 30-34)
-    [[35, 44], 207],  // 20.7% – GUS 2024: 6 079K – największa kohorta
-    [[45, 54], 188],  // 18.8% – GUS 2024: 5 527K
-    [[55, 64], 151],  // 15.1% – GUS 2024: 4 428K
-    [[65, 74], 159],  // 15.9% – GUS 2024: 4 663K (starzenie populacji PL)
-    [[75, 80],  55],  //  5.5% – GUS 2024: ~1 609K (75-79 + 1/5 × 80-84)
+    [[18, 24], w["18-24"]],
+    [[25, 34], w["25-34"]],
+    [[35, 44], w["35-44"]],
+    [[45, 54], w["45-54"]],
+    [[55, 64], w["55-64"]],
+    [[65, 74], w["65-74"]],
+    [[75, 80], w["75-80"]],
   ]);
   return group[0] + Math.floor(Math.random() * (group[1] - group[0] + 1));
 }
@@ -70,19 +68,14 @@ export function sampleGender(): Gender {
   ]);
 }
 
-// Wykształcenie: GUS NSP 2021 – cała populacja dorosłych PL (nie tylko aktywni zawodowo)
-//   Wyższe:                26.7%  (8.05M / 30.2M)
-//   Średnie + policealne:  37.3%  (11.27M) → secondary
-//   Zasadnicze zawodowe:   23.2%  (7.00M)  → vocational
-//   Podstawowe i niższe:   12.8%  (3.87M)  → primary
-// Uwaga: BAEL (aktywni zawodowo) zawyża wykształcenie wyższe do ~42%;
-//   NSP 2021 reprezentuje całą populację dorosłych (lepsze dla symulacji konsumentów)
+// Wykształcenie — wagi z bdl_snapshot.json (auto-kalibracja, źródło NSP 2021)
 export function sampleEducation(): EducationLevel {
+  const e = calibration.educationWeights;
   return weightedRandom<EducationLevel>([
-    ["primary",    13],  // 12.8% – NSP 2021: 3.87M
-    ["vocational", 23],  // 23.2% – NSP 2021: 7.00M
-    ["secondary",  37],  // 37.3% – NSP 2021: 11.27M (średnie + policealne)
-    ["higher",     27],  // 26.7% – NSP 2021: 8.05M (było 42% w BAEL)
+    ["primary",    e.primary],
+    ["vocational", e.vocational],
+    ["secondary",  e.secondary],
+    ["higher",     e.higher],
   ]);
 }
 
@@ -112,12 +105,13 @@ export function sampleEducationForAge(age: number): EducationLevel {
       ["higher",      20],
     ]);
   }
-  // 26+: pełna populacja GUS NSP 2021
+  // 26+: pełna populacja GUS NSP 2021 (z kalibracji)
+  const e = calibration.educationWeights;
   return weightedRandom<EducationLevel>([
-    ["primary",    13],
-    ["vocational", 23],
-    ["secondary",  37],
-    ["higher",     27],
+    ["primary",    e.primary],
+    ["vocational", e.vocational],
+    ["secondary",  e.secondary],
+    ["higher",     e.higher],
   ]);
 }
 
@@ -137,28 +131,12 @@ export function sampleSettlementType(): SettlementType {
   ]);
 }
 
-// Wagi regionalne: GUS BDL API var 72305 – ludność wg województw, rok 2024
-// Kalibracja: scripts/calibrate-from-bdl.ts, snapshot 2026-04
+// Wagi regionalne — z bdl_snapshot.json (auto-kalibracja)
 export function sampleRegion(): Region {
-  return weightedRandom<Region>([
-    ["mazowieckie",         15],   // 14.7% – 5.51M
-    ["slaskie",             11],   // 11.4% – 4.29M
-    ["wielkopolskie",        9],   //  9.3% – 3.48M
-    ["malopolskie",          9],   //  9.1% – 3.43M
-    ["dolnoslaskie",         8],   //  7.7% – 2.87M
-    ["lodzkie",              6],   //  6.3% – 2.35M
-    ["pomorskie",            6],   //  6.3% – 2.36M
-    ["kujawsko-pomorskie",   5],   //  5.3% – 1.98M
-    ["lubelskie",            5],   //  5.3% – 2.00M
-    ["podkarpackie",         5],   //  5.5% – 2.06M  ↓ korekta z 6
-    ["zachodniopomorskie",   4],   //  4.3% – 1.62M
-    ["warminsko-mazurskie",  4],   //  3.6% – 1.35M
-    ["swietokrzyskie",       3],   //  3.1% – 1.16M
-    ["podlaskie",            3],   //  3.0% – 1.13M
-    ["opolskie",             3],   //  2.5% – 0.93M  ↑ korekta z 2
-    ["lubuskie",             2],   //  2.6% – 0.97M  ↓ korekta z 3
-                                   // razem ~98%
-  ]);
+  const r = calibration.regionWeights;
+  return weightedRandom<Region>(
+    Object.entries(r).map(([region, w]) => [region as Region, w])
+  );
 }
 
 export function sampleHousehold(age: number, gender: Gender): HouseholdType {
