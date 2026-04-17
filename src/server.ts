@@ -18,6 +18,7 @@ import { simulationStore } from "./simulation/stateStore.js";
 import type { SimulationConfig, SimulationEventType, Platform } from "./simulation/schema.js";
 import { getCachedPersonas, regeneratePersonas, invalidatePersonasCache } from "./db/personas.js";
 import { fetchRelevantMarkets, getCachedMarkets, getCacheAge } from "./polymarket/index.js";
+import { refreshDigests, getDigestCache, getDigestStats } from "./news/digest.js";
 
 const PORT = parseInt(process.env.PORT ?? "3000", 10);
 const DATA_DIR = join(process.cwd(), "data");
@@ -558,6 +559,41 @@ Napisz analizę po polsku. Wyjaśnij przyczyny wyników (np. niska świadomość
     return;
   }
 
+  // ── API: News — ręczne odświeżenie digestów ──────────────────────────────
+  if (url.pathname === "/api/news/refresh" && req.method === "POST") {
+    try {
+      const t0 = Date.now();
+      const cache = await refreshDigests();
+      json(res, {
+        ok: true,
+        generatedAt: cache.generatedAt,
+        segments: Object.keys(cache.segments).length,
+        sourcesOk: cache.sourcesOk,
+        totalArticles: cache.totalArticles,
+        durationMs: Date.now() - t0,
+      });
+    } catch (err: any) {
+      json(res, { error: String(err.message ?? err) }, 500);
+    }
+    return;
+  }
+
+  // ── API: News — status cache ──────────────────────────────────────────────
+  if (url.pathname === "/api/news/status" && req.method === "GET") {
+    const stats = getDigestStats();
+    if (!stats) { json(res, { ok: false, message: "Brak digestu — uruchom POST /api/news/refresh" }); return; }
+    json(res, { ok: true, ...stats });
+    return;
+  }
+
+  // ── API: News — pełny digest (debug) ─────────────────────────────────────
+  if (url.pathname === "/api/news/digest" && req.method === "GET") {
+    const cache = getDigestCache();
+    if (!cache) { json(res, { error: "Brak digestu" }, 404); return; }
+    json(res, cache);
+    return;
+  }
+
   // ── API: Stan symulacji ───────────────────────────────────────────────────
   const simStateMatch = url.pathname.match(/^\/api\/simulation\/([^/]+)$/);
   if (simStateMatch && req.method === "GET") {
@@ -711,6 +747,21 @@ Napisz analizę po polsku. Wyjaśnij przyczyny wyników (np. niska świadomość
   }
 });
 
+// ─── News cron (odświeżanie co 24h) ──────────────────────────────────────────
+
+const NEWS_REFRESH_INTERVAL_MS = 24 * 60 * 60 * 1000; // 24h
+
+function scheduleNewsRefresh() {
+  // Pierwsze uruchomienie po 30s od startu (nie blokuje inicjalizacji serwera)
+  setTimeout(() => {
+    refreshDigests().catch((e) => console.warn("[news] Auto-refresh błąd:", e));
+    // Kolejne co 24h
+    setInterval(() => {
+      refreshDigests().catch((e) => console.warn("[news] Auto-refresh błąd:", e));
+    }, NEWS_REFRESH_INTERVAL_MS);
+  }, 30_000);
+}
+
 server.listen(PORT, () => {
   console.log(`\n◆ We Are Legion`);
   console.log(`  http://localhost:${PORT}\n`);
@@ -718,4 +769,6 @@ server.listen(PORT, () => {
   fetchRelevantMarkets().then((m) => {
     if (m.length > 0) console.log(`  ◇ Polymarket: załadowano ${m.length} rynków`);
   }).catch(() => {});
+  scheduleNewsRefresh();
+  console.log("  ◇ News: auto-refresh zaplanowany (start +30s, cykl 24h)");
 });

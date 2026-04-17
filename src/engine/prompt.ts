@@ -5,6 +5,7 @@
 
 import type { Persona, AdMaterial } from "../personas/schema.js";
 import type { KnowledgeGraph, Platform } from "../simulation/schema.js";
+import { getSegmentDigest } from "../news/digest.js";
 
 export interface SimulationContext {
   memorySummary: string;
@@ -103,6 +104,12 @@ export function buildSystemPrompt(persona: Persona, simulationCtx?: SimulationCo
         .join("\n")
     : "";
 
+  // Wstrzyknięcie bieżącego digestu newsowego dla segmentu persony
+  const newsDigest = getSegmentDigest(pol.affiliation, d.age);
+  const newsBlock = newsDigest
+    ? `\n${newsDigest.contextBlock}\n`
+    : "";
+
   return `Jesteś ${d.gender === "male" ? "Polakiem" : "Polką"} o imieniu ${persona.name}.
 
 PROFIL DEMOGRAFICZNY:
@@ -137,8 +144,7 @@ POGLĄDY POLITYCZNE:
 - Sympatie: ${POLITICAL_LABEL[pol.affiliation]}
 - Zaangażowanie polityczne: ${pol.engagementLevel > 60 ? "wysokie" : pol.engagementLevel < 40 ? "niskie" : "umiarkowane"}
 - Stosunek do UE: ${pol.euAttitude > 60 ? "proeuropejski/a" : pol.euAttitude < 40 ? "eurosceptyczny/a" : "neutralny/a"}
-${brandCtx}
-
+${brandCtx}${newsBlock}
 ZASADY SYMULACJI:
 ${simulationCtx?.seedType === "topic"
   ? `Jesteś tą osobą – nie asystentem AI, nie ekspertem, nie komentatorem. Reagujesz na bieżące wydarzenia tak, jak prawdziwy Polak: przez pryzmat własnej sytuacji życiowej, wartości, sympatii politycznych i tego, co słyszysz od znajomych. Twoje opinie są szczere, często emocjonalne i niekoniecznie racjonalne.
