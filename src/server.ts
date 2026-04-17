@@ -755,6 +755,20 @@ const server = createServer(async (req: IncomingMessage, res: ServerResponse) =>
       incomeLevel: population.reduce((acc, p) => { acc[p.financial.incomeLevel] = (acc[p.financial.incomeLevel] ?? 0) + 1; return acc; }, {} as Record<string, number>),
       education: population.reduce((acc, p) => { acc[p.demographic.education] = (acc[p.demographic.education] ?? 0) + 1; return acc; }, {} as Record<string, number>),
       political: population.reduce((acc, p) => { acc[p.political.affiliation] = (acc[p.political.affiliation] ?? 0) + 1; return acc; }, {} as Record<string, number>),
+      ageBrackets: (() => {
+        const brackets: Record<string, number> = { "18-24": 0, "25-34": 0, "35-44": 0, "45-54": 0, "55-64": 0, "65-74": 0, "75+": 0 };
+        for (const p of population) {
+          const a = p.demographic.age;
+          if (a <= 24) brackets["18-24"]++;
+          else if (a <= 34) brackets["25-34"]++;
+          else if (a <= 44) brackets["35-44"]++;
+          else if (a <= 54) brackets["45-54"]++;
+          else if (a <= 64) brackets["55-64"]++;
+          else if (a <= 74) brackets["65-74"]++;
+          else brackets["75+"]++;
+        }
+        return brackets;
+      })(),
     };
     json(res, stats);
     return;

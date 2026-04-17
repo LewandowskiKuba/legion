@@ -1,20 +1,47 @@
 import { useEffect, useState } from 'react';
-import { Users, Info } from 'lucide-react';
-import { getPopulation, type PopulationStats } from '../utils/api';
-import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { Users, Info, RefreshCw } from 'lucide-react';
+import { getPopulation, type PopulationStats, BASE } from '../utils/api';
+import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip } from 'recharts';
+
+async function regeneratePopulation(size: number): Promise<{ count: number }> {
+  const res = await fetch(`${BASE}/api/population/regenerate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ size }),
+  });
+  if (!res.ok) throw new Error(await res.text());
+  return res.json();
+}
 
 export function Population() {
   const [population, setPopulation] = useState<PopulationStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [regenerating, setRegenerating] = useState(false);
+  const [regenMsg, setRegenMsg] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function loadData() {
-      const data = await getPopulation();
-      setPopulation(data);
-      setLoading(false);
+  async function loadData() {
+    setLoading(true);
+    const data = await getPopulation();
+    setPopulation(data);
+    setLoading(false);
+  }
+
+  useEffect(() => { loadData(); }, []);
+
+  async function handleRegenerate() {
+    if (!confirm('Wygenerować nową populację 7 700 agentów? Trwa to kilkanaście sekund.')) return;
+    setRegenerating(true);
+    setRegenMsg(null);
+    try {
+      const { count } = await regeneratePopulation(7700);
+      setRegenMsg(`✓ Wygenerowano ${count.toLocaleString('pl-PL')} agentów`);
+      await loadData();
+    } catch (err: any) {
+      setRegenMsg(`Błąd: ${err.message}`);
+    } finally {
+      setRegenerating(false);
     }
-    loadData();
-  }, []);
+  }
 
   if (loading || !population) {
     return (
@@ -53,22 +80,29 @@ export function Population() {
     { segment: 'Prawica', value: population.politicalPreferences.right },
   ];
 
-  const ageDistribution = [
-    { segment: '18-24', value: 12 },
-    { segment: '25-34', value: 22 },
-    { segment: '35-44', value: 24 },
-    { segment: '45-54', value: 20 },
-    { segment: '55-64', value: 14 },
-    { segment: '65+', value: 8 },
-  ];
-
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div>
-        <h2 className="text-2xl font-semibold text-white">Populacja syntetyczna</h2>
-        <p className="text-sm text-[#a1a1aa] mt-1">Rozkłady demograficzne i socjodemograficzne próby badawczej</p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-2xl font-semibold text-white">Populacja syntetyczna</h2>
+          <p className="text-sm text-[#a1a1aa] mt-1">Rozkłady demograficzne i socjodemograficzne próby badawczej</p>
+        </div>
+        <button
+          onClick={handleRegenerate}
+          disabled={regenerating}
+          className="flex items-center gap-2 px-4 py-2 bg-[#27272a] hover:bg-[#3f3f46] disabled:opacity-50 text-white rounded-lg text-sm transition-colors"
+        >
+          <RefreshCw className={`w-4 h-4 ${regenerating ? 'animate-spin' : ''}`} />
+          {regenerating ? 'Generuję…' : 'Regeneruj populację'}
+        </button>
       </div>
+
+      {regenMsg && (
+        <div className={`px-4 py-3 rounded-lg text-sm ${regenMsg.startsWith('✓') ? 'bg-green-900/20 border border-green-800/40 text-green-400' : 'bg-red-900/20 border border-red-800/40 text-red-400'}`}>
+          {regenMsg}
+        </div>
+      )}
 
       {/* Calibration Info */}
       <div className="bg-[#6366f1]/10 border border-[#6366f1]/20 rounded-xl p-5">
@@ -77,11 +111,11 @@ export function Population() {
           <div>
             <h3 className="text-sm font-semibold text-white mb-1">Kalibracja populacji</h3>
             <p className="text-sm text-[#a1a1aa]">
-              Dane kalibracyjne: GUS BAEL 2023, CBOS 2025, 4P/Media Republic 2024
+              Dane kalibracyjne: GUS BDL 2024, NSP 2021, CBOS 2025
             </p>
             <p className="text-xs text-[#a1a1aa] mt-2">
-              Syntetyczna populacja została skalibrowana na podstawie rzeczywistych rozkładów demograficznych i społecznych w Polsce.
-              Próba n=50 zapewnia reprezentatywność dla głównych segmentów badawczych.
+              Syntetyczna populacja skalibrowana na podstawie rzeczywistych rozkładów demograficznych Polski.
+              Próba n={population.total.toLocaleString('pl-PL')} zapewnia reprezentatywność dla głównych segmentów badawczych.
             </p>
           </div>
         </div>
@@ -94,7 +128,7 @@ export function Population() {
             <Users className="w-5 h-5 text-[#6366f1]" />
             <span className="text-sm text-[#a1a1aa]">Wielkość próby</span>
           </div>
-          <div className="text-3xl font-bold text-white">n={population.total}</div>
+          <div className="text-3xl font-bold text-white">n={population.total.toLocaleString('pl-PL')}</div>
         </div>
 
         <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-5">
@@ -103,32 +137,13 @@ export function Population() {
         </div>
 
         <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-5">
-          <div className="text-sm text-[#a1a1aa] mb-2">Mediana dochodu</div>
-          <div className="text-3xl font-bold text-white">5 200 zł</div>
+          <div className="text-sm text-[#a1a1aa] mb-2">Płeć K/M</div>
+          <div className="text-3xl font-bold text-white">{population.genderDistribution.female}% / {population.genderDistribution.male}%</div>
         </div>
 
         <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-5">
           <div className="text-sm text-[#a1a1aa] mb-2">Wykształcenie wyższe</div>
           <div className="text-3xl font-bold text-white">{population.education.higher}%</div>
-        </div>
-      </div>
-
-      {/* Age Distribution */}
-      <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-6">
-        <h3 className="text-lg font-semibold text-white mb-4">Rozkład wiekowy</h3>
-        <div className="h-64">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={ageDistribution}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-              <XAxis dataKey="segment" tick={{ fill: '#a1a1aa' }} />
-              <YAxis tick={{ fill: '#a1a1aa' }} label={{ value: '%', angle: -90, position: 'insideLeft', fill: '#a1a1aa' }} />
-              <Tooltip
-                contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '8px' }}
-                labelStyle={{ color: '#fff' }}
-              />
-              <Bar dataKey="value" fill="#6366f1" radius={[8, 8, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
         </div>
       </div>
 
@@ -139,24 +154,12 @@ export function Population() {
           <div className="h-64 flex items-center">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie
-                  data={genderData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
+                <Pie data={genderData} cx="50%" cy="50%" labelLine={false}
                   label={({ name, value }) => `${name} ${value}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {genderData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
+                  outerRadius={80} dataKey="value">
+                  {genderData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                 </Pie>
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '8px' }}
-                  labelStyle={{ color: '#fff' }}
-                />
+                <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '8px' }} labelStyle={{ color: '#fff' }} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -167,24 +170,12 @@ export function Population() {
           <div className="h-64 flex items-center">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie
-                  data={locationData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
+                <Pie data={locationData} cx="50%" cy="50%" labelLine={false}
                   label={({ name, value }) => `${name} ${value}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {locationData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
+                  outerRadius={80} dataKey="value">
+                  {locationData.map((entry, i) => <Cell key={i} fill={entry.color} />)}
                 </Pie>
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '8px' }}
-                  labelStyle={{ color: '#fff' }}
-                />
+                <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '8px' }} labelStyle={{ color: '#fff' }} />
               </PieChart>
             </ResponsiveContainer>
           </div>
@@ -193,64 +184,43 @@ export function Population() {
 
       {/* Income, Education, Political */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-5">
-          <h3 className="font-semibold text-white mb-4 text-sm">Dochód gospodarstwa domowego</h3>
-          <div className="space-y-3">
-            {incomeData.map((item, i) => (
-              <div key={i}>
-                <div className="flex items-center justify-between text-xs mb-1.5">
-                  <span className="text-[#a1a1aa]">{item.segment}</span>
-                  <span className="text-white font-medium">{item.value}%</span>
+        {[
+          { title: 'Dochód', data: incomeData, color: '#10b981' },
+          { title: 'Wykształcenie', data: educationData, color: '#6366f1' },
+          { title: 'Preferencje polityczne', data: politicalData, color: '#f59e0b' },
+        ].map(({ title, data, color }) => (
+          <div key={title} className="bg-[#18181b] border border-[#27272a] rounded-xl p-5">
+            <h3 className="font-semibold text-white mb-4 text-sm">{title}</h3>
+            <div className="space-y-3">
+              {data.map((item, i) => (
+                <div key={i}>
+                  <div className="flex items-center justify-between text-xs mb-1.5">
+                    <span className="text-[#a1a1aa]">{item.segment}</span>
+                    <span className="text-white font-medium">{item.value}%</span>
+                  </div>
+                  <div className="h-2 bg-[#27272a] rounded-full overflow-hidden">
+                    <div className="h-full rounded-full transition-all" style={{ width: `${item.value}%`, backgroundColor: color }} />
+                  </div>
                 </div>
-                <div className="h-2 bg-[#27272a] rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-[#10b981] rounded-full transition-all"
-                    style={{ width: `${item.value}%` }}
-                  />
-                </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
+        ))}
+      </div>
 
-        <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-5">
-          <h3 className="font-semibold text-white mb-4 text-sm">Wykształcenie</h3>
-          <div className="space-y-3">
-            {educationData.map((item, i) => (
-              <div key={i}>
-                <div className="flex items-center justify-between text-xs mb-1.5">
-                  <span className="text-[#a1a1aa]">{item.segment}</span>
-                  <span className="text-white font-medium">{item.value}%</span>
-                </div>
-                <div className="h-2 bg-[#27272a] rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-[#6366f1] rounded-full transition-all"
-                    style={{ width: `${item.value}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-5">
-          <h3 className="font-semibold text-white mb-4 text-sm">Preferencje polityczne</h3>
-          <div className="space-y-3">
-            {politicalData.map((item, i) => (
-              <div key={i}>
-                <div className="flex items-center justify-between text-xs mb-1.5">
-                  <span className="text-[#a1a1aa]">{item.segment}</span>
-                  <span className="text-white font-medium">{item.value}%</span>
-                </div>
-                <div className="h-2 bg-[#27272a] rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-[#f59e0b] rounded-full transition-all"
-                    style={{ width: `${item.value}%` }}
-                  />
-                </div>
-              </div>
-            ))}
-          </div>
+      {/* Age distribution from API */}
+      <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-6">
+        <h3 className="text-lg font-semibold text-white mb-4">Rozkład wiekowy</h3>
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={population.ageDistribution ?? []}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+              <XAxis dataKey="segment" tick={{ fill: '#a1a1aa' }} />
+              <YAxis tick={{ fill: '#a1a1aa' }} label={{ value: '%', angle: -90, position: 'insideLeft', fill: '#a1a1aa' }} />
+              <Tooltip contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '8px' }} labelStyle={{ color: '#fff' }} />
+              <Bar dataKey="value" fill="#6366f1" radius={[8, 8, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
 
@@ -261,17 +231,18 @@ export function Population() {
           <div>
             <h4 className="text-[#a1a1aa] mb-2 font-medium">Źródła danych kalibracyjnych:</h4>
             <ul className="space-y-1 text-[#71717a]">
-              <li>• GUS Bilans kapitału ludzkiego 2023 (wiek, wykształcenie)</li>
-              <li>• CBOS Preferencje społeczne 2025 (postawy, polityka)</li>
-              <li>• 4P Research / Media Republic 2024 (zachowania konsumenckie)</li>
+              <li>• GUS BDL API 2024 – wiek, region, zamieszkanie</li>
+              <li>• GUS NSP 2021 – wykształcenie, typy gospodarstw</li>
+              <li>• CBOS BS/9/2025 – preferencje polityczne</li>
+              <li>• Gemius/PBI Megapanel 2024 Q3 – nawyki medialne</li>
             </ul>
           </div>
           <div>
             <h4 className="text-[#a1a1aa] mb-2 font-medium">Metodologia syntezy:</h4>
             <ul className="space-y-1 text-[#71717a]">
               <li>• Stratyfikowane losowanie z wagami populacyjnymi</li>
-              <li>• Kalibracja wielowymiarowa (age × gender × location)</li>
-              <li>• Generatywny model agent-based dla zachowań</li>
+              <li>• Kalibracja wielowymiarowa (wiek × płeć × region × dochód)</li>
+              <li>• Auto-aktualizacja wag z bdl_snapshot.json przy każdym restarcie</li>
             </ul>
           </div>
         </div>
