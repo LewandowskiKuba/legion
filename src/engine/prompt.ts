@@ -33,13 +33,20 @@ const SETTLEMENT_LABEL: Record<string, string> = {
   metropolis: "metropolia",
 };
 
-const INCOME_LABEL: Record<string, string> = {
-  below_2000: "poniżej 2 000 PLN netto/mies.",
-  "2000_3500": "2 000–3 500 PLN netto/mies.",
-  "3500_5000": "3 500–5 000 PLN netto/mies.",
-  "5000_8000": "5 000–8 000 PLN netto/mies.",
-  above_8000: "powyżej 8 000 PLN netto/mies.",
-};
+import { calibration } from "../personas/calibration.js";
+
+function buildIncomeLabel(): Record<string, string> {
+  const t = calibration.incomeThresholds;
+  return {
+    below_2000: `poniżej ${t.below.toLocaleString("pl-PL")} PLN netto/mies.`,
+    "2000_3500": `${t.below.toLocaleString("pl-PL")}–${t.lower.toLocaleString("pl-PL")} PLN netto/mies.`,
+    "3500_5000": `${t.lower.toLocaleString("pl-PL")}–${t.middle.toLocaleString("pl-PL")} PLN netto/mies.`,
+    "5000_8000": `${t.middle.toLocaleString("pl-PL")}–${t.upper.toLocaleString("pl-PL")} PLN netto/mies.`,
+    above_8000:  `powyżej ${t.upper.toLocaleString("pl-PL")} PLN netto/mies.`,
+  };
+}
+
+const INCOME_LABEL = buildIncomeLabel();
 
 const HOUSEHOLD_LABEL: Record<string, string> = {
   single: "singiel/singielka",
