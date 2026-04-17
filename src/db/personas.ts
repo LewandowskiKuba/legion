@@ -16,7 +16,7 @@ import type { Persona } from "../personas/schema.js";
 
 const DATA_DIR = join(process.cwd(), "data");
 const POPULATION_PATH = join(DATA_DIR, "population.json");
-const DEFAULT_SIZE = parseInt(process.env.POPULATION_SIZE ?? "7700", 10);
+const DEFAULT_SIZE = parseInt(process.env.POPULATION_SIZE ?? "7000", 10);
 
 // ── Załaduj persony (hierarchia fallbacków) ───────────────────────────────────
 

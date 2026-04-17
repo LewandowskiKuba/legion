@@ -46,7 +46,7 @@ export function Population() {
   if (loading || !population) {
     return (
       <div className="flex items-center justify-center h-96">
-        <div className="text-[#a1a1aa]">Ładowanie danych populacji...</div>
+        <div className="text-[#c0c0cc]">Ładowanie danych populacji...</div>
       </div>
     );
   }
@@ -123,16 +123,16 @@ export function Population() {
 
       {/* Overview Stats */}
       <div className="grid grid-cols-4 gap-4">
-        <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-5">
+        <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-5">
           <div className="flex items-center gap-3 mb-2">
             <Users className="w-5 h-5 text-[#6366f1]" />
-            <span className="text-sm text-[#a1a1aa]">Wielkość próby</span>
+            <span className="text-sm text-[#c0c0cc]">Wielkość próby</span>
           </div>
           <div className="text-3xl font-bold text-white">n={population.total.toLocaleString('pl-PL')}</div>
         </div>
 
-        <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-5">
-          <div className="text-sm text-[#a1a1aa] mb-2">Średni wiek</div>
+        <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-5">
+          <div className="text-sm text-[#c0c0cc] mb-2">Średni wiek</div>
           <div className="text-3xl font-bold text-white">{population.averageAge} lat</div>
         </div>
 
@@ -141,15 +141,15 @@ export function Population() {
           <div className="text-3xl font-bold text-white">{population.genderDistribution.female}% / {population.genderDistribution.male}%</div>
         </div>
 
-        <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-5">
-          <div className="text-sm text-[#a1a1aa] mb-2">Wykształcenie wyższe</div>
+        <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-5">
+          <div className="text-sm text-[#c0c0cc] mb-2">Wykształcenie wyższe</div>
           <div className="text-3xl font-bold text-white">{population.education.higher}%</div>
         </div>
       </div>
 
       {/* Gender & Location */}
       <div className="grid grid-cols-2 gap-6">
-        <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-6">
+        <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-6">
           <h3 className="text-lg font-semibold text-white mb-4">Płeć</h3>
           <div className="h-64 flex items-center">
             <ResponsiveContainer width="100%" height="100%">
@@ -165,7 +165,7 @@ export function Population() {
           </div>
         </div>
 
-        <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-6">
+        <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-6">
           <h3 className="text-lg font-semibold text-white mb-4">Typ miejscowości</h3>
           <div className="h-64 flex items-center">
             <ResponsiveContainer width="100%" height="100%">
@@ -225,7 +225,7 @@ export function Population() {
       </div>
 
       {/* Additional Info */}
-      <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-5">
+      <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-5">
         <h3 className="font-semibold text-white mb-3 text-sm">Dodatkowe informacje</h3>
         <div className="grid grid-cols-2 gap-8 text-sm">
           <div>
@@ -238,8 +238,8 @@ export function Population() {
             </ul>
           </div>
           <div>
-            <h4 className="text-[#a1a1aa] mb-2 font-medium">Metodologia syntezy:</h4>
-            <ul className="space-y-1 text-[#71717a]">
+            <h4 className="text-[#c0c0cc] mb-2 font-medium">Metodologia syntezy:</h4>
+            <ul className="space-y-1 text-[#9898a8]">
               <li>• Stratyfikowane losowanie z wagami populacyjnymi</li>
               <li>• Kalibracja wielowymiarowa (wiek × płeć × region × dochód)</li>
               <li>• Auto-aktualizacja wag z bdl_snapshot.json przy każdym restarcie</li>

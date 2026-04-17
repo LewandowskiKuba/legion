@@ -600,12 +600,75 @@ export async function startSimulation(data: SimulationFormData): Promise<string>
   return simulationId as string;
 }
 
+// Stary helper — zostawiony dla kompatybilności, używaj startAbTest / startSegmentCompare
 export async function startAbSimulation(
   dataA: AdSimulationFormData,
   dataB: AdSimulationFormData
 ): Promise<{ idA: string; idB: string }> {
   const [idA, idB] = await Promise.all([startSimulation(dataA), startSimulation(dataB)]);
   return { idA, idB };
+}
+
+// ─── Typy pomocnicze ─────────────────────────────────────────────────────────
+
+export interface PopFilter {
+  gender?: string;
+  ageMin?: number;
+  ageMax?: number;
+  settlement?: string;
+  income?: string;
+}
+
+export interface AbTestRequest {
+  studyName?: string;
+  adA: { headline?: string; body?: string; cta?: string; brand?: string; category?: string; context?: string; creativeId?: string };
+  adB: { headline?: string; body?: string; cta?: string; brand?: string; category?: string; context?: string; creativeId?: string };
+  filter?: PopFilter;
+  totalRounds: number;
+  platform: "facebook" | "twitter";
+  activeAgentRatio?: number;
+}
+
+export interface SegmentCompareRequest {
+  studyName?: string;
+  ad: { headline?: string; body?: string; cta?: string; brand?: string; category?: string; context?: string; creativeId?: string };
+  segmentA: { label: string; filter: PopFilter };
+  segmentB: { label: string; filter: PopFilter };
+  totalRounds: number;
+  platform: "facebook" | "twitter";
+  activeAgentRatio?: number;
+}
+
+// Test A/B: dwie kreacje, TA SAMA losowo dobrana populacja
+export async function startAbTest(
+  req: AbTestRequest
+): Promise<{ idA: string; idB: string; populationSize: number }> {
+  const res = await fetch(`${BASE}/api/simulation/ab`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(req),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as any).error ?? "Błąd startu testu A/B");
+  }
+  return res.json();
+}
+
+// Porównanie segmentów: jedna kreacja, DWA RÓŻNE segmenty demograficzne
+export async function startSegmentCompare(
+  req: SegmentCompareRequest
+): Promise<{ idA: string; idB: string; sizeA: number; sizeB: number }> {
+  const res = await fetch(`${BASE}/api/simulation/segment-compare`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(req),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as any).error ?? "Błąd startu porównania segmentów");
+  }
+  return res.json();
 }
 
 export async function getSimulation(id: string): Promise<any> {

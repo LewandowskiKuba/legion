@@ -60,7 +60,7 @@ export function Results() {
     return (
       <div className="flex items-center justify-center h-96 gap-3">
         <Loader2 className="w-5 h-5 text-[#6366f1] animate-spin" />
-        <div className="text-[#a1a1aa]">Ładowanie wyników...</div>
+        <div className="text-[#c0c0cc]">Ładowanie wyników...</div>
       </div>
     );
   }
@@ -69,7 +69,7 @@ export function Results() {
     return (
       <div className="flex flex-col items-center justify-center h-96 gap-3">
         <div className="text-white font-medium">Nie znaleziono wyników</div>
-        <div className="text-[#a1a1aa] text-sm">To badanie nie istnieje lub zostało usunięte.</div>
+        <div className="text-[#c0c0cc] text-sm">To badanie nie istnieje lub zostało usunięte.</div>
         <Link to="/studies" className="text-[#6366f1] text-sm hover:underline mt-2">← Wróć do historii</Link>
       </div>
     );
@@ -105,12 +105,12 @@ export function Results() {
       <div className="flex items-start justify-between">
         <div>
           <h2 className="text-2xl font-semibold text-white">{result.campaignName}</h2>
-          <p className="text-sm text-[#a1a1aa] mt-1">
+          <p className="text-sm text-[#c0c0cc] mt-1">
             {new Date(result.date).toLocaleDateString('pl-PL', { year: 'numeric', month: 'long', day: 'numeric' })}
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <Button onClick={handleExportPDF} disabled={pdfLoading} variant="outline" className="border-[#27272a] text-white hover:bg-[#27272a] rounded-lg">
+          <Button onClick={handleExportPDF} disabled={pdfLoading} variant="outline" className="border-[#38383f] text-white hover:bg-[#38383f] rounded-lg">
             {pdfLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Download className="w-4 h-4 mr-2" />}
             {pdfLoading ? 'Generowanie...' : 'Pobierz PDF'}
           </Button>
@@ -125,13 +125,13 @@ export function Results() {
 
       {/* Executive Summary */}
       {(summaryLoading || summary) && (
-        <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-5">
+        <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-5">
           <div className="flex items-center gap-2 mb-3">
             <Sparkles className="w-4 h-4 text-[#6366f1]" />
             <h3 className="text-sm font-semibold text-white">Executive Summary</h3>
           </div>
           {summaryLoading ? (
-            <div className="flex items-center gap-2 text-[#a1a1aa] text-sm">
+            <div className="flex items-center gap-2 text-[#c0c0cc] text-sm">
               <Loader2 className="w-4 h-4 animate-spin" />
               <span>Generuję podsumowanie...</span>
             </div>
@@ -177,21 +177,21 @@ export function Results() {
 
       {/* Profil metryczny + Rozkłady Bayessowskie */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-5">
+        <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-5">
           <h3 className="text-sm font-semibold text-white mb-3">Profil metryczny</h3>
           <div className="h-48">
             <ResponsiveContainer width="100%" height="100%">
               <RadarChart data={radarData}>
-                <PolarGrid stroke="#27272a" />
-                <PolarAngleAxis dataKey="metric" tick={{ fill: '#a1a1aa', fontSize: 10 }} />
-                <PolarRadiusAxis angle={90} domain={[0, 10]} tick={{ fill: '#a1a1aa', fontSize: 9 }} />
+                <PolarGrid stroke="#38383f" />
+                <PolarAngleAxis dataKey="metric" tick={{ fill: '#c0c0cc', fontSize: 10 }} />
+                <PolarRadiusAxis angle={90} domain={[0, 10]} tick={{ fill: '#c0c0cc', fontSize: 9 }} />
                 <Radar name="Score" dataKey="value" stroke="#6366f1" fill="#6366f1" fillOpacity={0.3} strokeWidth={2} />
               </RadarChart>
             </ResponsiveContainer>
           </div>
         </div>
-        <div className="col-span-2 bg-[#18181b] border border-[#27272a] rounded-xl p-5">
-          <h3 className="text-sm font-semibold text-white mb-3">Rozkład odpowiedzi populacji <span className="text-[#52525b] font-normal text-xs">(90% HDI zacieniowane)</span></h3>
+        <div className="col-span-2 bg-[#1f1f25] border border-[#38383f] rounded-xl p-5">
+          <h3 className="text-sm font-semibold text-white mb-3">Rozkład odpowiedzi populacji <span className="text-[#6b6b78] font-normal text-xs">(90% HDI zacieniowane)</span></h3>
           <BayesianPanel result={result} />
         </div>
       </div>
@@ -217,35 +217,35 @@ export function Results() {
 
       {/* Insights Grid */}
       <div className="grid grid-cols-3 gap-4">
-        <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-5">
+        <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-5">
           <div className="flex items-center gap-2 mb-4">
             <MessageCircle className="w-5 h-5 text-[#6366f1]" />
             <h3 className="font-semibold text-white">Top Recall</h3>
           </div>
           <ul className="space-y-2">
             {result.topRecall.map((item, i) => (
-              <li key={i} className="text-sm text-[#a1a1aa] pl-4 border-l-2 border-[#27272a]">
+              <li key={i} className="text-sm text-[#c0c0cc] pl-4 border-l-2 border-[#38383f]">
                 {item}
               </li>
             ))}
           </ul>
         </div>
 
-        <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-5">
+        <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-5">
           <div className="flex items-center gap-2 mb-4">
             <Share2 className="w-5 h-5 text-[#10b981]" />
             <h3 className="font-semibold text-white">WOM Quotes</h3>
           </div>
           <ul className="space-y-3">
             {result.womQuotes.map((quote, i) => (
-              <li key={i} className="text-sm text-[#a1a1aa] italic">
+              <li key={i} className="text-sm text-[#c0c0cc] italic">
                 {quote}
               </li>
             ))}
           </ul>
         </div>
 
-        <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-5">
+        <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-5">
           <div className="flex items-center gap-2 mb-4">
             <AlertTriangle className="w-5 h-5 text-[#f59e0b]" />
             <h3 className="font-semibold text-white">Sygnały odrzucenia</h3>
@@ -262,7 +262,7 @@ export function Results() {
 
       {/* Social Spread */}
       {result.socialSpread && (
-        <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-6">
+        <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-6">
           <div className="flex items-center gap-2 mb-6">
             <div className="w-3 h-3 rounded-full bg-[#7c3aed]" />
             <h3 className="text-lg font-semibold text-white">Social Spread Analysis</h3>
@@ -271,25 +271,25 @@ export function Results() {
           <div className="grid grid-cols-2 gap-8">
             <div>
               <div className="mb-4">
-                <div className="text-sm text-[#a1a1aa] mb-2">Viral Score</div>
+                <div className="text-sm text-[#c0c0cc] mb-2">Viral Score</div>
                 <div className="text-5xl font-bold text-[#7c3aed]">{result.socialSpread.viralScore.toFixed(0)}</div>
               </div>
 
               <div className="space-y-3 mt-6">
                 {result.socialSpread.chains.map((chain, i) => (
-                  <div key={i} className="bg-[#0f0f11] rounded-lg p-4 border border-[#27272a]">
+                  <div key={i} className="bg-[#0f0f11] rounded-lg p-4 border border-[#38383f]">
                     <div className="flex items-center justify-between mb-2">
                       <span className="text-sm font-medium text-white">Level {chain.depth}</span>
-                      <span className="text-xs text-[#a1a1aa]">Reach: {chain.reach}</span>
+                      <span className="text-xs text-[#c0c0cc]">Reach: {chain.reach}</span>
                     </div>
                     <div className="flex items-center gap-2">
-                      <div className="flex-1 h-2 bg-[#27272a] rounded-full overflow-hidden">
+                      <div className="flex-1 h-2 bg-[#38383f] rounded-full overflow-hidden">
                         <div
                           className="h-full bg-[#7c3aed] rounded-full transition-all"
                           style={{ width: `${(chain.engagement / 10) * 100}%` }}
                         />
                       </div>
-                      <span className="text-xs text-[#a1a1aa] w-12 text-right">{chain.engagement.toFixed(1)}</span>
+                      <span className="text-xs text-[#c0c0cc] w-12 text-right">{chain.engagement.toFixed(1)}</span>
                     </div>
                   </div>
                 ))}
@@ -297,15 +297,15 @@ export function Results() {
             </div>
 
             <div>
-              <div className="text-sm text-[#a1a1aa] mb-4">Propagacja w czasie</div>
+              <div className="text-sm text-[#c0c0cc] mb-4">Propagacja w czasie</div>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={result.socialSpread.chains}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-                    <XAxis dataKey="depth" tick={{ fill: '#a1a1aa' }} label={{ value: 'Depth', position: 'insideBottom', offset: -5, fill: '#a1a1aa' }} />
-                    <YAxis tick={{ fill: '#a1a1aa' }} label={{ value: 'Reach', angle: -90, position: 'insideLeft', fill: '#a1a1aa' }} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#38383f" />
+                    <XAxis dataKey="depth" tick={{ fill: '#c0c0cc' }} label={{ value: 'Depth', position: 'insideBottom', offset: -5, fill: '#c0c0cc' }} />
+                    <YAxis tick={{ fill: '#c0c0cc' }} label={{ value: 'Reach', angle: -90, position: 'insideLeft', fill: '#c0c0cc' }} />
                     <Tooltip
-                      contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '8px' }}
+                      contentStyle={{ backgroundColor: '#1f1f25', border: '1px solid #38383f', borderRadius: '8px' }}
                       labelStyle={{ color: '#fff' }}
                     />
                     <Bar dataKey="reach" fill="#7c3aed" radius={[8, 8, 0, 0]} />
@@ -319,7 +319,7 @@ export function Results() {
 
       {/* Segment Deep Dive Drawer */}
       <Drawer open={drawerOpen} onOpenChange={setDrawerOpen}>
-        <DrawerContent className="bg-[#18181b] border-t border-[#27272a] max-h-[80vh]">
+        <DrawerContent className="bg-[#1f1f25] border-t border-[#38383f] max-h-[80vh]">
           <DrawerHeader>
             <DrawerTitle className="text-white">
               {selectedSegment?.type === 'age' && 'Analiza segmentu wiekowego'}
@@ -333,11 +333,11 @@ export function Results() {
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={selectedSegment.data}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-                      <XAxis dataKey="segment" tick={{ fill: '#a1a1aa', fontSize: 11 }} />
-                      <YAxis tick={{ fill: '#a1a1aa' }} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#38383f" />
+                      <XAxis dataKey="segment" tick={{ fill: '#c0c0cc', fontSize: 11 }} />
+                      <YAxis tick={{ fill: '#c0c0cc' }} />
                       <Tooltip
-                        contentStyle={{ backgroundColor: '#18181b', border: '1px solid #27272a', borderRadius: '8px' }}
+                        contentStyle={{ backgroundColor: '#1f1f25', border: '1px solid #38383f', borderRadius: '8px' }}
                         labelStyle={{ color: '#fff' }}
                       />
                       <Bar dataKey="attention" fill="#6366f1" name="Attention" radius={[4, 4, 0, 0]} />
@@ -349,19 +349,19 @@ export function Results() {
 
                 <div className="grid grid-cols-3 gap-4">
                   {selectedSegment.data.map((seg: any, i: number) => (
-                    <div key={i} className="bg-[#0f0f11] border border-[#27272a] rounded-lg p-4">
+                    <div key={i} className="bg-[#0f0f11] border border-[#38383f] rounded-lg p-4">
                       <div className="text-sm font-medium text-white mb-3">{seg.segment}</div>
                       <div className="space-y-2 text-xs">
                         <div className="flex justify-between">
-                          <span className="text-[#a1a1aa]">Attention:</span>
+                          <span className="text-[#c0c0cc]">Attention:</span>
                           <span className="text-white font-medium">{seg.attention.toFixed(1)}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-[#a1a1aa]">Resonance:</span>
+                          <span className="text-[#c0c0cc]">Resonance:</span>
                           <span className="text-white font-medium">{seg.resonance.toFixed(1)}</span>
                         </div>
                         <div className="flex justify-between">
-                          <span className="text-[#a1a1aa]">Purchase Intent:</span>
+                          <span className="text-[#c0c0cc]">Purchase Intent:</span>
                           <span className="text-[#10b981] font-medium">+{seg.purchaseIntent}%</span>
                         </div>
                       </div>
@@ -380,7 +380,7 @@ export function Results() {
 function MetricCard({ label, tooltip, value, icon: Icon, color, trend }: any) {
   const [showTip, setShowTip] = useState(false);
   return (
-    <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-5">
+    <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-5">
       <div className="flex items-start justify-between mb-3">
         <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ backgroundColor: `${color}15` }}>
           <Icon className="w-5 h-5" style={{ color }} />
@@ -392,18 +392,18 @@ function MetricCard({ label, tooltip, value, icon: Icon, color, trend }: any) {
         )}
       </div>
       <div className="flex items-center gap-1 mb-1">
-        <div className="text-sm text-[#a1a1aa]">{label}</div>
+        <div className="text-sm text-[#c0c0cc]">{label}</div>
         {tooltip && (
           <div className="relative">
             <button
               onMouseEnter={() => setShowTip(true)}
               onMouseLeave={() => setShowTip(false)}
-              className="text-[#52525b] hover:text-[#a1a1aa] transition-colors"
+              className="text-[#6b6b78] hover:text-[#c0c0cc] transition-colors"
             >
               <Info className="w-3.5 h-3.5" />
             </button>
             {showTip && (
-              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 bg-[#27272a] text-[#d4d4d8] text-xs rounded-lg px-3 py-2 shadow-lg z-10 pointer-events-none">
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-52 bg-[#38383f] text-[#d4d4d8] text-xs rounded-lg px-3 py-2 shadow-lg z-10 pointer-events-none">
                 {tooltip}
               </div>
             )}
@@ -417,7 +417,7 @@ function MetricCard({ label, tooltip, value, icon: Icon, color, trend }: any) {
 
 function SegmentCard({ title, data, onViewDetails }: any) {
   return (
-    <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-5">
+    <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-5">
       <div className="flex items-center justify-between mb-4">
         <h3 className="font-semibold text-white text-sm">{title}</h3>
         <button
@@ -433,10 +433,10 @@ function SegmentCard({ title, data, onViewDetails }: any) {
         {data.slice(0, 4).map((item: any, i: number) => (
           <div key={i}>
             <div className="flex items-center justify-between text-xs mb-1">
-              <span className="text-[#a1a1aa]">{item.segment}</span>
+              <span className="text-[#c0c0cc]">{item.segment}</span>
               <span className="text-white font-medium">{item.attention.toFixed(1)}</span>
             </div>
-            <div className="h-1.5 bg-[#27272a] rounded-full overflow-hidden">
+            <div className="h-1.5 bg-[#38383f] rounded-full overflow-hidden">
               <div
                 className="h-full bg-[#6366f1] rounded-full transition-all"
                 style={{ width: `${(item.attention / 10) * 100}%` }}
@@ -515,11 +515,11 @@ function BayesianCard({
   const hdi = computeHDI(values);
   const sign = unit === '%' && value >= 0 ? '+' : '';
   return (
-    <div className="bg-[#0f0f11] border border-[#27272a] rounded-xl p-4">
-      <div className="text-xs text-[#71717a] mb-1">{label}</div>
+    <div className="bg-[#0f0f11] border border-[#38383f] rounded-xl p-4">
+      <div className="text-xs text-[#9898a8] mb-1">{label}</div>
       <div className="text-2xl font-bold text-white">{sign}{value.toFixed(1)}{unit}</div>
       <MiniHistogram values={values} min={min} max={max} color={color} />
-      <div className="flex justify-between text-[10px] text-[#52525b] mt-1.5">
+      <div className="flex justify-between text-[10px] text-[#6b6b78] mt-1.5">
         <span>90% HDI</span>
         <span style={{ color }}>{sign}{hdi.lo.toFixed(1)} – {sign}{hdi.hi.toFixed(1)}{unit}</span>
       </div>

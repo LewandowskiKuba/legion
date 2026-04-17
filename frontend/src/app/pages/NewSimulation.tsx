@@ -9,13 +9,15 @@ import { Switch } from '../components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '../components/ui/select';
 import {
   startSimulation,
-  startAbSimulation,
+  startAbTest,
+  startSegmentCompare,
   uploadCreative,
   getBrands,
   mockCategories,
   type AdSimulationFormData,
   type RumorSimulationFormData,
   type TopicSimulationFormData,
+  type PopFilter,
 } from '../utils/api';
 
 // ─── Stałe ───────────────────────────────────────────────────────────────────
@@ -29,6 +31,7 @@ const TOPIC_EXAMPLES = [
 ];
 
 type SeedTab = 'ad' | 'rumor' | 'topic';
+type AdMode = 'single' | 'ab' | 'segment';
 
 // ─── CreativeState & Uploader (poza komponentem – unika remount) ─────────────
 
@@ -356,9 +359,11 @@ export function NewSimulation() {
   const [adBrand, setAdBrand] = useState('');
   const [adCategory, setAdCategory] = useState('');
   const [adContext, setAdContext] = useState('');
-  const [adAbMode, setAdAbMode] = useState(false);
-  const [adTargeting, setAdTargeting] = useState(false);
+  const [adMode, setAdMode] = useState<AdMode>('single');
   const [adTargetingFilters, setAdTargetingFilters] = useState<TargetingState>(emptyTargeting());
+  const [adSegmentALabel, setAdSegmentALabel] = useState('Segment A');
+  const [adSegmentBLabel, setAdSegmentBLabel] = useState('Segment B');
+  const [adSegmentBFilters, setAdSegmentBFilters] = useState<TargetingState>(emptyTargeting());
   const [creativeA, setCreativeA] = useState<CreativeState>(emptyCreative());
   // Wariant B
   const [adHeadlineB, setAdHeadlineB] = useState('');
@@ -390,18 +395,17 @@ export function NewSimulation() {
 
     if (tab === 'ad') {
       if (!adHeadline && !creativeA.id) {
-        setError(adAbMode ? 'Wariant A: podaj Headline lub wgraj kreację graficzną' : 'Podaj Headline lub wgraj kreację graficzną');
+        setError(adMode === 'single' ? 'Podaj Headline lub wgraj kreację graficzną' : 'Wariant A: podaj Headline lub wgraj kreację graficzną');
         return;
       }
-      if (adAbMode && !adHeadlineB && !creativeB.id) {
+      if (adMode === 'ab' && !adHeadlineB && !creativeB.id) {
         setError('Wariant B: podaj Headline lub wgraj kreację graficzną');
         return;
       }
       setLoading(true);
       try {
-        const baseAd: AdSimulationFormData = {
-          seedType: 'ad',
-          studyName: adStudyName || `${adBrand || 'Reklama'} – ${adHeadline.slice(0, 30)}`,
+        const studyName = adStudyName || `${adBrand || 'Reklama'} – ${adHeadline.slice(0, 30)}`;
+        const commonAd = {
           headline: adHeadline || undefined,
           body: adBody || undefined,
           cta: adCta || undefined,
@@ -409,28 +413,69 @@ export function NewSimulation() {
           category: adCategory || undefined,
           context: adContext || undefined,
           creativeId: creativeA.id || undefined,
-          totalRounds: params.totalRounds,
-          platform: params.platform,
-          activeAgentRatio: params.activeAgentRatio,
-          filterGender: adTargeting ? adTargetingFilters.gender : undefined,
-          filterAgeMin: adTargeting ? adTargetingFilters.ageMin : undefined,
-          filterAgeMax: adTargeting ? adTargetingFilters.ageMax : undefined,
-          filterSettlement: adTargeting ? adTargetingFilters.location : undefined,
-          filterIncome: adTargeting ? adTargetingFilters.income : undefined,
+        };
+        const sharedFilter: PopFilter = {
+          gender: adTargetingFilters.gender !== 'all' ? adTargetingFilters.gender : undefined,
+          ageMin: adTargetingFilters.ageMin ? Number(adTargetingFilters.ageMin) : undefined,
+          ageMax: adTargetingFilters.ageMax ? Number(adTargetingFilters.ageMax) : undefined,
+          settlement: adTargetingFilters.location !== 'all' ? adTargetingFilters.location : undefined,
+          income: adTargetingFilters.income !== 'all' ? adTargetingFilters.income : undefined,
         };
 
-        if (adAbMode) {
-          const dataB: AdSimulationFormData = {
-            ...baseAd,
-            studyName: `${baseAd.studyName} – B`,
+        if (adMode === 'ab') {
+          const adB = {
             headline: adHeadlineB || adHeadline || undefined,
             body: adBodyB || adBody || undefined,
             cta: adCtaB || adCta || undefined,
+            brand: adBrand || undefined,
+            category: adCategory || undefined,
+            context: adContext || undefined,
             creativeId: creativeB.id || creativeA.id || undefined,
           };
-          const { idA, idB } = await startAbSimulation(baseAd, dataB);
+          const { idA, idB } = await startAbTest({
+            studyName,
+            adA: commonAd,
+            adB,
+            filter: sharedFilter,
+            totalRounds: params.totalRounds,
+            platform: params.platform,
+            activeAgentRatio: params.activeAgentRatio,
+          });
           navigate(`/simulation/compare/${idA}/${idB}`);
+
+        } else if (adMode === 'segment') {
+          const toFilter = (s: TargetingState): PopFilter => ({
+            gender: s.gender !== 'all' ? s.gender : undefined,
+            ageMin: s.ageMin ? Number(s.ageMin) : undefined,
+            ageMax: s.ageMax ? Number(s.ageMax) : undefined,
+            settlement: s.location !== 'all' ? s.location : undefined,
+            income: s.income !== 'all' ? s.income : undefined,
+          });
+          const { idA, idB } = await startSegmentCompare({
+            studyName,
+            ad: commonAd,
+            segmentA: { label: adSegmentALabel || 'Segment A', filter: toFilter(adTargetingFilters) },
+            segmentB: { label: adSegmentBLabel || 'Segment B', filter: toFilter(adSegmentBFilters) },
+            totalRounds: params.totalRounds,
+            platform: params.platform,
+            activeAgentRatio: params.activeAgentRatio,
+          });
+          navigate(`/simulation/compare/${idA}/${idB}`);
+
         } else {
+          const baseAd: AdSimulationFormData = {
+            seedType: 'ad',
+            studyName,
+            ...commonAd,
+            totalRounds: params.totalRounds,
+            platform: params.platform,
+            activeAgentRatio: params.activeAgentRatio,
+            filterGender: sharedFilter.gender,
+            filterAgeMin: sharedFilter.ageMin?.toString(),
+            filterAgeMax: sharedFilter.ageMax?.toString(),
+            filterSettlement: sharedFilter.settlement,
+            filterIncome: sharedFilter.income,
+          };
           const id = await startSimulation(baseAd);
           navigate(`/simulation/${id}`);
         }
@@ -538,32 +583,36 @@ export function NewSimulation() {
         {/* ── Zakładka: Reklama ── */}
         {tab === 'ad' && (
           <>
-            {/* Opcje: A/B, targeting */}
-            <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-5">
-              <div className="flex items-center gap-8 flex-wrap">
-                <div className="flex items-center gap-3">
-                  <Switch checked={adAbMode} onCheckedChange={setAdAbMode} className="data-[state=checked]:bg-[#6366f1]" />
-                  <div>
-                    <div className="text-sm font-medium text-white">Tryb A/B</div>
-                    <div className="text-xs text-[#c0c0cc]">Porównaj dwie wersje kreacji</div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Switch checked={adTargeting} onCheckedChange={setAdTargeting} className="data-[state=checked]:bg-[#6366f1]" />
-                  <div>
-                    <div className="text-sm font-medium text-white">Targeting</div>
-                    <div className="text-xs text-[#c0c0cc]">Ogranicz do wybranej grupy</div>
-                  </div>
-                </div>
-              </div>
+            {/* Mode selector */}
+            <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-2 flex gap-2">
+              {([
+                { key: 'single' as AdMode, label: 'Pojedyncze badanie', desc: 'Jedna kreacja, jedna populacja' },
+                { key: 'ab' as AdMode, label: 'Test A/B', desc: 'Dwie kreacje, ta sama populacja' },
+                { key: 'segment' as AdMode, label: 'Porównanie segmentów', desc: 'Jedna kreacja, dwa segmenty' },
+              ]).map(({ key, label, desc }) => (
+                <button
+                  key={key}
+                  type="button"
+                  onClick={() => setAdMode(key)}
+                  className={`flex-1 flex flex-col items-center py-3 px-2 rounded-lg text-sm font-medium transition-colors ${
+                    adMode === key
+                      ? 'bg-[#6366f1] text-white'
+                      : 'text-[#c0c0cc] hover:text-white hover:bg-[#2a2a32]'
+                  }`}
+                >
+                  <span className="font-semibold">{label}</span>
+                  <span className={`text-xs mt-0.5 ${adMode === key ? 'text-indigo-200' : 'text-[#6b6b78]'}`}>{desc}</span>
+                </button>
+              ))}
             </div>
 
-            {adTargeting && (
+            {/* Targeting — widoczny tylko w single i ab */}
+            {adMode !== 'segment' && (
               <TargetingFilters value={adTargetingFilters} onChange={setAdTargetingFilters} />
             )}
 
             {/* Panele wariantów */}
-            {!adAbMode ? (
+            {adMode === 'single' ? (
               <>
                 {/* Kreacja */}
                 <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-5">
@@ -647,8 +696,8 @@ export function NewSimulation() {
                   </div>
                 </div>
               </>
-            ) : (
-              /* Tryb A/B: dwie kolumny */
+            ) : adMode === 'ab' ? (
+              /* Tryb A/B: dwie kreacje, ta sama populacja */
               <div className="grid grid-cols-2 gap-6">
                 {/* Wariant A */}
                 <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-6 space-y-4">
@@ -759,6 +808,77 @@ export function NewSimulation() {
                   </div>
                 </div>
               </div>
+            ) : (
+              /* Tryb Segmenty: jedna kreacja, dwa panele targetowania */
+              <>
+                <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-6 space-y-4">
+                  <h2 className="text-white font-semibold">Materiał reklamowy</h2>
+                  <CreativeUploader state={creativeA} onChange={setCreativeA} />
+                  <div>
+                    <label className="block text-xs text-[#c0c0cc] mb-1">Nazwa badania</label>
+                    <input type="text" value={adStudyName} onChange={(e) => setAdStudyName(e.target.value)}
+                      placeholder="np. Kampania T-Mobile Q2 2026 – segmenty" className={inputCls} />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-[#c0c0cc] mb-1">Headline</label>
+                    <input type="text" value={adHeadline} onChange={(e) => setAdHeadline(e.target.value)}
+                      placeholder="Główny nagłówek reklamy" className={inputCls} />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-[#c0c0cc] mb-1">Body</label>
+                    <textarea value={adBody} onChange={(e) => setAdBody(e.target.value)}
+                      placeholder="Treść reklamy" rows={3} className={`${inputCls} resize-none`} />
+                  </div>
+                  <div>
+                    <label className="block text-xs text-[#c0c0cc] mb-1">CTA</label>
+                    <input type="text" value={adCta} onChange={(e) => setAdCta(e.target.value)}
+                      placeholder="Call to action" className={inputCls} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs text-[#c0c0cc] mb-1">Marka</label>
+                      <BrandAutocomplete value={adBrand} onChange={setAdBrand} options={brands} />
+                    </div>
+                    <div>
+                      <label className="block text-xs text-[#c0c0cc] mb-1">Kategoria</label>
+                      <select value={adCategory} onChange={(e) => setAdCategory(e.target.value)}
+                        className="w-full bg-[#111113] border border-[#6b6b78] rounded-lg text-white px-3 py-2 text-sm focus:outline-none focus:border-[#6366f1]">
+                        <option value="">– dowolna –</option>
+                        {mockCategories.map((c) => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Dwa segmenty */}
+                <div className="grid grid-cols-2 gap-6">
+                  {/* Segment A */}
+                  <div className="bg-[#1f1f25] border border-[#6366f1]/40 rounded-xl p-5 space-y-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-[#6366f1]" />
+                      <input
+                        type="text" value={adSegmentALabel} onChange={(e) => setAdSegmentALabel(e.target.value)}
+                        className="text-sm font-semibold text-white bg-transparent border-none outline-none w-full"
+                        placeholder="Nazwa segmentu A"
+                      />
+                    </div>
+                    <TargetingFilters value={adTargetingFilters} onChange={setAdTargetingFilters} />
+                  </div>
+
+                  {/* Segment B */}
+                  <div className="bg-[#1f1f25] border border-[#f59e0b]/40 rounded-xl p-5 space-y-4">
+                    <div className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full bg-[#f59e0b]" />
+                      <input
+                        type="text" value={adSegmentBLabel} onChange={(e) => setAdSegmentBLabel(e.target.value)}
+                        className="text-sm font-semibold text-white bg-transparent border-none outline-none w-full"
+                        placeholder="Nazwa segmentu B"
+                      />
+                    </div>
+                    <TargetingFilters value={adSegmentBFilters} onChange={setAdSegmentBFilters} />
+                  </div>
+                </div>
+              </>
             )}
           </>
         )}
@@ -918,8 +1038,10 @@ export function NewSimulation() {
                 ? 'Uruchom predykcję społeczną'
                 : tab === 'rumor'
                 ? 'Uruchom symulację komunikatu'
-                : adAbMode
+                : adMode === 'ab'
                 ? 'Uruchom test A/B'
+                : adMode === 'segment'
+                ? 'Uruchom porównanie segmentów'
                 : 'Uruchom symulację reklamy'}
             </>
           )}

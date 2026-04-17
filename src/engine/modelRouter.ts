@@ -34,13 +34,20 @@ export interface ModelConfig {
 }
 
 // ── Tier 1: Default (bulk / rundy symulacji) ──────────────────────────────
-const MODEL_CENTER    = process.env.MODEL            ?? "claude-sonnet-4-6";
+// Wspólne overrides — jeśli ustawione, wszystkie segmenty polityczne używają
+// tego samego providera/klucza/URL (np. DashScope dla Qwen)
 const MODEL_PROVIDER  = (process.env.MODEL_PROVIDER  ?? "anthropic") as ModelProvider;
-const MODEL_API_KEY   = process.env.MODEL_API_KEY;   // undefined = użyj domyślnego
-const MODEL_BASE_URL  = process.env.MODEL_BASE_URL;  // undefined = domyślny endpoint
+const MODEL_API_KEY   = process.env.MODEL_API_KEY;
+const MODEL_BASE_URL  = process.env.MODEL_BASE_URL;
+
+const MODEL_CENTER    = process.env.MODEL            ?? "claude-sonnet-4-6";
 const MODEL_FAR_LEFT  = process.env.MODEL_FAR_LEFT   ?? "gpt-5.4-mini";
 const MODEL_RIGHT     = process.env.MODEL_RIGHT      ?? "llama-3.3-70b-versatile";
 const MODEL_FAR_RIGHT = process.env.MODEL_FAR_RIGHT  ?? "meta-llama/llama-4-scout-17b-16e-instruct";
+
+// Domyślny provider per segment (używany tylko gdy MODEL_PROVIDER nie jest ustawiony)
+const DEFAULT_PROVIDER_RIGHT    = MODEL_API_KEY ? MODEL_PROVIDER : "groq"    as ModelProvider;
+const DEFAULT_PROVIDER_FAR_LEFT = MODEL_API_KEY ? MODEL_PROVIDER : "openai"  as ModelProvider;
 
 // ── Tier 2: Smart (raporty, GraphRAG, ciężka synteza) ────────────────────
 const SMART_MODEL_NAME = process.env.SMART_MODEL_NAME ?? "claude-sonnet-4-6";

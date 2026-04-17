@@ -35,7 +35,7 @@ async function main() {
     process.exit(1);
   }
 
-  const populationSize = parseInt(process.env.POPULATION_SIZE ?? "50", 10);
+  const populationSize = parseInt(process.env.POPULATION_SIZE ?? "7000", 10);
 
   console.log(`\n◆ Synthetic Population Sandbox`);
   console.log(`  Generowanie ${populationSize} person...`);

@@ -116,7 +116,7 @@ async function main() {
   }
 
   const ad = JSON.parse(readFileSync(adPath, "utf8")) as AdMaterial;
-  const populationSize = parseInt(process.env.POPULATION_SIZE ?? "50", 10);
+  const populationSize = parseInt(process.env.POPULATION_SIZE ?? "7000", 10);
   const population = loadOrGeneratePopulation(args["population"], populationSize);
 
   console.log(`\n◆ Synthetic Population Sandbox`);

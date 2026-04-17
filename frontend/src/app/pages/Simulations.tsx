@@ -35,7 +35,7 @@ export function Simulations() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-white">Symulacje</h1>
-          <p className="text-[#71717a] text-sm mt-1">Historia wielorundowych symulacji społecznych</p>
+          <p className="text-[#9898a8] text-sm mt-1">Historia wielorundowych symulacji społecznych</p>
         </div>
         <Link
           to="/new-simulation"
@@ -50,9 +50,9 @@ export function Simulations() {
           <Loader2 className="w-6 h-6 animate-spin text-[#6366f1]" />
         </div>
       ) : sims.length === 0 ? (
-        <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-12 text-center space-y-4">
-          <Network className="w-10 h-10 text-[#3f3f46] mx-auto" />
-          <p className="text-[#71717a]">Brak symulacji. Uruchom pierwszą!</p>
+        <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-12 text-center space-y-4">
+          <Network className="w-10 h-10 text-[#52525a] mx-auto" />
+          <p className="text-[#9898a8]">Brak symulacji. Uruchom pierwszą!</p>
           <Link
             to="/new-simulation"
             className="inline-flex items-center gap-2 px-4 py-2 bg-[#6366f1] hover:bg-[#4f46e5] text-white rounded-lg text-sm font-medium transition-colors"
@@ -66,7 +66,7 @@ export function Simulations() {
             <Link
               key={sim.id}
               to={`/simulation/${sim.id}`}
-              className="block bg-[#18181b] border border-[#27272a] hover:border-[#6366f1]/50 rounded-xl p-4 transition-colors group"
+              className="block bg-[#1f1f25] border border-[#38383f] hover:border-[#6366f1]/50 rounded-xl p-4 transition-colors group"
             >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
@@ -75,7 +75,7 @@ export function Simulations() {
                     <p className="text-white font-medium group-hover:text-[#818cf8] transition-colors">
                       {sim.studyName || 'Symulacja bez nazwy'}
                     </p>
-                    <p className="text-[#71717a] text-xs mt-0.5">
+                    <p className="text-[#9898a8] text-xs mt-0.5">
                       {new Date(sim.createdAt).toLocaleString('pl-PL', {
                         day: '2-digit', month: '2-digit', year: 'numeric',
                         hour: '2-digit', minute: '2-digit',
@@ -89,11 +89,11 @@ export function Simulations() {
                     <p className="text-white text-sm font-mono">
                       {sim.currentRound}/{sim.totalRounds}
                     </p>
-                    <p className="text-[#52525b] text-xs">rund</p>
+                    <p className="text-[#6b6b78] text-xs">rund</p>
                   </div>
 
                   <div className="w-24">
-                    <div className="h-1.5 bg-[#27272a] rounded-full overflow-hidden">
+                    <div className="h-1.5 bg-[#38383f] rounded-full overflow-hidden">
                       <div
                         className="h-full bg-[#6366f1] rounded-full transition-all"
                         style={{ width: `${sim.totalRounds > 0 ? (sim.currentRound / sim.totalRounds) * 100 : 0}%` }}

@@ -37,7 +37,7 @@ function getStatusColor(status: string | undefined): string {
     case 'completed': return 'text-green-400';
     case 'running': return 'text-yellow-400';
     case 'error': return 'text-red-400';
-    default: return 'text-[#a1a1aa]';
+    default: return 'text-[#c0c0cc]';
   }
 }
 
@@ -55,11 +55,11 @@ function getStatusLabel(status: string | undefined): string {
 function ProgressBar({ value, color, label }: { value: number; color: string; label: string }) {
   return (
     <div className="space-y-1">
-      <div className="flex justify-between text-xs text-[#a1a1aa]">
+      <div className="flex justify-between text-xs text-[#c0c0cc]">
         <span>{label}</span>
         <span className="text-white font-semibold">{Math.round(value * 100)}%</span>
       </div>
-      <div className="h-2 bg-[#27272a] rounded-full overflow-hidden">
+      <div className="h-2 bg-[#38383f] rounded-full overflow-hidden">
         <div
           className="h-full rounded-full transition-all duration-500"
           style={{ width: `${Math.round(value * 100)}%`, backgroundColor: color }}
@@ -89,7 +89,7 @@ function SimColumn({
   const dist = data?.finalOpinionDistribution ?? null;
 
   return (
-    <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-6 space-y-5 flex flex-col">
+    <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-6 space-y-5 flex flex-col">
       {/* Header wariantu */}
       <div className="flex items-center gap-2">
         <div className="w-3 h-3 rounded-full flex-shrink-0" style={{ backgroundColor: accentColor }} />
@@ -97,7 +97,7 @@ function SimColumn({
       </div>
 
       {loading && (
-        <div className="flex items-center gap-2 text-[#a1a1aa] text-sm">
+        <div className="flex items-center gap-2 text-[#c0c0cc] text-sm">
           <Loader2 className="w-4 h-4 animate-spin" />
           <span>Ładowanie...</span>
         </div>
@@ -122,19 +122,19 @@ function SimColumn({
           {/* Rozkład opinii */}
           {dist ? (
             <div className="space-y-2">
-              <div className="text-xs text-[#a1a1aa] mb-2 font-medium uppercase tracking-wide">Rozkład opinii</div>
+              <div className="text-xs text-[#c0c0cc] mb-2 font-medium uppercase tracking-wide">Rozkład opinii</div>
               <ProgressBar value={dist.positive} color="#22c55e" label="Pozytywni" />
-              <ProgressBar value={dist.neutral} color="#a1a1aa" label="Neutralni" />
+              <ProgressBar value={dist.neutral} color="#c0c0cc" label="Neutralni" />
               <ProgressBar value={dist.negative} color="#ef4444" label="Negatywni" />
             </div>
           ) : (
-            <div className="text-xs text-[#52525b]">Brak danych o rozkładzie opinii</div>
+            <div className="text-xs text-[#6b6b78]">Brak danych o rozkładzie opinii</div>
           )}
 
           {/* Synteza agentów */}
           {data.reportAgentSynthesis && (
             <div>
-              <div className="text-xs text-[#a1a1aa] mb-2 font-medium uppercase tracking-wide">Synteza</div>
+              <div className="text-xs text-[#c0c0cc] mb-2 font-medium uppercase tracking-wide">Synteza</div>
               <p className="text-sm text-[#d4d4d8] leading-relaxed line-clamp-6">
                 {data.reportAgentSynthesis}
               </p>
@@ -144,7 +144,7 @@ function SimColumn({
           {/* Rekomendacje */}
           {data.recommendations && data.recommendations.length > 0 && (
             <div>
-              <div className="text-xs text-[#a1a1aa] mb-2 font-medium uppercase tracking-wide">Rekomendacje</div>
+              <div className="text-xs text-[#c0c0cc] mb-2 font-medium uppercase tracking-wide">Rekomendacje</div>
               <ul className="space-y-1">
                 {data.recommendations.slice(0, 4).map((r, i) => (
                   <li key={i} className="text-xs text-[#d4d4d8] flex gap-2">
@@ -159,12 +159,12 @@ function SimColumn({
       )}
 
       {/* CTA */}
-      <div className="mt-auto pt-4 border-t border-[#27272a]">
+      <div className="mt-auto pt-4 border-t border-[#38383f]">
         <button
           type="button"
           onClick={onOpen}
           disabled={loading || !!error || !data}
-          className="w-full flex items-center justify-center gap-2 bg-[#27272a] hover:bg-[#3f3f46] disabled:opacity-40 text-white text-sm font-medium py-2.5 rounded-lg transition-colors"
+          className="w-full flex items-center justify-center gap-2 bg-[#38383f] hover:bg-[#52525a] disabled:opacity-40 text-white text-sm font-medium py-2.5 rounded-lg transition-colors"
         >
           <ExternalLink className="w-3.5 h-3.5" />
           Otwórz pełny widok
@@ -221,7 +221,7 @@ export function SimulationCompare() {
         <button
           type="button"
           onClick={() => navigate('/simulations')}
-          className="flex items-center gap-2 text-[#a1a1aa] hover:text-white text-sm mb-4 transition-colors"
+          className="flex items-center gap-2 text-[#c0c0cc] hover:text-white text-sm mb-4 transition-colors"
         >
           <ArrowLeft className="w-4 h-4" />
           Powrót do listy
@@ -230,7 +230,7 @@ export function SimulationCompare() {
           <BarChart3 className="w-7 h-7 text-[#6366f1]" />
           <h1 className="text-2xl font-bold text-white">Porównanie A/B</h1>
         </div>
-        <p className="text-[#a1a1aa] text-sm">
+        <p className="text-[#c0c0cc] text-sm">
           Wyniki dwóch wariantów symulacji side-by-side.
         </p>
       </div>
