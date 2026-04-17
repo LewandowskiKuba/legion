@@ -8,6 +8,7 @@ import type { Persona, BotResponse } from "../personas/schema.js";
 import { buildSystemPrompt } from "./prompt.js";
 import { callModelRaw } from "./runner.js";
 import { selectModel } from "./modelRouter.js";
+import { getPolymarketContext } from "../polymarket/index.js";
 
 export interface SpreadNode {
   personaId: string;
@@ -42,6 +43,7 @@ async function querySpread(
   senderName: string,
   message: string,
   hop: number,
+  polyCtx = "",
 ): Promise<SpreadNode> {
   const userPrompt = `Twój znajomy/znajoma ${senderName} właśnie powiedział/a Ci:
 „${message}"
@@ -56,7 +58,7 @@ Reagujesz zgodnie ze swoim profilem. Odpowiedz WYŁĄCZNIE w formacie JSON:
   try {
     const raw = await callModelRaw(
       selectModel(persona),
-      buildSystemPrompt(persona),
+      buildSystemPrompt(persona, undefined, polyCtx),
       userPrompt,
       200,
     );
@@ -96,6 +98,7 @@ export async function runSpreadSimulation(
   onProgress?: (done: number, total: number) => void,
 ): Promise<SpreadReport> {
   const personaMap = new Map(population.map((p) => [p.id, p]));
+  const polyCtx = await getPolymarketContext();
 
   // Top spreaderów: najwyższy attention + WOM (bez twardego progu – adaptuje się do populacji)
   const minSpreaders = Math.max(1, Math.min(5, Math.floor(responses.length * 0.2)));
@@ -125,7 +128,7 @@ export async function runSpreadSimulation(
     // Hop 1 – 3 losowe persony słyszą od seedu
     const hop1Personas = [...pool].sort(() => Math.random() - 0.5).slice(0, 3);
     const hop1Results = await Promise.all(
-      hop1Personas.map((p) => querySpread(p, seed.name, spreader.womSimulation, 1))
+      hop1Personas.map((p) => querySpread(p, seed.name, spreader.womSimulation, 1, polyCtx))
     );
     chain.nodes.push(...hop1Results);
     done += hop1Results.length;
@@ -141,7 +144,7 @@ export async function runSpreadSimulation(
         .sort(() => Math.random() - 0.5)[0];
       if (!recipient) continue;
 
-      const node = await querySpread(recipient, hop2Seed.personaName, hop2Seed.shareMessage, 2);
+      const node = await querySpread(recipient, hop2Seed.personaName, hop2Seed.shareMessage, 2, polyCtx);
       chain.nodes.push(node);
       done++;
       onProgress?.(done, estimated);

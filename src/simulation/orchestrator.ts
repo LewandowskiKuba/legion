@@ -23,6 +23,7 @@ import type {
 
 import { buildSystemPrompt } from "../engine/prompt.js";
 import { callSmartModel, callModelRaw } from "../engine/runner.js";
+import { getPolymarketContext } from "../polymarket/index.js";
 import { selectModel } from "../engine/modelRouter.js";
 
 export class SimulationOrchestrator {
@@ -282,6 +283,7 @@ Rekomendacje: ${this.state.insights?.recommendations?.join("; ") ?? "brak"}`;
     const memorySummary = this.memoryStore.getSummary(pid);
     const currentOpinion = this.state.agentOpinions[pid] ?? 0;
 
+    const polyCtx = await getPolymarketContext();
     const systemPrompt = buildSystemPrompt(persona, {
       memorySummary,
       currentOpinion,
@@ -291,7 +293,7 @@ Rekomendacje: ${this.state.insights?.recommendations?.join("; ") ?? "brak"}`;
       platform: this.platform,
       recentFeed: [],
       activeEvents: [],
-    });
+    }, polyCtx);
 
     return callModelRaw(
       selectModel(persona),
