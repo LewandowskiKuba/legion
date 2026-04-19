@@ -613,12 +613,18 @@ Napisz analizę po polsku. Wyjaśnij przyczyny wyników (np. niska świadomość
       "Content-Type": "text/event-stream",
       "Cache-Control": "no-cache",
       Connection: "keep-alive",
+      "X-Accel-Buffering": "no",
       ...CORS_HEADERS,
     });
 
     const sendEvent = (type: string, data: unknown) => {
       res.write(`event: ${type}\ndata: ${JSON.stringify(data)}\n\n`);
     };
+
+    // Heartbeat co 30s – zapobiega zamknięciu połączenia przez Cloudflare (timeout ~100s)
+    const heartbeat = setInterval(() => { res.write(": ping\n\n"); }, 30_000);
+    const cleanup = () => clearInterval(heartbeat);
+    req.on("close", cleanup);
 
     const state = orc.getState();
     sendEvent("state", state);
@@ -628,21 +634,24 @@ Napisz analizę po polsku. Wyjaśnij przyczyny wyników (np. niska świadomość
       simulationStore.persist(orc.getId());
     };
 
+    const endStream = (eventType: string, data: unknown) => {
+      cleanup();
+      sendEvent(eventType, data);
+      res.end();
+    };
+
     // Uruchom symulację jeśli jeszcze nie ruszyła
     if (state.status === "running" && state.currentRound < state.totalRounds) {
       orc.runToCompletion((current, total) => {
         sendEvent("progress", { current, total });
       }).then(() => {
-        sendEvent("complete", orc.getState());
         simulationStore.persist(orc.getId());
-        res.end();
+        endStream("complete", orc.getState());
       }).catch((err) => {
-        sendEvent("error", { message: String(err.message ?? err) });
-        res.end();
+        endStream("error", { message: String(err.message ?? err) });
       });
     } else if (state.status === "complete") {
-      sendEvent("complete", state);
-      res.end();
+      endStream("complete", state);
     } else {
       // Initializing – czekaj
       const poll = setInterval(() => {
@@ -652,19 +661,16 @@ Napisz analizę po polsku. Wyjaśnij przyczyny wyników (np. niska świadomość
             sendEvent("progress", { current, total });
           }).then(() => {
             clearInterval(poll);
-            sendEvent("complete", orc.getState());
             simulationStore.persist(orc.getId());
-            res.end();
+            endStream("complete", orc.getState());
           }).catch((err) => {
             clearInterval(poll);
-            sendEvent("error", { message: String(err.message ?? err) });
-            res.end();
+            endStream("error", { message: String(err.message ?? err) });
           });
           clearInterval(poll);
         } else if (s.status === "error" || s.status === "complete") {
           clearInterval(poll);
-          sendEvent(s.status === "error" ? "error" : "complete", s);
-          res.end();
+          endStream(s.status === "error" ? "error" : "complete", s);
         }
       }, 500);
 
