@@ -232,6 +232,76 @@ function BayesianDimension({ dim, labelA, labelB }: { dim: DimensionResult; labe
   );
 }
 
+function DualSignalPanel({ result, labelA, labelB }: { result: BayesianABResult; labelA: string; labelB: string }) {
+  const { signal1, signal2, signalAgreement, weights } = result;
+  if (!signal1 || !signal2) return null;
+
+  const agreementColor = signalAgreement === 'agree' ? 'border-green-700/40 bg-green-900/10'
+    : signalAgreement === 'disagree' ? 'border-red-700/40 bg-red-900/10'
+    : 'border-yellow-700/40 bg-yellow-900/10';
+  const agreementText = signalAgreement === 'agree'
+    ? 'Sygnały zgodne — oba wskazują tego samego zwycięzcę'
+    : signalAgreement === 'disagree'
+    ? 'Sygnały rozbieżne — symulacja i ranking wskazują różnych zwycięzców (efekt kontekstu)'
+    : 'Jeden z sygnałów niepewny — wynik kombinowany może być miarodajny';
+
+  const s1WinnerLabel = signal1.globalWinner === 'A' ? labelA : signal1.globalWinner === 'B' ? labelB : 'Remis';
+  const s2WinnerLabel = signal2.globalWinner === 'A' ? labelA : signal2.globalWinner === 'B' ? labelB : 'Remis';
+  const s1Color = signal1.globalWinner === 'A' ? '#6366f1' : signal1.globalWinner === 'B' ? '#f59e0b' : '#71717a';
+  const s2Color = signal2.globalWinner === 'A' ? '#6366f1' : signal2.globalWinner === 'B' ? '#f59e0b' : '#71717a';
+
+  return (
+    <div className="space-y-3">
+      {/* Alert zgodności */}
+      <div className={`border rounded-xl px-4 py-3 flex items-start gap-3 text-sm ${agreementColor}`}>
+        {signalAgreement === 'agree'
+          ? <CheckCircle2 className="w-4 h-4 text-green-400 flex-shrink-0 mt-0.5" />
+          : signalAgreement === 'disagree'
+          ? <AlertTriangle className="w-4 h-4 text-red-400 flex-shrink-0 mt-0.5" />
+          : <HelpCircle className="w-4 h-4 text-yellow-400 flex-shrink-0 mt-0.5" />}
+        <span className="text-[#d4d4d8]">{agreementText}</span>
+      </div>
+
+      {/* Dwa sygnały obok siebie */}
+      <div className="grid grid-cols-2 gap-3">
+        {/* Signal 1 */}
+        <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <div className="text-xs text-[#52525b] uppercase tracking-widest">Signal 1</div>
+              <div className="text-xs text-[#71717a]">Symulacja ({Math.round((weights?.signal1 ?? 0.6) * 100)}%)</div>
+            </div>
+            <div className="text-sm font-bold" style={{ color: s1Color }}>{s1WinnerLabel}</div>
+          </div>
+          {posteriorBar(signal1.globalPosteriorA, signal1.globalPosteriorB)}
+          <div className="flex justify-between text-xs mt-1">
+            <span style={{ color: '#6366f1' }}>{Math.round(signal1.globalPosteriorA * 100)}%</span>
+            <span className="text-[#52525b]">margin {Math.round(signal1.globalMargin * 100)} pp</span>
+            <span style={{ color: '#f59e0b' }}>{Math.round(signal1.globalPosteriorB * 100)}%</span>
+          </div>
+        </div>
+
+        {/* Signal 2 */}
+        <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-4">
+          <div className="flex items-center justify-between mb-3">
+            <div>
+              <div className="text-xs text-[#52525b] uppercase tracking-widest">Signal 2</div>
+              <div className="text-xs text-[#71717a]">Ranking porównawczy ({Math.round((weights?.signal2 ?? 0.4) * 100)}%)</div>
+            </div>
+            <div className="text-sm font-bold" style={{ color: s2Color }}>{s2WinnerLabel}</div>
+          </div>
+          {posteriorBar(signal2.globalPosteriorA, signal2.globalPosteriorB)}
+          <div className="flex justify-between text-xs mt-1">
+            <span style={{ color: '#6366f1' }}>{Math.round(signal2.globalPosteriorA * 100)}%</span>
+            <span className="text-[#52525b]">{signal2.countA}A / {signal2.countB}B / {signal2.countTie}↔</span>
+            <span style={{ color: '#f59e0b' }}>{Math.round(signal2.globalPosteriorB * 100)}%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function BayesianSection({ idA, idB, statusA, statusB }: {
   idA: string; idB: string; statusA?: string; statusB?: string;
 }) {
@@ -264,7 +334,7 @@ function BayesianSection({ idA, idB, statusA, statusB }: {
     return (
       <div className="mt-8 bg-[#18181b] border border-[#27272a] rounded-xl p-6 flex items-center gap-3 text-[#a1a1aa] text-sm">
         <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" />
-        Obliczam posteriors Bayesowskie…
+        Obliczam posteriors Bayesowskie + ranking porównawczy (Signal 2)…
       </div>
     );
   }
@@ -302,6 +372,9 @@ function BayesianSection({ idA, idB, statusA, statusB }: {
         <h2 className="text-lg font-semibold text-white">Analiza Bayesowska</h2>
         <span className="text-xs text-[#52525b] ml-1">P(kreacja = najlepsza | evidence)</span>
       </div>
+
+      {/* Dual-signal panel — tylko gdy mamy oba sygnały */}
+      {result.signal1 && <DualSignalPanel result={result} labelA={labelA} labelB={labelB} />}
 
       {/* Global posterior */}
       <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-6">

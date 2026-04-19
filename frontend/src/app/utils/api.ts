@@ -719,6 +719,11 @@ export interface BayesianABResult {
     runnerUpPosterior: number;
     n: number;
   }>;
+  // Dual-signal — obecne gdy obie symulacje mają kreacje reklamowe
+  signal1?: { globalPosteriorA: number; globalPosteriorB: number; globalWinner: "A" | "B" | "uncertain"; globalMargin: number };
+  signal2?: { globalPosteriorA: number; globalPosteriorB: number; globalWinner: "A" | "B" | "uncertain"; globalMargin: number; countA: number; countB: number; countTie: number; totalRanked: number };
+  signalAgreement?: "agree" | "disagree" | "weak";
+  weights?: { signal1: number; signal2: number };
 }
 
 export async function getBayesianAB(idA: string, idB: string): Promise<BayesianABResult> {

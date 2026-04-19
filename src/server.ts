@@ -11,7 +11,8 @@ import { generatePopulation } from "./personas/generator.js";
 import { callSmartModel } from "./engine/runner.js";
 import { runSpreadSimulation } from "./engine/spread.js";
 import type { StudyReport } from "./reports/aggregator.js";
-import { computeBayesianAB } from "./reports/bayesian.js";
+import { computeBayesianAB, computeBayesianDualSignal } from "./reports/bayesian.js";
+import { runPairRanking } from "./engine/ranker.js";
 import { generatePDF } from "./reports/pdf.js";
 import type { AdMaterial, Persona, BotResponse } from "./personas/schema.js";
 import { simulationStore } from "./simulation/stateStore.js";
@@ -547,12 +548,28 @@ Napisz analizę po polsku. Wyjaśnij przyczyny wyników (np. niska świadomość
     }
 
     try {
-      const result = computeBayesianAB(
-        stateA.population,
-        stateA.agentOpinions,
-        stateB.agentOpinions,
-      );
-      json(res, result);
+      const adA = stateA.ad;
+      const adB = stateB.ad;
+
+      // Dual-signal: gdy obie symulacje mają kreacje reklamowe → uruchom RankerAgent
+      if (adA && adB) {
+        const rankingResult = await runPairRanking(stateA.population, adA, adB);
+        const result = computeBayesianDualSignal(
+          stateA.population,
+          stateA.agentOpinions,
+          stateB.agentOpinions,
+          rankingResult,
+        );
+        json(res, result);
+      } else {
+        // Fallback dla topic/rumor bez kreacji — single-signal
+        const result = computeBayesianAB(
+          stateA.population,
+          stateA.agentOpinions,
+          stateB.agentOpinions,
+        );
+        json(res, result);
+      }
     } catch (err: any) {
       json(res, { error: String(err.message ?? err) }, 500);
     }
