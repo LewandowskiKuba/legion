@@ -74,11 +74,21 @@ function computePoliticalScore(persona: Persona): { score: number; extremism: nu
   return { score, extremism };
 }
 
+const DEFAULT_FALLBACK: ModelConfig = {
+  provider: MODEL_PROVIDER,
+  modelId: MODEL_CENTER,
+  hasVision: true,
+  label: `${MODEL_PROVIDER}·${MODEL_CENTER}`,
+  apiKey: MODEL_API_KEY,
+  baseURL: MODEL_BASE_URL,
+};
+
 export function selectModel(persona: Persona): ModelConfig {
   const { score, extremism } = computePoliticalScore(persona);
 
   // Skrajna prawica – Llama 4 Scout (Groq): największy open-source, minimalny alignment
   if (score > 25 && extremism > 60) {
+    if (!process.env.GROQ_API_KEY) return DEFAULT_FALLBACK;
     return {
       provider: "groq",
       modelId: MODEL_FAR_RIGHT,
@@ -89,6 +99,7 @@ export function selectModel(persona: Persona): ModelConfig {
 
   // Prawica – Llama 3.3 70B (Groq): mniejszy RLHF niż Claude/GPT
   if (score > 15) {
+    if (!process.env.GROQ_API_KEY) return DEFAULT_FALLBACK;
     return {
       provider: "groq",
       modelId: MODEL_RIGHT,
@@ -99,6 +110,7 @@ export function selectModel(persona: Persona): ModelConfig {
 
   // Skrajna lewica – GPT-5.4-mini (OpenAI): profil SF, bardziej progresywny
   if (score < -25 && extremism > 60) {
+    if (!process.env.OPENAI_API_KEY) return DEFAULT_FALLBACK;
     return {
       provider: "openai",
       modelId: MODEL_FAR_LEFT,
@@ -108,14 +120,7 @@ export function selectModel(persona: Persona): ModelConfig {
   }
 
   // Centrum + Lewica – domyślnie Claude Sonnet (Anthropic), konfigurowalny przez env
-  return {
-    provider: MODEL_PROVIDER,
-    modelId: MODEL_CENTER,
-    hasVision: true,
-    label: `${MODEL_PROVIDER}·${MODEL_CENTER}`,
-    apiKey: MODEL_API_KEY,
-    baseURL: MODEL_BASE_URL,
-  };
+  return DEFAULT_FALLBACK;
 }
 
 // Zwraca czytelny opis segmentu politycznego persony (do logów)
