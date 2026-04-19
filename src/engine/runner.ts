@@ -277,7 +277,7 @@ export async function callPersonaRaw(
   attempt = 0
 ): Promise<string> {
   const model = selectModel(persona);
-  const { provider, modelId, hasVision, label } = model;
+  const { provider, modelId, hasVision, apiKey, baseURL, label } = model;
 
   await waitForRateLimit(provider);
 
@@ -296,7 +296,7 @@ export async function callPersonaRaw(
         .map((b) => (b as { type: "text"; text: string }).text)
         .join("");
     } else {
-      const client = provider === "openai" ? getOpenAI() : getGroq();
+      const client = provider === "openai" ? getOpenAI(apiKey, baseURL) : getGroq(apiKey, baseURL);
       const completion = await client.chat.completions.create({
         model: modelId,
         max_tokens: 512,
