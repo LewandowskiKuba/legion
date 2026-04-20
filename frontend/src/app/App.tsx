@@ -7,7 +7,7 @@ import { Studies } from './pages/Studies';
 import { NewSimulation } from './pages/NewSimulation';
 import { SimulationView } from './pages/SimulationView';
 import { Simulations } from './pages/Simulations';
-import { SimulationCompare } from './pages/SimulationCompare';
+import { SimulationCompare, SimulationCompareMulti } from './pages/SimulationCompare';
 
 const router = createBrowserRouter([
   {
@@ -21,6 +21,7 @@ const router = createBrowserRouter([
       { path: 'new-simulation', element: <NewSimulation /> },
       { path: 'simulation/:id', element: <SimulationView /> },
       { path: 'simulation/compare/:idA/:idB', element: <SimulationCompare /> },
+      { path: 'simulation/compare-multi/:ids', element: <SimulationCompareMulti /> },
       { path: 'simulations', element: <Simulations /> },
     ],
   },

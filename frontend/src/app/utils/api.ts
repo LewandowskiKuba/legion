@@ -735,6 +735,50 @@ export async function getBayesianAB(idA: string, idB: string): Promise<BayesianA
   return res.json();
 }
 
+// ─── Plackett-Luce N-way ranking ─────────────────────────────────────────────
+
+export interface PLSegmentResult {
+  label: string;
+  key: string;
+  n: number;
+  probabilities: number[];
+  winner: number;
+  margin: number;
+  entropy: number;
+  needsTest: boolean;
+  avgOpinions: number[];
+}
+
+export interface PLDimensionResult {
+  dimension: string;
+  label: string;
+  segments: PLSegmentResult[];
+}
+
+export interface PlackettLuceResult {
+  globalProbabilities: number[];
+  globalWinner: number;
+  globalMargin: number;
+  confidenceLevel: "high" | "moderate" | "low";
+  totalPersonas: number;
+  creativeCount: number;
+  creativeLabels: string[];
+  dimensions: PLDimensionResult[];
+  rankingSignal: {
+    firstChoiceCounts: number[];
+    totalRanked: number;
+  };
+}
+
+export async function getNWayRanking(ids: string[]): Promise<PlackettLuceResult> {
+  const res = await fetch(`${BASE}/api/simulation/n-way-ranking?ids=${ids.join(",")}`);
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: "Błąd analizy N-way" }));
+    throw new Error(err.error ?? "Błąd analizy");
+  }
+  return res.json();
+}
+
 export function streamSimulation(
   id: string,
   handlers: {
