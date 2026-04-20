@@ -315,16 +315,46 @@ function SimulationParams({ value, onChange }: { value: SimParams; onChange: (v:
         </div>
       </div>
       <div>
-        <label className="block text-xs text-[#c0c0cc] mb-2">
-          Aktywni agenci per runda:{' '}
-          <span className="text-white font-semibold">{Math.round(value.activeAgentRatio * 100)}%</span>
-        </label>
-        <input
-          type="range" min={30} max={100} step={10}
-          value={Math.round(value.activeAgentRatio * 100)}
-          onChange={(e) => onChange({ ...value, activeAgentRatio: Number(e.target.value) / 100 })}
-          className="w-full accent-[#6366f1]"
-        />
+        <label className="block text-xs text-[#c0c0cc] mb-2">Intensywność symulacji</label>
+        <div className="grid grid-cols-3 gap-2">
+          {([
+            {
+              ratio: 0.1,
+              label: 'Pilotaż',
+              desc: '10% agentów / rundę',
+              note: 'Szybko · orientacyjne wyniki',
+            },
+            {
+              ratio: 0.35,
+              label: 'Standardowe',
+              desc: '35% agentów / rundę',
+              note: 'Dobry balans jakości i czasu',
+            },
+            {
+              ratio: 0.7,
+              label: 'Pełna analiza',
+              desc: '70% agentów / rundę',
+              note: 'Najdokładniejsze · najdroższe',
+            },
+          ] as const).map(({ ratio, label, desc, note }) => (
+            <button
+              key={ratio}
+              type="button"
+              onClick={() => onChange({ ...value, activeAgentRatio: ratio })}
+              className={`flex flex-col items-start p-3 rounded-lg border text-left transition-colors ${
+                value.activeAgentRatio === ratio
+                  ? 'border-[#6366f1] bg-[#6366f1]/10'
+                  : 'border-[#38383f] hover:border-[#52525a]'
+              }`}
+            >
+              <span className={`text-sm font-semibold ${value.activeAgentRatio === ratio ? 'text-white' : 'text-[#c0c0cc]'}`}>
+                {label}
+              </span>
+              <span className="text-xs text-[#6366f1] mt-0.5">{desc}</span>
+              <span className="text-xs text-[#6b6b7a] mt-1">{note}</span>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -337,7 +367,7 @@ const emptyTargeting = (): TargetingState => ({
 });
 
 const defaultParams = (): SimParams => ({
-  totalRounds: 5, platform: 'facebook', activeAgentRatio: 0.7,
+  totalRounds: 5, platform: 'facebook', activeAgentRatio: 0.35,
 });
 
 export function NewSimulation() {
