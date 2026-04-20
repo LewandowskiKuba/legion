@@ -20,7 +20,7 @@ export function Layout() {
             <div className="flex items-center gap-3">
               <BarChart3 className="w-7 h-7 text-[#6366f1]" />
               <div>
-                <h1 className="text-lg font-semibold text-white">We Are Legion</h1>
+                <h1 className="text-lg font-semibold text-white">Society Reactor</h1>
                 <p className="text-xs text-[#c0c0cc]">Social Simulation & Prediction Engine</p>
               </div>
             </div>
