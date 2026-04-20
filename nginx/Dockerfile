@@ -8,3 +8,6 @@ RUN npm run build
 FROM nginx:alpine
 COPY --from=frontend-builder /frontend/dist /usr/share/nginx/html/adstest/
 COPY nginx/default.conf /etc/nginx/conf.d/default.conf
+COPY nginx/cloudflare-origin.crt /etc/nginx/certs/cloudflare-origin.crt
+COPY nginx/cloudflare-origin.key /etc/nginx/certs/cloudflare-origin.key
+RUN chmod 600 /etc/nginx/certs/cloudflare-origin.key
