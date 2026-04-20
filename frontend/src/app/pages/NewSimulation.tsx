@@ -32,8 +32,9 @@ const TOPIC_EXAMPLES = [
   'Ogłoszono masowe zwolnienia w sektorze automotive — 50 000 etatów',
 ];
 
-type SeedTab = 'ad' | 'rumor' | 'topic' | 'frames';
+type SeedTab = 'ad' | 'rumor' | 'topic';
 type AdMode = 'single' | 'ab' | 'segment';
+type TopicMode = 'single' | 'frames';
 
 // ─── CreativeState & Uploader (poza komponentem – unika remount) ─────────────
 
@@ -388,8 +389,9 @@ export function NewSimulation() {
   const [topicQuery, setTopicQuery] = useState('');
   const [topicContext, setTopicContext] = useState('');
   const [topicImpacts, setTopicImpacts] = useState('');
+  const [topicMode, setTopicMode] = useState<TopicMode>('single');
 
-  // ── Zakładka Competitive Contagion ──
+  // ── Tryb Competitive Contagion (podzakładka Scenariusza) ──
   const [framesStudyName, setFramesStudyName] = useState('');
   const [frames, setFrames] = useState<Frame[]>([
     { id: 'f1', label: '', text: '' },
@@ -522,29 +524,32 @@ export function NewSimulation() {
         setError(err.message ?? 'Błąd startu symulacji');
         setLoading(false);
       }
-    } else if (tab === 'frames') {
-      const validFrames = frames.filter(f => f.label.trim() && f.text.trim());
-      if (validFrames.length < 2) {
-        setError('Podaj co najmniej 2 framings (etykieta + treść)');
+    } else {
+      if (topicMode === 'frames') {
+        const validFrames = frames.filter(f => f.label.trim() && f.text.trim());
+        if (validFrames.length < 2) {
+          setError('Podaj co najmniej 2 framings (etykieta + treść)');
+          return;
+        }
+        setLoading(true);
+        try {
+          const data: FramesSimulationFormData = {
+            seedType: 'frames',
+            studyName: framesStudyName || `WoM: ${validFrames.map(f => f.label).join(' vs ')}`.slice(0, 60),
+            frames: validFrames,
+            totalRounds: params.totalRounds,
+            platform: params.platform,
+            activeAgentRatio: params.activeAgentRatio,
+          };
+          const id = await startSimulation(data);
+          navigate(`/simulation/${id}`);
+        } catch (err: any) {
+          setError(err.message ?? 'Błąd startu symulacji');
+          setLoading(false);
+        }
         return;
       }
-      setLoading(true);
-      try {
-        const data: FramesSimulationFormData = {
-          seedType: 'frames',
-          studyName: framesStudyName || `WoM: ${validFrames.map(f => f.label).join(' vs ')}`.slice(0, 60),
-          frames: validFrames,
-          totalRounds: params.totalRounds,
-          platform: params.platform,
-          activeAgentRatio: params.activeAgentRatio,
-        };
-        const id = await startSimulation(data);
-        navigate(`/simulation/${id}`);
-      } catch (err: any) {
-        setError(err.message ?? 'Błąd startu symulacji');
-        setLoading(false);
-      }
-    } else {
+
       if (!topicQuery.trim()) {
         setError('Opisz scenariusz (pole Scenariusz jest wymagane)');
         return;
@@ -574,7 +579,7 @@ export function NewSimulation() {
   const inputCls = "w-full bg-[#111113] border border-[#6b6b78] rounded-lg text-white px-3 py-2 text-sm focus:outline-none focus:border-[#6366f1] placeholder:text-[#9898a8]";
 
   return (
-    <div className="max-w-2xl mx-auto">
+    <div className="max-w-4xl mx-auto">
       <div className="mb-8">
         <div className="flex items-center gap-3 mb-2">
           <Network className="w-7 h-7 text-[#6366f1]" />
@@ -594,7 +599,6 @@ export function NewSimulation() {
             { key: 'ad' as SeedTab, icon: Megaphone, label: 'Reklama' },
             { key: 'rumor' as SeedTab, icon: MessageSquare, label: 'Komunikat / Plotka' },
             { key: 'topic' as SeedTab, icon: Globe, label: 'Scenariusz / Event' },
-            { key: 'frames' as SeedTab, icon: Network, label: 'Competitive Contagion' },
           ]).map(({ key, icon: Icon, label }) => (
             <button
               key={key}
@@ -982,113 +986,128 @@ export function NewSimulation() {
 
         {/* ── Zakładka: Scenariusz / Event ── */}
         {tab === 'topic' && (
-          <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-6 space-y-4">
-            <h2 className="text-white font-semibold">Scenariusz / Wydarzenie</h2>
-            <p className="text-[#9898a8] text-xs">
-              Opisz wydarzenie — gospodarcze, polityczne, społeczne. Agenci zareagują z perspektywy
-              swojej sytuacji życiowej, wartości i poglądów.
-            </p>
-
-            <div>
-              <label className="block text-xs text-[#c0c0cc] mb-1">Nazwa symulacji</label>
-              <input
-                type="text" value={topicStudyName} onChange={(e) => setTopicStudyName(e.target.value)}
-                placeholder="np. Scenariusz: blokada Ormuz" className={inputCls}
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs text-[#c0c0cc] mb-1">Scenariusz *</label>
-              <textarea
-                value={topicQuery} onChange={(e) => setTopicQuery(e.target.value)}
-                placeholder="Opisz wydarzenie. Np.: Iran blokuje Cieśninę Ormuz. Ceny ropy skaczą o 40% w ciągu tygodnia..."
-                rows={4} className={`${inputCls} resize-none`}
-              />
-              <div className="mt-2 flex flex-wrap gap-2">
-                {TOPIC_EXAMPLES.map((ex) => (
+          <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-6 space-y-5">
+            {/* Mode selector */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-white font-semibold">Scenariusz / Wydarzenie</h2>
+                <p className="text-[#9898a8] text-xs mt-0.5">
+                  {topicMode === 'single'
+                    ? 'Agenci reagują na zdarzenie z perspektywy swoich wartości i sytuacji życiowej.'
+                    : 'Wiele narracji tego samego zdarzenia konkuruje w grafie społecznym.'}
+                </p>
+              </div>
+              <div className="flex rounded-lg border border-[#38383f] overflow-hidden text-xs shrink-0 ml-4">
+                {([
+                  { key: 'single' as TopicMode, label: 'Jeden scenariusz' },
+                  { key: 'frames' as TopicMode, label: 'Competitive Contagion' },
+                ]).map(({ key, label }) => (
                   <button
-                    key={ex} type="button"
-                    onClick={() => setTopicQuery(ex)}
-                    className="text-xs bg-[#38383f] hover:bg-[#52525a] text-[#c0c0cc] hover:text-white px-2 py-1 rounded transition-colors"
+                    key={key} type="button" onClick={() => setTopicMode(key)}
+                    className={`px-3 py-2 transition-colors whitespace-nowrap ${topicMode === key ? 'bg-[#6366f1] text-white' : 'text-[#9898a8] hover:text-white'}`}
                   >
-                    {ex.slice(0, 40)}…
+                    {label}
                   </button>
                 ))}
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs text-[#c0c0cc] mb-1">Kontekst (opcjonalnie)</label>
-              <textarea
-                value={topicContext} onChange={(e) => setTopicContext(e.target.value)}
-                placeholder="Dodatkowy kontekst historyczny, dane, tło wydarzenia..."
-                rows={2} className={`${inputCls} resize-none`}
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs text-[#c0c0cc] mb-1">
-                Przewidywane skutki (opcjonalnie, jeden per linię)
-              </label>
-              <textarea
-                value={topicImpacts} onChange={(e) => setTopicImpacts(e.target.value)}
-                placeholder={"Wzrost cen paliw o 30%\nZwolnienia w transporcie\nInflacja powróci do 15%"}
-                rows={3} className={`${inputCls} resize-none font-mono`}
-              />
-            </div>
-          </div>
-        )}
-
-        {tab === 'frames' && (
-          <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-6 space-y-4">
-            <h2 className="text-white font-semibold">Competitive Contagion — wiele framingów</h2>
-            <p className="text-[#9898a8] text-xs">
-              Podaj N różnych sposobów narracji o tym samym zdarzeniu. Agenci w grafie społecznym
-              wybiorą, który framing adoptują i dalej rozprzestrzenią. Wynik: który framing
-              "wygrywa" i w jakich segmentach.
-            </p>
-            <div>
-              <label className="block text-xs text-[#c0c0cc] mb-1">Nazwa badania</label>
-              <input
-                type="text" value={framesStudyName} onChange={e => setFramesStudyName(e.target.value)}
-                placeholder="np. Framing: awaria elektrowni" className={inputCls}
-              />
-            </div>
-            <div className="space-y-3">
-              {frames.map((f, i) => (
-                <div key={f.id} className="border border-[#38383f] rounded-lg p-4 space-y-2 relative">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-semibold text-[#6366f1] w-16 shrink-0">Framing {i + 1}</span>
-                    <input
-                      type="text" value={f.label}
-                      onChange={e => setFrames(prev => prev.map((x, j) => j === i ? { ...x, label: e.target.value } : x))}
-                      placeholder="Krótka etykieta (np. katastrofa ekologiczna)"
-                      className={`${inputCls} text-xs`}
-                    />
-                    {frames.length > 2 && (
-                      <button type="button" onClick={() => setFrames(prev => prev.filter((_, j) => j !== i))}
-                        className="p-1 text-[#6b6b78] hover:text-red-400 shrink-0">
-                        <X className="w-3.5 h-3.5" />
-                      </button>
-                    )}
-                  </div>
-                  <textarea
-                    value={f.text}
-                    onChange={e => setFrames(prev => prev.map((x, j) => j === i ? { ...x, text: e.target.value } : x))}
-                    placeholder="Treść narracji — jak agenci sformułują ten framing w postach..."
-                    rows={3} className={`${inputCls} resize-none text-xs`}
+            {topicMode === 'single' && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs text-[#c0c0cc] mb-1">Nazwa symulacji</label>
+                  <input
+                    type="text" value={topicStudyName} onChange={(e) => setTopicStudyName(e.target.value)}
+                    placeholder="np. Scenariusz: blokada Ormuz" className={inputCls}
                   />
                 </div>
-              ))}
-            </div>
-            {frames.length < 5 && (
-              <button
-                type="button"
-                onClick={() => setFrames(prev => [...prev, { id: `f${Date.now()}`, label: '', text: '' }])}
-                className="text-xs text-[#6366f1] hover:text-indigo-300 flex items-center gap-1 transition-colors"
-              >
-                + Dodaj framing
-              </button>
+                <div>
+                  <label className="block text-xs text-[#c0c0cc] mb-1">Scenariusz *</label>
+                  <textarea
+                    value={topicQuery} onChange={(e) => setTopicQuery(e.target.value)}
+                    placeholder="Opisz wydarzenie. Np.: Iran blokuje Cieśninę Ormuz. Ceny ropy skaczą o 40% w ciągu tygodnia..."
+                    rows={4} className={`${inputCls} resize-none`}
+                  />
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {TOPIC_EXAMPLES.map((ex) => (
+                      <button
+                        key={ex} type="button" onClick={() => setTopicQuery(ex)}
+                        className="text-xs bg-[#38383f] hover:bg-[#52525a] text-[#c0c0cc] hover:text-white px-2 py-1 rounded transition-colors"
+                      >
+                        {ex.slice(0, 40)}…
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-xs text-[#c0c0cc] mb-1">Kontekst (opcjonalnie)</label>
+                  <textarea
+                    value={topicContext} onChange={(e) => setTopicContext(e.target.value)}
+                    placeholder="Dodatkowy kontekst historyczny, dane, tło wydarzenia..."
+                    rows={2} className={`${inputCls} resize-none`}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-[#c0c0cc] mb-1">
+                    Przewidywane skutki (opcjonalnie, jeden per linię)
+                  </label>
+                  <textarea
+                    value={topicImpacts} onChange={(e) => setTopicImpacts(e.target.value)}
+                    placeholder={"Wzrost cen paliw o 30%\nZwolnienia w transporcie\nInflacja powróci do 15%"}
+                    rows={3} className={`${inputCls} resize-none font-mono`}
+                  />
+                </div>
+              </div>
+            )}
+
+            {topicMode === 'frames' && (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs text-[#c0c0cc] mb-1">Nazwa badania</label>
+                  <input
+                    type="text" value={framesStudyName} onChange={e => setFramesStudyName(e.target.value)}
+                    placeholder="np. Framing: awaria elektrowni" className={inputCls}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  {frames.map((f, i) => (
+                    <div key={f.id} className="border border-[#38383f] rounded-lg p-4 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-semibold shrink-0" style={{ color: ['#6366f1','#f59e0b','#10b981','#ef4444','#8b5cf6'][i % 5] }}>
+                          Framing {i + 1}
+                        </span>
+                        <input
+                          type="text" value={f.label}
+                          onChange={e => setFrames(prev => prev.map((x, j) => j === i ? { ...x, label: e.target.value } : x))}
+                          placeholder="Krótka etykieta"
+                          className={`${inputCls} text-xs flex-1`}
+                        />
+                        {frames.length > 2 && (
+                          <button type="button" onClick={() => setFrames(prev => prev.filter((_, j) => j !== i))}
+                            className="p-1 text-[#6b6b78] hover:text-red-400 shrink-0">
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
+                      <textarea
+                        value={f.text}
+                        onChange={e => setFrames(prev => prev.map((x, j) => j === i ? { ...x, text: e.target.value } : x))}
+                        placeholder="Treść narracji — jak agenci sformułują ten framing w postach..."
+                        rows={4} className={`${inputCls} resize-none text-xs`}
+                      />
+                    </div>
+                  ))}
+                </div>
+                {frames.length < 6 && (
+                  <button
+                    type="button"
+                    onClick={() => setFrames(prev => [...prev, { id: `f${Date.now()}`, label: '', text: '' }])}
+                    className="text-xs text-[#6366f1] hover:text-indigo-300 flex items-center gap-1 transition-colors"
+                  >
+                    + Dodaj framing
+                  </button>
+                )}
+              </div>
             )}
           </div>
         )}
@@ -1120,12 +1139,12 @@ export function NewSimulation() {
           ) : (
             <>
               <Network className="w-4 h-4" />
-              {tab === 'topic'
+              {tab === 'topic' && topicMode === 'frames'
+                ? 'Uruchom competitive contagion'
+                : tab === 'topic'
                 ? 'Uruchom predykcję społeczną'
                 : tab === 'rumor'
                 ? 'Uruchom symulację komunikatu'
-                : tab === 'frames'
-                ? 'Uruchom competitive contagion'
                 : adMode === 'ab'
                 ? 'Uruchom test A/B'
                 : adMode === 'segment'
