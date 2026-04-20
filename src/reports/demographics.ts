@@ -10,13 +10,25 @@ export interface SegmentOpinionStats {
   neutralRatio: number;  // 0–1
 }
 
+export interface PsychoDimension {
+  dimension: string;
+  segments: SegmentOpinionStats[];
+}
+
 export interface DemographicBreakdown {
   byAgeGroup: SegmentOpinionStats[];
   byGender: SegmentOpinionStats[];
   byEducation: SegmentOpinionStats[];
   byPolitical: SegmentOpinionStats[];
   bySettlement: SegmentOpinionStats[];
+  psychographic: {
+    personality: PsychoDimension[];
+    values: PsychoDimension[];
+    trust: PsychoDimension[];
+  };
 }
+
+// ── Demographic helpers ───────────────────────────────────────────────────────
 
 function ageGroup(age: number): string {
   if (age < 30) return "18-29";
@@ -62,6 +74,33 @@ const SETTLEMENT_LABELS: Record<string, string> = {
   metropolis:   "Metropolia",
 };
 
+// ── Psychographic helpers ─────────────────────────────────────────────────────
+
+const LEVEL_ORDER = ["low", "medium", "high"];
+const LEVEL_LABELS: Record<string, string> = {
+  low:    "Niski",
+  medium: "Średni",
+  high:   "Wysoki",
+};
+
+function levelBucket(value: number): string {
+  if (value <= 33) return "low";
+  if (value <= 66) return "medium";
+  return "high";
+}
+
+function buildPsychoDimension(
+  dimension: string,
+  values: Map<string, number[]>,
+): PsychoDimension {
+  return {
+    dimension,
+    segments: buildStats(values, LEVEL_LABELS, LEVEL_ORDER),
+  };
+}
+
+// ── Generic stats builder ─────────────────────────────────────────────────────
+
 function buildStats(
   groups: Map<string, number[]>,
   labelMap: Record<string, string>,
@@ -89,47 +128,104 @@ function buildStats(
   });
 }
 
+function makeTracker() {
+  const m = new Map<string, number[]>();
+  return {
+    push(key: string, val: number) {
+      if (!m.has(key)) m.set(key, []);
+      m.get(key)!.push(val);
+    },
+    map: m,
+  };
+}
+
+// ── Main export ───────────────────────────────────────────────────────────────
+
 export function computeDemographicBreakdown(
   population: Persona[],
   agentOpinions: Record<string, number>,
 ): DemographicBreakdown {
-  const age      = new Map<string, number[]>();
-  const gender   = new Map<string, number[]>();
-  const edu      = new Map<string, number[]>();
-  const political = new Map<string, number[]>();
-  const settle   = new Map<string, number[]>();
+  // Demographic
+  const age      = makeTracker();
+  const gender   = makeTracker();
+  const edu      = makeTracker();
+  const political = makeTracker();
+  const settle   = makeTracker();
+
+  // OCEAN
+  const openness          = makeTracker();
+  const conscientiousness = makeTracker();
+  const extraversion      = makeTracker();
+  const agreeableness     = makeTracker();
+  const neuroticism       = makeTracker();
+
+  // Values
+  const traditionalism = makeTracker();
+  const collectivism   = makeTracker();
+  const riskTolerance  = makeTracker();
+
+  // Trust
+  const institutionalTrust = makeTracker();
+  const mediaTrust         = makeTracker();
+  const brandTrust         = makeTracker();
 
   for (const persona of population) {
     const opinion = agentOpinions[persona.id];
     if (opinion === undefined) continue;
 
-    const d = persona.demographic;
-    const p = persona.political;
+    const d   = persona.demographic;
+    const p   = persona.political;
+    const psy = persona.psychographic;
 
-    const ag = ageGroup(d.age);
-    if (!age.has(ag)) age.set(ag, []);
-    age.get(ag)!.push(opinion);
+    // Demographic
+    age.push(ageGroup(d.age), opinion);
+    gender.push(d.gender, opinion);
+    edu.push(d.education, opinion);
+    political.push(p.affiliation, opinion);
+    settle.push(d.settlementType, opinion);
 
-    if (!gender.has(d.gender)) gender.set(d.gender, []);
-    gender.get(d.gender)!.push(opinion);
+    // OCEAN
+    openness.push(levelBucket(psy.ocean.openness), opinion);
+    conscientiousness.push(levelBucket(psy.ocean.conscientiousness), opinion);
+    extraversion.push(levelBucket(psy.ocean.extraversion), opinion);
+    agreeableness.push(levelBucket(psy.ocean.agreeableness), opinion);
+    neuroticism.push(levelBucket(psy.ocean.neuroticism), opinion);
 
-    if (!edu.has(d.education)) edu.set(d.education, []);
-    edu.get(d.education)!.push(opinion);
+    // Values
+    traditionalism.push(levelBucket(psy.traditionalism), opinion);
+    collectivism.push(levelBucket(psy.collectivism), opinion);
+    riskTolerance.push(levelBucket(psy.riskTolerance), opinion);
 
-    const aff = p.affiliation;
-    if (!political.has(aff)) political.set(aff, []);
-    political.get(aff)!.push(opinion);
-
-    const st = d.settlementType;
-    if (!settle.has(st)) settle.set(st, []);
-    settle.get(st)!.push(opinion);
+    // Trust
+    institutionalTrust.push(levelBucket(psy.institutionalTrust), opinion);
+    mediaTrust.push(levelBucket(psy.mediaTrust), opinion);
+    brandTrust.push(levelBucket(psy.brandTrust), opinion);
   }
 
   return {
-    byAgeGroup:  buildStats(age,      AGE_LABELS,       ["18-29", "30-44", "45-59", "60+"]),
-    byGender:    buildStats(gender,   GENDER_LABELS,    ["male", "female"]),
-    byEducation: buildStats(edu,      EDUCATION_LABELS, ["primary", "vocational", "secondary", "higher"]),
-    byPolitical: buildStats(political, POLITICAL_LABELS, ["pis", "ko", "td", "lewica", "konfederacja", "undecided", "apolitical"]),
-    bySettlement: buildStats(settle,  SETTLEMENT_LABELS, ["village", "small_city", "medium_city", "large_city", "metropolis"]),
+    byAgeGroup:   buildStats(age.map,     AGE_LABELS,       ["18-29", "30-44", "45-59", "60+"]),
+    byGender:     buildStats(gender.map,  GENDER_LABELS,    ["male", "female"]),
+    byEducation:  buildStats(edu.map,     EDUCATION_LABELS, ["primary", "vocational", "secondary", "higher"]),
+    byPolitical:  buildStats(political.map, POLITICAL_LABELS, ["pis", "ko", "td", "lewica", "konfederacja", "undecided", "apolitical"]),
+    bySettlement: buildStats(settle.map,  SETTLEMENT_LABELS, ["village", "small_city", "medium_city", "large_city", "metropolis"]),
+    psychographic: {
+      personality: [
+        buildPsychoDimension("Otwartość",    openness.map),
+        buildPsychoDimension("Sumienność",   conscientiousness.map),
+        buildPsychoDimension("Ekstrawersja", extraversion.map),
+        buildPsychoDimension("Ugodowość",    agreeableness.map),
+        buildPsychoDimension("Neurotyczność", neuroticism.map),
+      ],
+      values: [
+        buildPsychoDimension("Tradycjonalizm",     traditionalism.map),
+        buildPsychoDimension("Kolektywizm",        collectivism.map),
+        buildPsychoDimension("Tolerancja ryzyka",  riskTolerance.map),
+      ],
+      trust: [
+        buildPsychoDimension("Zaufanie instytucjonalne", institutionalTrust.map),
+        buildPsychoDimension("Zaufanie mediom",          mediaTrust.map),
+        buildPsychoDimension("Zaufanie markom",          brandTrust.map),
+      ],
+    },
   };
 }
