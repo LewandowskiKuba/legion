@@ -18,6 +18,7 @@ import { computePlackettLuce } from "./reports/plackettLuce.js";
 import { generatePDF } from "./reports/pdf.js";
 import type { AdMaterial, Persona, BotResponse } from "./personas/schema.js";
 import { simulationStore } from "./simulation/stateStore.js";
+import { computeDemographicBreakdown } from "./reports/demographics.js";
 import type { SimulationConfig, SimulationEventType, Platform } from "./simulation/schema.js";
 import { getCachedPersonas, regeneratePersonas, invalidatePersonasCache } from "./db/personas.js";
 import { fetchRelevantMarkets, getCachedMarkets, getCacheAge } from "./polymarket/index.js";
@@ -673,7 +674,12 @@ Napisz analizę po polsku. Wyjaśnij przyczyny wyników (np. niska świadomość
   if (simStateMatch && req.method === "GET") {
     const orc = simulationStore.get(simStateMatch[1]);
     if (!orc) { json(res, { error: "Symulacja nie istnieje" }, 404); return; }
-    json(res, orc.getState());
+    const state = orc.getState();
+    const demographicBreakdown = computeDemographicBreakdown(
+      state.population,
+      state.agentOpinions,
+    );
+    json(res, { ...state, demographicBreakdown });
     return;
   }
 

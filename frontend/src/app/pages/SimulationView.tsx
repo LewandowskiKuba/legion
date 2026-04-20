@@ -12,6 +12,8 @@ import {
 } from '../utils/api';
 import { SocialGraph } from '../components/SocialGraph';
 import { FrameCompetitionChart } from '../components/FrameCompetitionChart';
+import { DemographicBreakdown } from '../components/DemographicBreakdown';
+import type { DemographicBreakdownData } from '../components/DemographicBreakdown';
 import { Progress } from '../components/ui/progress';
 
 function formatEta(ms: number): string {
@@ -68,6 +70,7 @@ interface SimState {
   population: Array<{ id: string; name: string; demographic?: { age: number }; political?: { affiliation: string } }>;
   knowledgeGraph: { brand: string; claims: string[]; controversialElements: string[] };
   agentOpinions: Record<string, number>;
+  demographicBreakdown?: DemographicBreakdownData;
   frames?: SimFrame[];
   agentFrames?: Record<string, string>;
   frameStats?: FrameRoundStats[];
@@ -600,6 +603,11 @@ export function SimulationView() {
             </div>
           )}
         </div>
+      )}
+
+      {/* Demographic breakdown */}
+      {status === 'complete' && state?.demographicBreakdown && (
+        <DemographicBreakdown data={state.demographicBreakdown} />
       )}
 
       {/* Rounds accordion */}
