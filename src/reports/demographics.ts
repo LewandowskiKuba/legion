@@ -103,8 +103,8 @@ export function computeDemographicBreakdown(
     const opinion = agentOpinions[persona.id];
     if (opinion === undefined) continue;
 
-    const d = persona.demographics;
-    const p = persona.politicalProfile;
+    const d = persona.demographic;
+    const p = persona.political;
 
     const ag = ageGroup(d.age);
     if (!age.has(ag)) age.set(ag, []);
