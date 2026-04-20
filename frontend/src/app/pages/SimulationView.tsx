@@ -11,6 +11,7 @@ import {
   streamSimulation, injectSimulationEvent, chatWithSimulationAgent
 } from '../utils/api';
 import { SocialGraph } from '../components/SocialGraph';
+import { FrameCompetitionChart } from '../components/FrameCompetitionChart';
 import { Progress } from '../components/ui/progress';
 
 function formatEta(ms: number): string {
@@ -44,6 +45,17 @@ interface SimRound {
   negativeCount: number;
   neutralCount: number;
   viralPaths: Array<{ from: string; fromName: string; to: string; toName: string; content: string }>;
+  frameAdoption?: Record<string, number>;
+}
+
+interface SimFrame { id: string; label: string; text: string; }
+interface FrameSegmentStats { segment: string; frameShares: Record<string, number>; }
+interface FrameRoundStats {
+  roundNumber: number;
+  frameAdoption: Record<string, number>;
+  frameShare: Record<string, number>;
+  byAgeGroup: FrameSegmentStats[];
+  byPolitical: FrameSegmentStats[];
 }
 
 interface SimState {
@@ -53,9 +65,12 @@ interface SimState {
   currentRound: number;
   totalRounds: number;
   rounds: SimRound[];
-  population: Array<{ id: string; name: string }>;
+  population: Array<{ id: string; name: string; demographic?: { age: number }; political?: { affiliation: string } }>;
   knowledgeGraph: { brand: string; claims: string[]; controversialElements: string[] };
   agentOpinions: Record<string, number>;
+  frames?: SimFrame[];
+  agentFrames?: Record<string, string>;
+  frameStats?: FrameRoundStats[];
   insights?: {
     reportAgentSynthesis: string;
     recommendations: string[];
@@ -468,12 +483,19 @@ export function SimulationView() {
         </div>
       ) : null}
 
+      {/* Frame competition charts */}
+      {state && state.frames && state.frames.length > 0 && state.frameStats && state.frameStats.length > 0 && (
+        <FrameCompetitionChart frames={state.frames} frameStats={state.frameStats} />
+      )}
+
       {/* Social graph */}
       {state && state.rounds.length > 0 && (
         <SocialGraph
           population={state.population.map(p => ({ id: p.id, name: p.name }))}
           agentOpinions={state.agentOpinions}
           viralPathsByRound={state.rounds.map(r => r.viralPaths)}
+          agentFrames={state.agentFrames}
+          frames={state.frames}
         />
       )}
 

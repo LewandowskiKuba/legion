@@ -5,6 +5,27 @@
 
 import type { Persona, AdMaterial } from "../personas/schema.js";
 
+// ─── Competitive contagion ────────────────────────────────────────────────────
+
+export interface Frame {
+  id: string;
+  label: string;   // np. "katastrofa ekologiczna"
+  text: string;    // treść framingu wstrzykiwana jako seed post
+}
+
+export interface FrameSegmentStats {
+  segment: string;
+  frameShares: Record<string, number>;  // frameId → udział (0–1)
+}
+
+export interface FrameRoundStats {
+  roundNumber: number;
+  frameAdoption: Record<string, number>;  // frameId → liczba agentów
+  frameShare: Record<string, number>;     // frameId → udział (0–1)
+  byAgeGroup: FrameSegmentStats[];
+  byPolitical: FrameSegmentStats[];
+}
+
 // ─── Action types ─────────────────────────────────────────────────────────────
 
 export type ActionType =
@@ -29,6 +50,8 @@ export interface AgentAction {
   targetPersonaId?: string;    // For comment/share/react
   opinionDelta: number;        // -3 to +3 shift this round
   currentOpinion: number;      // Running opinion score (-10 to +10)
+  frameId?: string;            // Framing carried by this action (competitive contagion mode)
+  propagatedFrom?: string;     // personaId who spread this frame to this agent
 }
 
 // ─── Agent memory ─────────────────────────────────────────────────────────────
@@ -72,6 +95,7 @@ export interface SimulationRound {
   negativeCount: number;
   neutralCount: number;
   viralPaths: Array<{ from: string; fromName: string; to: string; toName: string; content: string }>;
+  frameAdoption?: Record<string, number>;   // frameId → agent count (competitive contagion)
 }
 
 // ─── Injected event ───────────────────────────────────────────────────────────
@@ -170,6 +194,9 @@ export interface SimulationState {
   agentMemoryCompacted?: Record<string, string>; // personaId → compacted summary
   agentOpinions: Record<string, number>;         // personaId → current opinion (-10 to +10)
   agentBeliefs?: Record<string, BeliefStateSnapshot>; // personaId → current beliefs
+  frames?: Frame[];                                    // framings (competitive contagion)
+  agentFrames?: Record<string, string>;               // personaId → adoptedFrameId
+  frameStats?: FrameRoundStats[];                     // per-round frame adoption
   events: SimulationEvent[];
   trajectory?: SimulationTrajectoryData;
   status: SimulationStatus;
@@ -199,6 +226,7 @@ export interface SimulationConfig {
   seedType: SeedType;
   ad?: AdMaterial;          // wymagane gdy seedType === "ad"
   topic?: TopicSeed;        // wymagane gdy seedType === "topic"
+  frames?: Frame[];         // opcjonalne: tryb competitive contagion (N framingów)
   population: Persona[];
   totalRounds: number;
   platform?: Platform;

@@ -410,6 +410,13 @@ Napisz analizę po polsku. Wyjaśnij przyczyny wyników (np. niska świadomość
         totalRounds: Math.min(Math.max(Number(body.totalRounds ?? 5), 1), 20),
         platform: (body.platform ?? "facebook") as Platform,
         activeAgentRatio: Math.min(Math.max(Number(body.activeAgentRatio ?? 0.7), 0.1), 1),
+        frames: Array.isArray(body.frames) && body.frames.length >= 2
+          ? body.frames.map((f: any, i: number) => ({
+              id: String(f.id ?? `frame_${i}`),
+              label: String(f.label ?? `Framing ${i + 1}`),
+              text: String(f.text ?? ""),
+            })).filter((f: any) => f.text.length > 0)
+          : undefined,
       };
 
       if (seedType === "ad" && !config.ad?.headline) {

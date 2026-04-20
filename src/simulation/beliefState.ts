@@ -156,6 +156,39 @@ export class BeliefState {
     this.trust[otherPersonaId] = clamp(current + (adjustments[action] ?? 0), 0, 1);
   }
 
+  // ── Wybór framingu (Plackett-Luce sampling) ───────────────────────────────
+  // Wagi = alignment agenta z tekstem framingu, próbkowanie z PL, temperature=0.8
+  selectFrame(frames: Array<{ id: string; text: string }>, temperature = 0.8): string | null {
+    if (frames.length === 0) return null;
+    if (frames.length === 1) return frames[0].id;
+
+    const positions = Object.values(this.positions);
+    const avgPos = positions.length > 0
+      ? positions.reduce((a, b) => a + b, 0) / positions.length
+      : 0;
+
+    const weights = frames.map(frame => {
+      const stance = estimateStance(frame.text) ?? 0;
+      // alignment: im bliżej stance do avgPos, tym wyższa waga
+      const alignment = 1 - Math.abs(stance - avgPos) / 2;
+      return Math.max(0.01, alignment);
+    });
+
+    // Softmax z temperature
+    const scaled = weights.map(w => Math.exp(w / temperature));
+    const sum = scaled.reduce((a, b) => a + b, 0);
+    const probs = scaled.map(w => w / sum);
+
+    // Próbkowanie z rozkładu
+    const rand = Math.random();
+    let cum = 0;
+    for (let i = 0; i < frames.length; i++) {
+      cum += probs[i];
+      if (rand <= cum) return frames[i].id;
+    }
+    return frames[frames.length - 1].id;
+  }
+
   // ── Generowanie tekstu dla promptu ────────────────────────────────────────
 
   toPromptText(): string {

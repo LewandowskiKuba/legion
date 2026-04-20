@@ -17,6 +17,8 @@ import {
   type AdSimulationFormData,
   type RumorSimulationFormData,
   type TopicSimulationFormData,
+  type FramesSimulationFormData,
+  type Frame,
   type PopFilter,
 } from '../utils/api';
 
@@ -30,7 +32,7 @@ const TOPIC_EXAMPLES = [
   'Ogłoszono masowe zwolnienia w sektorze automotive — 50 000 etatów',
 ];
 
-type SeedTab = 'ad' | 'rumor' | 'topic';
+type SeedTab = 'ad' | 'rumor' | 'topic' | 'frames';
 type AdMode = 'single' | 'ab' | 'segment';
 
 // ─── CreativeState & Uploader (poza komponentem – unika remount) ─────────────
@@ -387,6 +389,13 @@ export function NewSimulation() {
   const [topicContext, setTopicContext] = useState('');
   const [topicImpacts, setTopicImpacts] = useState('');
 
+  // ── Zakładka Competitive Contagion ──
+  const [framesStudyName, setFramesStudyName] = useState('');
+  const [frames, setFrames] = useState<Frame[]>([
+    { id: 'f1', label: '', text: '' },
+    { id: 'f2', label: '', text: '' },
+  ]);
+
   const anyUploading = creativeA.uploading || creativeB.uploading || rumorCreative.uploading;
 
   async function handleSubmit(e: React.FormEvent) {
@@ -513,6 +522,28 @@ export function NewSimulation() {
         setError(err.message ?? 'Błąd startu symulacji');
         setLoading(false);
       }
+    } else if (tab === 'frames') {
+      const validFrames = frames.filter(f => f.label.trim() && f.text.trim());
+      if (validFrames.length < 2) {
+        setError('Podaj co najmniej 2 framings (etykieta + treść)');
+        return;
+      }
+      setLoading(true);
+      try {
+        const data: FramesSimulationFormData = {
+          seedType: 'frames',
+          studyName: framesStudyName || `WoM: ${validFrames.map(f => f.label).join(' vs ')}`.slice(0, 60),
+          frames: validFrames,
+          totalRounds: params.totalRounds,
+          platform: params.platform,
+          activeAgentRatio: params.activeAgentRatio,
+        };
+        const id = await startSimulation(data);
+        navigate(`/simulation/${id}`);
+      } catch (err: any) {
+        setError(err.message ?? 'Błąd startu symulacji');
+        setLoading(false);
+      }
     } else {
       if (!topicQuery.trim()) {
         setError('Opisz scenariusz (pole Scenariusz jest wymagane)');
@@ -563,6 +594,7 @@ export function NewSimulation() {
             { key: 'ad' as SeedTab, icon: Megaphone, label: 'Reklama' },
             { key: 'rumor' as SeedTab, icon: MessageSquare, label: 'Komunikat / Plotka' },
             { key: 'topic' as SeedTab, icon: Globe, label: 'Scenariusz / Event' },
+            { key: 'frames' as SeedTab, icon: Network, label: 'Competitive Contagion' },
           ]).map(({ key, icon: Icon, label }) => (
             <button
               key={key}
@@ -1007,6 +1039,60 @@ export function NewSimulation() {
           </div>
         )}
 
+        {tab === 'frames' && (
+          <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-6 space-y-4">
+            <h2 className="text-white font-semibold">Competitive Contagion — wiele framingów</h2>
+            <p className="text-[#9898a8] text-xs">
+              Podaj N różnych sposobów narracji o tym samym zdarzeniu. Agenci w grafie społecznym
+              wybiorą, który framing adoptują i dalej rozprzestrzenią. Wynik: który framing
+              "wygrywa" i w jakich segmentach.
+            </p>
+            <div>
+              <label className="block text-xs text-[#c0c0cc] mb-1">Nazwa badania</label>
+              <input
+                type="text" value={framesStudyName} onChange={e => setFramesStudyName(e.target.value)}
+                placeholder="np. Framing: awaria elektrowni" className={inputCls}
+              />
+            </div>
+            <div className="space-y-3">
+              {frames.map((f, i) => (
+                <div key={f.id} className="border border-[#38383f] rounded-lg p-4 space-y-2 relative">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-semibold text-[#6366f1] w-16 shrink-0">Framing {i + 1}</span>
+                    <input
+                      type="text" value={f.label}
+                      onChange={e => setFrames(prev => prev.map((x, j) => j === i ? { ...x, label: e.target.value } : x))}
+                      placeholder="Krótka etykieta (np. katastrofa ekologiczna)"
+                      className={`${inputCls} text-xs`}
+                    />
+                    {frames.length > 2 && (
+                      <button type="button" onClick={() => setFrames(prev => prev.filter((_, j) => j !== i))}
+                        className="p-1 text-[#6b6b78] hover:text-red-400 shrink-0">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+                  <textarea
+                    value={f.text}
+                    onChange={e => setFrames(prev => prev.map((x, j) => j === i ? { ...x, text: e.target.value } : x))}
+                    placeholder="Treść narracji — jak agenci sformułują ten framing w postach..."
+                    rows={3} className={`${inputCls} resize-none text-xs`}
+                  />
+                </div>
+              ))}
+            </div>
+            {frames.length < 5 && (
+              <button
+                type="button"
+                onClick={() => setFrames(prev => [...prev, { id: `f${Date.now()}`, label: '', text: '' }])}
+                className="text-xs text-[#6366f1] hover:text-indigo-300 flex items-center gap-1 transition-colors"
+              >
+                + Dodaj framing
+              </button>
+            )}
+          </div>
+        )}
+
         {/* Parametry symulacji — wspólne */}
         <SimulationParams value={params} onChange={setParams} />
 
@@ -1038,6 +1124,8 @@ export function NewSimulation() {
                 ? 'Uruchom predykcję społeczną'
                 : tab === 'rumor'
                 ? 'Uruchom symulację komunikatu'
+                : tab === 'frames'
+                ? 'Uruchom competitive contagion'
                 : adMode === 'ab'
                 ? 'Uruchom test A/B'
                 : adMode === 'segment'

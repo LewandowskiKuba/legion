@@ -9,6 +9,7 @@ import { getPolymarketContext } from "../polymarket/index.js";
 import type {
   AgentAction,
   ActionType,
+  Frame,
   KnowledgeGraph,
   MemoryEntry,
   Platform,
@@ -88,11 +89,11 @@ function hotScore(
 // Buduje feed dla agenta: top-8 postów wg hot score (z boostem dla połączeń społecznych)
 function buildFeedForPersona(
   personaId: string,
-  allPastActions: AgentAction[],   // wszystkie akcje ze wszystkich rund
-  personaMap: Map<string, string>,  // id → name
-  socialConnections: Set<string>,   // kogo obserwuje agent
+  allPastActions: AgentAction[],
+  personaMap: Map<string, string>,
+  socialConnections: Set<string>,
   currentRound: number
-): Array<{ personaName: string; content: string; actionType: string }> {
+): Array<{ personaName: string; content: string; actionType: string; frameId?: string; authorId: string }> {
   const candidates = allPastActions.filter(
     (a) =>
       a.personaId !== personaId &&
@@ -111,6 +112,8 @@ function buildFeedForPersona(
       personaName: a.personaName,
       content: a.content,
       actionType: a.actionType,
+      frameId: a.frameId,
+      authorId: a.personaId,
     }));
 }
 
@@ -133,12 +136,14 @@ export async function runRound(params: {
   agentBeliefs: Map<string, BeliefState>;
   memoryStore: AgentMemoryStore;
   knowledgeGraph: KnowledgeGraph;
-  allPastActions: AgentAction[];      // wszystkie akcje ze wszystkich poprzednich rund
-  socialGraph: Map<string, Set<string>>; // Barabási-Albert: id → Set<followingId>
+  allPastActions: AgentAction[];
+  socialGraph: Map<string, Set<string>>;
   events: SimulationEvent[];
   platform: Platform;
   activeAgentRatio: number;
   seedType?: "ad" | "topic";
+  frames?: Frame[];              // competitive contagion framings
+  agentFrames?: Map<string, string>; // personaId → current frameId (mutated in-place)
   onProgress?: (done: number, total: number) => void;
 }): Promise<SimulationRound> {
   const {
@@ -155,6 +160,8 @@ export async function runRound(params: {
     platform,
     activeAgentRatio,
     seedType,
+    frames,
+    agentFrames,
     onProgress,
   } = params;
 
@@ -169,6 +176,28 @@ export async function runRound(params: {
   const activeEvents = events
     .filter((e) => e.injectedAt <= round)
     .map((e) => ({ type: e.type, content: e.content }));
+
+  // ── Frame competition: wybierz framing dla każdego aktywnego agenta ────────
+  // Jeśli agent widzi posty z różnych framingów → próbkowanie PL z BeliefState
+  const propagationSources = new Map<string, string>(); // personaId → sourcePersonaId
+  if (frames && frames.length > 0 && agentFrames) {
+    for (const persona of activePersonas) {
+      const connections = socialGraph.get(persona.id) ?? new Set<string>();
+      const feed = buildFeedForPersona(persona.id, allPastActions, personaMap, connections, round);
+      const framesInFeed = frames.filter(f => feed.some(item => item.frameId === f.id));
+      if (framesInFeed.length === 0) continue;
+
+      const bs = agentBeliefs.get(persona.id);
+      if (!bs) continue;
+      const selectedId = bs.selectFrame(framesInFeed);
+      if (!selectedId) continue;
+      agentFrames.set(persona.id, selectedId);
+
+      // Zapamiętaj źródło propagacji (autor z najwyższym hot-score z wybranego framu)
+      const source = feed.find(item => item.frameId === selectedId);
+      if (source?.authorId) propagationSources.set(persona.id, source.authorId);
+    }
+  }
 
   // Uruchom batch
   const polyCtx = await getPolymarketContext();
@@ -203,7 +232,12 @@ export async function runRound(params: {
     (personaId, raw) => {
       const persona = activePersonas.find((p) => p.id === personaId)!;
       const currentOpinion = agentOpinions[personaId] ?? 0;
-      return parseAgentRoundResponse(personaId, persona.name, raw, round, platform, currentOpinion);
+      const action = parseAgentRoundResponse(personaId, persona.name, raw, round, platform, currentOpinion);
+      if (agentFrames) {
+        action.frameId = agentFrames.get(personaId);
+        action.propagatedFrom = propagationSources.get(personaId);
+      }
+      return action;
     },
     onProgress
   );
@@ -287,6 +321,16 @@ export async function runRound(params: {
       content: a.content,
     }));
 
+  // Frame adoption snapshot tej rundy
+  let frameAdoption: Record<string, number> | undefined;
+  if (frames && frames.length > 0 && agentFrames) {
+    frameAdoption = {};
+    for (const f of frames) frameAdoption[f.id] = 0;
+    for (const fid of agentFrames.values()) {
+      if (fid in frameAdoption) frameAdoption[fid]++;
+    }
+  }
+
   return {
     roundNumber: round,
     actions,
@@ -296,5 +340,6 @@ export async function runRound(params: {
     negativeCount,
     neutralCount,
     viralPaths,
+    frameAdoption,
   };
 }
