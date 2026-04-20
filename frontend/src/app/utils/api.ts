@@ -557,8 +557,14 @@ export interface SimulationSummary {
   status: string;
   seedType: SimulationSeedType;
   createdAt: string;
+  completedAt?: string;
   totalRounds: number;
   currentRound: number;
+  populationSize: number;
+  avgOpinion: number;
+  positiveRatio: number;
+  negativeRatio: number;
+  neutralRatio: number;
 }
 
 export async function listSimulations(): Promise<SimulationSummary[]> {

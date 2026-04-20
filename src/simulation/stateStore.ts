@@ -14,6 +14,22 @@ if (!existsSync(SIMULATIONS_DIR)) {
   mkdirSync(SIMULATIONS_DIR, { recursive: true });
 }
 
+export interface SimulationListItem {
+  id: string;
+  studyName: string;
+  status: string;
+  seedType: string;
+  createdAt: string;
+  completedAt?: string;
+  totalRounds: number;
+  currentRound: number;
+  populationSize: number;
+  avgOpinion: number;
+  positiveRatio: number;
+  negativeRatio: number;
+  neutralRatio: number;
+}
+
 export class SimulationStateStore {
   private active: Map<string, SimulationOrchestrator> = new Map();
 
@@ -53,20 +69,37 @@ export class SimulationStateStore {
     }
   }
 
-  listAll(): Array<{ id: string; studyName: string; status: string; createdAt: string; totalRounds: number; currentRound: number }> {
-    const results: Array<{ id: string; studyName: string; status: string; createdAt: string; totalRounds: number; currentRound: number }> = [];
+  listAll(): SimulationListItem[] {
+    const results: SimulationListItem[] = [];
 
-    // Aktywne
-    for (const [id, orc] of this.active.entries()) {
-      const s = orc.getState();
-      results.push({
+    const summarize = (id: string, s: any): SimulationListItem => {
+      const opinions = Object.values(s.agentOpinions ?? {}) as number[];
+      const count = opinions.length;
+      const avgOpinion = count > 0
+        ? Math.round((opinions.reduce((a: number, b: number) => a + b, 0) / count) * 100) / 100
+        : 0;
+      const positive = count > 0 ? Math.round(opinions.filter((v: number) => v > 0).length / count * 100) : 0;
+      const negative = count > 0 ? Math.round(opinions.filter((v: number) => v < 0).length / count * 100) : 0;
+      return {
         id,
         studyName: s.studyName,
         status: s.status,
+        seedType: s.seedType ?? "ad",
         createdAt: s.createdAt,
+        completedAt: s.completedAt,
         totalRounds: s.totalRounds,
         currentRound: s.currentRound,
-      });
+        populationSize: Array.isArray(s.population) ? s.population.length : 0,
+        avgOpinion,
+        positiveRatio: positive,
+        negativeRatio: negative,
+        neutralRatio: 100 - positive - negative,
+      };
+    };
+
+    // Aktywne
+    for (const [id, orc] of this.active.entries()) {
+      results.push(summarize(id, orc.getState()));
     }
 
     // Z dysku (jeśli nie są już w aktywnych)
@@ -78,14 +111,7 @@ export class SimulationStateStore {
         try {
           const raw = readFileSync(path.join(SIMULATIONS_DIR, file), "utf-8");
           const { state } = JSON.parse(raw);
-          results.push({
-            id,
-            studyName: state.studyName,
-            status: state.status,
-            createdAt: state.createdAt,
-            totalRounds: state.totalRounds,
-            currentRound: state.currentRound,
-          });
+          results.push(summarize(id, state));
         } catch {
           // Pomiń uszkodzone pliki
         }

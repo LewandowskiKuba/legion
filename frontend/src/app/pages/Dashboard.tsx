@@ -1,39 +1,94 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router';
-import { Users, TrendingUp, ArrowRight, Calendar, Award } from 'lucide-react';
-import { getCampaigns, getPopulation, type Campaign, type PopulationStats } from '../utils/api';
+import {
+  Users, TrendingUp, TrendingDown, Minus, ArrowRight,
+  Play, CheckCircle2, Clock, Zap, Network,
+} from 'lucide-react';
+import { getPopulation, listSimulations, type PopulationStats } from '../utils/api';
 import { Button } from '../components/ui/button';
+
+interface SimulationListItem {
+  id: string;
+  studyName: string;
+  status: string;
+  seedType: string;
+  createdAt: string;
+  completedAt?: string;
+  totalRounds: number;
+  currentRound: number;
+  populationSize: number;
+  avgOpinion: number;
+  positiveRatio: number;
+  negativeRatio: number;
+  neutralRatio: number;
+}
+
+const SEED_LABELS: Record<string, string> = {
+  ad:     'Reklama',
+  topic:  'Scenariusz',
+  frames: 'Competitive Contagion',
+};
+
+const SEED_COLORS: Record<string, string> = {
+  ad:     'bg-[#6366f1]/20 text-[#818cf8]',
+  topic:  'bg-emerald-500/20 text-emerald-400',
+  frames: 'bg-amber-500/20 text-amber-400',
+};
+
+function StatusBadge({ status }: { status: string }) {
+  if (status === 'complete')
+    return <span className="flex items-center gap-1 text-xs text-emerald-400"><CheckCircle2 className="w-3 h-3" />Zakończona</span>;
+  if (status === 'running')
+    return <span className="flex items-center gap-1 text-xs text-[#6366f1] animate-pulse"><Play className="w-3 h-3" />W toku</span>;
+  if (status === 'initializing')
+    return <span className="flex items-center gap-1 text-xs text-amber-400"><Clock className="w-3 h-3" />Inicjalizacja</span>;
+  if (status === 'error')
+    return <span className="flex items-center gap-1 text-xs text-red-400"><Minus className="w-3 h-3" />Błąd</span>;
+  return <span className="text-xs text-[#6b6b7a]">{status}</span>;
+}
+
+function OpinionBar({ pos, neg, neu }: { pos: number; neg: number; neu: number }) {
+  return (
+    <div className="flex h-1.5 w-24 rounded overflow-hidden bg-[#1c1c22]">
+      {pos > 0 && <div className="bg-emerald-500 h-full" style={{ width: `${pos}%` }} />}
+      {neu > 0 && <div className="bg-[#38383f] h-full"  style={{ width: `${neu}%` }} />}
+      {neg > 0 && <div className="bg-red-500 h-full"    style={{ width: `${neg}%` }} />}
+    </div>
+  );
+}
+
+function opinionColor(v: number) {
+  if (v > 1.5)  return 'text-emerald-400';
+  if (v > 0)    return 'text-emerald-300';
+  if (v < -1.5) return 'text-red-400';
+  if (v < 0)    return 'text-red-300';
+  return 'text-[#c0c0cc]';
+}
+
+const sk = 'bg-[#38383f] rounded animate-pulse';
 
 export function Dashboard() {
   const [population, setPopulation] = useState<PopulationStats | null>(null);
-  const [recentCampaigns, setRecentCampaigns] = useState<Campaign[]>([]);
-  const [allCampaigns, setAllCampaigns] = useState<Campaign[]>([]);
+  const [sims, setSims] = useState<SimulationListItem[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function loadData() {
-      const [popData, campaigns] = await Promise.all([getPopulation(), getCampaigns()]);
-      setPopulation(popData);
-      setAllCampaigns(campaigns);
-      setRecentCampaigns(campaigns.slice(0, 3));
+    async function load() {
+      const [pop, simList] = await Promise.all([getPopulation(), listSimulations()]);
+      setPopulation(pop);
+      setSims(simList as SimulationListItem[]);
       setLoading(false);
     }
-    loadData();
+    load();
   }, []);
 
-  const now = new Date();
-  const studiesThisMonth = allCampaigns.filter((c) => {
-    const d = new Date(c.date);
-    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
-  }).length;
+  const completed  = sims.filter((s) => s.status === 'complete');
+  const running    = sims.filter((s) => s.status === 'running' || s.status === 'initializing');
+  const recent     = sims.slice(0, 5);
 
-  const avgAttention = allCampaigns.length > 0
-    ? (allCampaigns.reduce((s, c) => s + c.attentionScore, 0) / allCampaigns.length).toFixed(1)
+  const avgOpinionAll = completed.length > 0
+    ? (completed.reduce((a, s) => a + s.avgOpinion, 0) / completed.length).toFixed(1)
     : '—';
-
-  const uniqueBrands = new Set(allCampaigns.map((c) => c.brand).filter((b) => b && b !== '–')).size;
-
-  const sk = 'bg-[#38383f] rounded animate-pulse';
 
   return (
     <div className="space-y-6">
@@ -41,166 +96,163 @@ export function Dashboard() {
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-semibold text-white">Dashboard</h2>
-          <p className="text-sm text-[#c0c0cc] mt-1">Przegląd syntetycznej populacji i ostatnich badań</p>
+          <p className="text-sm text-[#c0c0cc] mt-1">Przegląd symulacji i syntetycznej populacji</p>
         </div>
-        <Link to="/new-study">
+        <Link to="/new-simulation">
           <Button className="bg-[#6366f1] hover:bg-[#5558e3] text-white rounded-lg px-6">
-            Nowe badanie
+            Nowa symulacja
           </Button>
         </Link>
       </div>
 
-      {/* Population Card */}
+      {/* Quick stats */}
+      <div className="grid grid-cols-4 gap-4">
+        {[
+          { icon: Network,      color: 'text-[#6366f1]', bg: 'bg-[#6366f1]/10', label: 'Wszystkich symulacji',   value: loading ? null : sims.length },
+          { icon: Play,         color: 'text-amber-400',  bg: 'bg-amber-400/10',  label: 'W toku',                value: loading ? null : running.length },
+          { icon: CheckCircle2, color: 'text-emerald-400',bg: 'bg-emerald-400/10',label: 'Zakończonych',          value: loading ? null : completed.length },
+          { icon: TrendingUp,   color: 'text-[#c0c0cc]',  bg: 'bg-[#38383f]',    label: 'Śr. opinia (ukończone)',value: loading ? null : avgOpinionAll },
+        ].map(({ icon: Icon, color, bg, label, value }) => (
+          <div key={label} className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-5">
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-lg ${bg} flex items-center justify-center shrink-0`}>
+                <Icon className={`w-5 h-5 ${color}`} />
+              </div>
+              <div>
+                <div className="text-xs text-[#c0c0cc] mb-0.5">{label}</div>
+                {value === null
+                  ? <div className={`h-6 w-12 ${sk}`} />
+                  : <div className="text-xl font-semibold text-white">{value}</div>
+                }
+              </div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Population */}
       <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-6">
-        <div className="flex items-start justify-between mb-6">
+        <div className="flex items-start justify-between mb-5">
           <div>
-            <h3 className="text-lg font-semibold text-white mb-1">Stan populacji syntetycznej</h3>
-            <p className="text-sm text-[#c0c0cc]">Aktualna kalibracja: GUS BDL 2024, NSP 2021, CBOS 2025</p>
+            <h3 className="text-base font-semibold text-white mb-1">Syntetyczna populacja</h3>
+            <p className="text-xs text-[#c0c0cc]">Kalibracja: GUS BDL 2024 · NSP 2021 · CBOS 2025</p>
           </div>
           <Link to="/population">
-            <Button variant="ghost" size="sm" className="text-[#6366f1] hover:text-[#5558e3] hover:bg-[#38383f]">
-              Szczegóły
-              <ArrowRight className="w-4 h-4 ml-1" />
+            <Button variant="ghost" size="sm" className="text-[#6366f1] hover:bg-[#38383f] text-xs">
+              Szczegóły <ArrowRight className="w-3 h-3 ml-1" />
+            </Button>
+          </Link>
+        </div>
+        <div className="grid grid-cols-4 gap-6">
+          {[
+            { label: 'Wielkość próby', value: population ? `n=${population.total}` : null },
+            { label: 'Średni wiek',    value: population ? `${population.averageAge} lat` : null },
+            { label: 'Kobiety',        value: population ? `${population.genderDistribution.female}%` : null },
+            { label: 'Miasta >100k',   value: population ? `${population.regions.urban}%` : null },
+          ].map(({ label, value }) => (
+            <div key={label} className="space-y-1">
+              <div className="text-xs text-[#c0c0cc]">{label}</div>
+              {value ? <p className="text-2xl font-semibold text-white">{value}</p> : <div className={`h-8 w-20 ${sk}`} />}
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Recent simulations */}
+      <div>
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="text-base font-semibold text-white">Ostatnie symulacje</h3>
+          <Link to="/simulations">
+            <Button variant="ghost" size="sm" className="text-[#6366f1] hover:bg-[#38383f] text-xs">
+              Wszystkie <ArrowRight className="w-3 h-3 ml-1" />
             </Button>
           </Link>
         </div>
 
-        <div className="grid grid-cols-4 gap-6">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-[#c0c0cc] text-sm">
-              <Users className="w-4 h-4" />
-              <span>Wielkość próby</span>
-            </div>
-            {population ? <p className="text-3xl font-semibold text-white">n={population.total}</p> : <div className={`h-9 w-24 ${sk}`} />}
-          </div>
-
-          <div className="space-y-1">
-            <div className="text-[#c0c0cc] text-sm">Średni wiek</div>
-            {population ? <p className="text-3xl font-semibold text-white">{population.averageAge} lat</p> : <div className={`h-9 w-20 ${sk}`} />}
-          </div>
-
-          <div className="space-y-1">
-            <div className="text-[#c0c0cc] text-sm">Płeć</div>
-            {population ? (
-              <>
-                <p className="text-3xl font-semibold text-white">{population.genderDistribution.female}% K</p>
-                <p className="text-xs text-[#c0c0cc]">{population.genderDistribution.male}% M</p>
-              </>
-            ) : <div className={`h-9 w-20 ${sk}`} />}
-          </div>
-
-          <div className="space-y-1">
-            <div className="text-[#c0c0cc] text-sm">Miasta {'>'}100k</div>
-            {population ? <p className="text-3xl font-semibold text-white">{population.regions.urban}%</p> : <div className={`h-9 w-16 ${sk}`} />}
-          </div>
-        </div>
-      </div>
-
-      {/* Recent Studies */}
-      <div>
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-white">Ostatnie badania</h3>
-        </div>
-
-        <div className="space-y-3">
+        <div className="space-y-2">
           {loading && [0, 1, 2].map((i) => (
-            <div key={i} className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-5">
+            <div key={i} className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-4">
               <div className="flex items-center justify-between">
-                <div className="flex-1 space-y-2">
+                <div className="space-y-2">
                   <div className={`h-4 w-48 ${sk}`} />
                   <div className={`h-3 w-24 ${sk}`} />
                 </div>
-                <div className="flex gap-8 mr-4">
-                  {[0,1,2,3].map(j => <div key={j} className={`h-6 w-12 ${sk}`} />)}
-                </div>
+                <div className={`h-4 w-24 ${sk}`} />
               </div>
             </div>
           ))}
-          {!loading && recentCampaigns.map((campaign) => (
-            <Link key={campaign.id} to={`/results/${campaign.id}`}>
-              <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-5 hover:border-[#6366f1] transition-colors cursor-pointer group">
-                <div className="flex items-center justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-2">
-                      <h4 className="text-base font-semibold text-white group-hover:text-[#6366f1] transition-colors">
-                        {campaign.name}
-                      </h4>
-                      <span className="text-xs px-2 py-1 rounded bg-[#38383f] text-[#c0c0cc]">
-                        {campaign.brand}
+
+          {!loading && recent.length === 0 && (
+            <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-8 text-center">
+              <Zap className="w-8 h-8 text-[#38383f] mx-auto mb-3" />
+              <p className="text-sm text-[#c0c0cc]">Brak symulacji. Zacznij od nowej.</p>
+              <Link to="/new-simulation">
+                <Button className="mt-4 bg-[#6366f1] hover:bg-[#5558e3] text-white text-sm">
+                  Utwórz symulację
+                </Button>
+              </Link>
+            </div>
+          )}
+
+          {!loading && recent.map((sim) => (
+            <Link key={sim.id} to={`/simulation/${sim.id}`}>
+              <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-4 hover:border-[#6366f1] transition-colors cursor-pointer group">
+                <div className="flex items-center gap-4">
+                  {/* Name + meta */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-1">
+                      <span className="text-sm font-medium text-white group-hover:text-[#6366f1] transition-colors truncate">
+                        {sim.studyName}
+                      </span>
+                      <span className={`shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${SEED_COLORS[sim.seedType] ?? 'bg-[#38383f] text-[#c0c0cc]'}`}>
+                        {SEED_LABELS[sim.seedType] ?? sim.seedType}
                       </span>
                     </div>
-                    <div className="flex items-center gap-2 text-xs text-[#c0c0cc]">
-                      <Calendar className="w-3 h-3" />
-                      <span>{new Date(campaign.date).toLocaleDateString('pl-PL')}</span>
+                    <div className="flex items-center gap-3 text-xs text-[#6b6b7a]">
+                      <StatusBadge status={sim.status} />
+                      <span>·</span>
+                      <span>{new Date(sim.createdAt).toLocaleDateString('pl-PL', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
+                      <span>·</span>
+                      <span>{sim.populationSize.toLocaleString()} agentów</span>
+                      <span>·</span>
+                      <span>runda {sim.currentRound}/{sim.totalRounds}</span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-8 mr-4">
-                    <div className="text-right">
-                      <div className="text-xs text-[#c0c0cc] mb-1">Attention Score</div>
-                      <div className="text-xl font-semibold text-white">{campaign.attentionScore.toFixed(1)}</div>
+                  {/* Opinion */}
+                  {sim.status === 'complete' && (
+                    <div className="flex items-center gap-3 shrink-0">
+                      <div className="text-right">
+                        <div className="text-xs text-[#6b6b7a] mb-1">Śr. opinia</div>
+                        <div className={`text-base font-mono font-semibold ${opinionColor(sim.avgOpinion)}`}>
+                          {sim.avgOpinion > 0 ? '+' : ''}{sim.avgOpinion.toFixed(1)}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-xs text-[#6b6b7a] mb-1.5">Rozkład</div>
+                        <OpinionBar pos={sim.positiveRatio} neg={sim.negativeRatio} neu={sim.neutralRatio} />
+                        <div className="flex gap-2 text-xs mt-1 text-[#6b6b7a]">
+                          <span className="text-emerald-400">{sim.positiveRatio}%</span>
+                          <span className="text-red-400">{sim.negativeRatio}%</span>
+                        </div>
+                      </div>
                     </div>
+                  )}
 
-                    <div className="text-right">
-                      <div className="text-xs text-[#c0c0cc] mb-1">Resonance</div>
-                      <div className="text-xl font-semibold text-white">{campaign.resonance.toFixed(1)}</div>
+                  {sim.status === 'running' && (
+                    <div className="shrink-0 text-right">
+                      <div className="text-xs text-[#6b6b7a] mb-1">Postęp</div>
+                      <div className="text-sm font-mono text-[#6366f1]">
+                        {Math.round(sim.currentRound / sim.totalRounds * 100)}%
+                      </div>
                     </div>
+                  )}
 
-                    <div className="text-right">
-                      <div className="text-xs text-[#c0c0cc] mb-1">Purchase Intent Δ</div>
-                      <div className="text-xl font-semibold text-[#10b981]">+{campaign.purchaseIntentDelta}%</div>
-                    </div>
-
-                    <div className="text-right">
-                      <div className="text-xs text-[#c0c0cc] mb-1">Trust Δ</div>
-                      <div className="text-xl font-semibold text-[#10b981]">+{campaign.trustDelta}%</div>
-                    </div>
-                  </div>
-
-                  <ArrowRight className="w-5 h-5 text-[#c0c0cc] group-hover:text-[#6366f1] transition-colors" />
+                  <ArrowRight className="w-4 h-4 text-[#38383f] group-hover:text-[#6366f1] transition-colors shrink-0" />
                 </div>
               </div>
             </Link>
           ))}
-        </div>
-      </div>
-
-      {/* Quick Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-5">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-[#6366f1]/10 flex items-center justify-center">
-              <TrendingUp className="w-5 h-5 text-[#6366f1]" />
-            </div>
-            <div>
-              <div className="text-sm text-[#c0c0cc]">Badania w tym miesiącu</div>
-              <div className="text-xl font-semibold text-white">{studiesThisMonth}</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-5">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-[#10b981]/10 flex items-center justify-center">
-              <Award className="w-5 h-5 text-[#10b981]" />
-            </div>
-            <div>
-              <div className="text-sm text-[#c0c0cc]">Śr. Attention Score</div>
-              <div className="text-xl font-semibold text-white">{avgAttention}</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-5">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-[#f59e0b]/10 flex items-center justify-center">
-              <Users className="w-5 h-5 text-[#f59e0b]" />
-            </div>
-            <div>
-              <div className="text-sm text-[#c0c0cc]">Testowane marki</div>
-              <div className="text-xl font-semibold text-white">{uniqueBrands || '—'}</div>
-            </div>
-          </div>
         </div>
       </div>
     </div>
