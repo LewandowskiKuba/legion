@@ -21,18 +21,28 @@ interface GraphEdge {
   source: string;
   target: string;
   count: number;
+  frameId?: string;
 }
 
 interface ViralPath {
   from: string;
   to: string;
+  frameId?: string;
 }
+
+interface SimFrame { id: string; label: string; }
+
+type GraphMode = 'opinion' | 'frames';
 
 interface SocialGraphProps {
   population: Array<{ id: string; name: string }>;
   agentOpinions: Record<string, number>;
   viralPathsByRound: ViralPath[][];
+  agentFrames?: Record<string, string>;
+  frames?: SimFrame[];
 }
+
+const FRAME_COLORS = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6', '#06b6d4'];
 
 // ── Layout ────────────────────────────────────────────────────────────────────
 
@@ -44,6 +54,7 @@ function buildLayout(
   h: number,
 ): { nodes: GraphNode[]; edges: GraphEdge[] } {
   const edgeMap = new Map<string, number>();
+  const edgeFrameMap = new Map<string, string>(); // key → frameId (most common)
   const influenceMap = new Map<string, number>();
 
   for (const paths of viralPathsByRound) {
@@ -52,6 +63,7 @@ function buildLayout(
       const key = `${p.from}__${p.to}`;
       edgeMap.set(key, (edgeMap.get(key) ?? 0) + 1);
       influenceMap.set(p.from, (influenceMap.get(p.from) ?? 0) + 1);
+      if (p.frameId) edgeFrameMap.set(key, p.frameId);
     }
   }
 
@@ -79,7 +91,7 @@ function buildLayout(
   for (const [key, count] of edgeMap.entries()) {
     const sep = key.indexOf('__');
     if (sep < 0) continue;
-    edges.push({ source: key.slice(0, sep), target: key.slice(sep + 2), count });
+    edges.push({ source: key.slice(0, sep), target: key.slice(sep + 2), count, frameId: edgeFrameMap.get(key) });
   }
 
   // Force simulation
@@ -132,9 +144,22 @@ function nodeColor(opinion: number): string {
   return '#9898a8';
 }
 
+function frameColor(frameId: string | undefined, frames: SimFrame[]): string {
+  if (!frameId) return '#52525a';
+  const idx = frames.findIndex(f => f.id === frameId);
+  return FRAME_COLORS[idx >= 0 ? idx % FRAME_COLORS.length : 0];
+}
+
+function edgeFrameColor(frameId: string | undefined, frames: SimFrame[]): string {
+  if (!frameId) return 'rgba(255,255,255,0.15)';
+  return frameColor(frameId, frames) + '80';
+}
+
 // ── Komponent ─────────────────────────────────────────────────────────────────
 
-export function SocialGraph({ population, agentOpinions, viralPathsByRound }: SocialGraphProps) {
+export function SocialGraph({ population, agentOpinions, viralPathsByRound, agentFrames, frames }: SocialGraphProps) {
+  const hasFrames = frames && frames.length > 0 && agentFrames && Object.keys(agentFrames).length > 0;
+  const [mode, setMode] = useState<GraphMode>('opinion');
   const wrapRef   = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [dims, setDims] = useState({ w: 800, h: 440 });
@@ -198,7 +223,9 @@ export function SocialGraph({ population, agentOpinions, viralPathsByRound }: So
       ctx.beginPath();
       ctx.moveTo(s.x, s.y);
       ctx.lineTo(t.x, t.y);
-      ctx.strokeStyle = `rgba(255,255,255,${0.25 + (e.count / maxCount) * 0.45})`;
+      ctx.strokeStyle = mode === 'frames' && frames
+        ? edgeFrameColor(e.frameId, frames)
+        : `rgba(255,255,255,${0.25 + (e.count / maxCount) * 0.45})`;
       ctx.lineWidth = 0.8 + (e.count / maxCount) * 1.5;
       ctx.stroke();
     }
@@ -206,7 +233,9 @@ export function SocialGraph({ population, agentOpinions, viralPathsByRound }: So
     // Draw nodes
     for (const n of nodes) {
       const r = 4 + n.influenceScore * 9;
-      const color = nodeColor(n.opinion);
+      const color = mode === 'frames' && frames && agentFrames
+        ? frameColor(agentFrames[n.id], frames)
+        : nodeColor(n.opinion);
       const isHov = hovered?.id === n.id;
 
       // Glow for influencers
@@ -230,7 +259,7 @@ export function SocialGraph({ population, agentOpinions, viralPathsByRound }: So
     }
 
     ctx.restore();
-  }, [nodes, edges, dims, zoom, pan, hovered]);
+  }, [nodes, edges, dims, zoom, pan, hovered, mode, agentFrames, frames]);
 
   // Mouse move — hit test
   const onMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -278,17 +307,47 @@ export function SocialGraph({ population, agentOpinions, viralPathsByRound }: So
         <div>
           <h2 className="text-white font-semibold text-sm">Graf społeczny</h2>
           <p className="text-[#6b6b78] text-xs mt-0.5">
-            Każdy węzeł to agent, każda linia — przekazanie treści. Kolor = opinia końcowa, rozmiar = zasięg.
+            {mode === 'opinion'
+              ? 'Każdy węzeł to agent, każda linia — przekazanie treści. Kolor = opinia końcowa, rozmiar = zasięg.'
+              : 'Kolor węzła = adoptowany framing. Kolor krawędzi = framing którym treść przeszła.'}
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-3 text-xs text-[#9898a8]">
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" />{positiveCount} pozyt.</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" />{negativeCount} negat.</span>
-            <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#9898a8] inline-block" />{neutralCount} neutr.</span>
-            <span className="text-[#52525a]">·</span>
-            <span>{edges.length} połączeń</span>
-          </div>
+          {hasFrames && (
+            <div className="flex rounded-lg border border-[#38383f] overflow-hidden text-xs">
+              <button
+                onClick={() => setMode('opinion')}
+                className={`px-3 py-1.5 transition-colors ${mode === 'opinion' ? 'bg-[#38383f] text-white' : 'text-[#6b6b78] hover:text-white'}`}
+              >
+                Sentyment
+              </button>
+              <button
+                onClick={() => setMode('frames')}
+                className={`px-3 py-1.5 transition-colors ${mode === 'frames' ? 'bg-[#38383f] text-white' : 'text-[#6b6b78] hover:text-white'}`}
+              >
+                Framings
+              </button>
+            </div>
+          )}
+          {mode === 'opinion' && (
+            <div className="flex items-center gap-3 text-xs text-[#9898a8]">
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-green-500 inline-block" />{positiveCount} pozyt.</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-red-500 inline-block" />{negativeCount} negat.</span>
+              <span className="flex items-center gap-1"><span className="w-2 h-2 rounded-full bg-[#9898a8] inline-block" />{neutralCount} neutr.</span>
+              <span className="text-[#52525a]">·</span>
+              <span>{edges.length} połączeń</span>
+            </div>
+          )}
+          {mode === 'frames' && frames && (
+            <div className="flex items-center gap-3 text-xs text-[#9898a8] flex-wrap max-w-xs">
+              {frames.map((f, i) => (
+                <span key={f.id} className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full inline-block flex-shrink-0" style={{ background: FRAME_COLORS[i % FRAME_COLORS.length] }} />
+                  {f.label}
+                </span>
+              ))}
+            </div>
+          )}
           <div className="flex items-center gap-1">
             <button onClick={() => setZoom(z => Math.min(3, z * 1.25))} className="p-1 text-[#9898a8] hover:text-white rounded"><ZoomIn className="w-3.5 h-3.5" /></button>
             <button onClick={() => setZoom(z => Math.max(0.3, z / 1.25))} className="p-1 text-[#9898a8] hover:text-white rounded"><ZoomOut className="w-3.5 h-3.5" /></button>
@@ -312,7 +371,7 @@ export function SocialGraph({ population, agentOpinions, viralPathsByRound }: So
         {hovered && (
           <div
             className="absolute pointer-events-none bg-[#111113] border border-[#38383f] rounded-lg px-3 py-2 shadow-xl z-10"
-            style={{ left: Math.min(tooltipPos.x + 12, dims.w - 170), top: Math.max(tooltipPos.y - 48, 4), maxWidth: 164 }}
+            style={{ left: Math.min(tooltipPos.x + 12, dims.w - 180), top: Math.max(tooltipPos.y - 48, 4), maxWidth: 176 }}
           >
             <p className="text-white text-xs font-semibold truncate">{hovered.name}</p>
             <p className="text-[#9898a8] text-xs">
@@ -320,6 +379,11 @@ export function SocialGraph({ population, agentOpinions, viralPathsByRound }: So
                 {hovered.opinion > 0 ? '+' : ''}{hovered.opinion.toFixed(1)}
               </span>
             </p>
+            {mode === 'frames' && agentFrames && frames && agentFrames[hovered.id] && (
+              <p className="text-[#9898a8] text-xs">
+                Framing: <span className="text-white">{frames.find(f => f.id === agentFrames![hovered!.id])?.label ?? '—'}</span>
+              </p>
+            )}
             {hovered.influenceScore > 0 && (
               <p className="text-[#6b6b78] text-xs">Influence: {Math.round(hovered.influenceScore * 100)}%</p>
             )}
@@ -328,10 +392,17 @@ export function SocialGraph({ population, agentOpinions, viralPathsByRound }: So
       </div>
 
       {/* Footer */}
-      <div className="px-5 py-3 border-t border-[#38383f] flex items-center gap-2">
-        <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dominant === 'positive' ? 'bg-green-500' : dominant === 'negative' ? 'bg-red-500' : 'bg-[#9898a8]'}`} />
-        <p className="text-xs text-[#c0c0cc]">{dominantLabel}</p>
-      </div>
+      {mode === 'opinion' && (
+        <div className="px-5 py-3 border-t border-[#38383f] flex items-center gap-2">
+          <span className={`w-2 h-2 rounded-full flex-shrink-0 ${dominant === 'positive' ? 'bg-green-500' : dominant === 'negative' ? 'bg-red-500' : 'bg-[#9898a8]'}`} />
+          <p className="text-xs text-[#c0c0cc]">{dominantLabel}</p>
+        </div>
+      )}
+      {mode === 'frames' && (
+        <div className="px-5 py-3 border-t border-[#38383f]">
+          <p className="text-xs text-[#6b6b78]">Węzły kolorowane wg aktualnie adoptowanego framingu. Szary = brak adopcji.</p>
+        </div>
+      )}
     </div>
   );
 }

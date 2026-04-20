@@ -464,7 +464,7 @@ export async function fetchSummary(result: StudyResult): Promise<string> {
 
 // ─── Simulation API (v2) ──────────────────────────────────────────────────────
 
-export type SimulationSeedType = "ad" | "topic";
+export type SimulationSeedType = "ad" | "topic" | "frames";
 
 export interface AdSimulationFormData {
   seedType: "ad";
@@ -517,10 +517,39 @@ export interface TopicSimulationFormData {
   activeAgentRatio?: number;
 }
 
+export interface Frame {
+  id: string;
+  label: string;
+  text: string;
+}
+
+export interface FrameSegmentStats {
+  segment: string;
+  frameShares: Record<string, number>;
+}
+
+export interface FrameRoundStats {
+  roundNumber: number;
+  frameAdoption: Record<string, number>;
+  frameShare: Record<string, number>;
+  byAgeGroup: FrameSegmentStats[];
+  byPolitical: FrameSegmentStats[];
+}
+
+export interface FramesSimulationFormData {
+  seedType: "frames";
+  studyName: string;
+  frames: Frame[];
+  totalRounds: number;
+  platform: "facebook" | "twitter";
+  activeAgentRatio?: number;
+}
+
 export type SimulationFormData =
   | AdSimulationFormData
   | RumorSimulationFormData
-  | TopicSimulationFormData;
+  | TopicSimulationFormData
+  | FramesSimulationFormData;
 
 export interface SimulationSummary {
   id: string;
@@ -578,6 +607,13 @@ export async function startSimulation(data: SimulationFormData): Promise<string>
       brandName: data.brand || undefined,
       context: data.context || undefined,
     };
+  } else if (data.seedType === "frames") {
+    bodyObj.seedType = "topic";
+    bodyObj.topic = {
+      query: data.frames.map(f => f.label).join(" vs "),
+      context: "Competitive contagion — multiple framings of the same event",
+    };
+    bodyObj.frames = data.frames;
   } else {
     bodyObj.seedType = "topic";
     bodyObj.topic = {

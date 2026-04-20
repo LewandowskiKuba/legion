@@ -12,6 +12,8 @@ import { BeliefState, extractTopicsFromRequirement } from "./beliefState.js";
 import { SimulationTrajectory } from "./trajectoryTracker.js";
 import { buildSocialGraph } from "./socialGraph.js";
 import type {
+  Frame,
+  FrameRoundStats,
   SimulationConfig,
   SimulationState,
   SimulationRound,
@@ -34,6 +36,8 @@ export class SimulationOrchestrator {
   private agentBeliefs: Map<string, BeliefState> = new Map();
   private trajectory: SimulationTrajectory = new SimulationTrajectory();
   private socialGraph: Map<string, Set<string>> = new Map();
+  private frames: Frame[] = [];
+  private agentFrames: Map<string, string> = new Map(); // personaId → frameId
 
   // Callback called after each round completes (for SSE streaming)
   onRoundComplete?: (round: SimulationRound) => void;
@@ -93,6 +97,55 @@ export class SimulationOrchestrator {
     // Zbuduj graf społeczny Barabási-Albert raz dla całej symulacji
     this.socialGraph = buildSocialGraph(config.population.map((p) => p.id));
     console.log(`🕸 Graf społeczny: ${config.population.length} węzłów, BA m=3`);
+
+    // Competitive contagion: seeding framingów (~5% populacji per frame)
+    if (config.frames && config.frames.length > 0) {
+      this.frames = config.frames;
+      this.state.frames = config.frames;
+      this.state.frameStats = [];
+      const seedRatio = 0.05;
+      const seedCount = Math.max(1, Math.round(config.population.length * seedRatio));
+      const shuffled = [...config.population].sort(() => Math.random() - 0.5);
+      let offset = 0;
+      for (const frame of config.frames) {
+        const seedAgents = shuffled.slice(offset, offset + seedCount);
+        for (const agent of seedAgents) this.agentFrames.set(agent.id, frame.id);
+        offset += seedCount;
+      }
+      // Seed posty (runda 0) — widoczne od pierwszej rundy w feedzie
+      const seedActions = config.frames.flatMap(frame => {
+        const carriers = [...this.agentFrames.entries()]
+          .filter(([, fid]) => fid === frame.id)
+          .map(([pid]) => config.population.find(p => p.id === pid)!)
+          .filter(Boolean);
+        return carriers.map(agent => ({
+          personaId: agent.id,
+          personaName: agent.name,
+          round: 0,
+          platform: this.platform,
+          actionType: "post" as const,
+          content: frame.text,
+          opinionDelta: 0,
+          currentOpinion: 0,
+          frameId: frame.id,
+        }));
+      });
+      // Wstrzyknij jako zerowa runda do historii
+      if (seedActions.length > 0) {
+        this.state.rounds.push({
+          roundNumber: 0,
+          actions: seedActions,
+          opinionSnapshot: { ...this.state.agentOpinions },
+          avgOpinion: 0,
+          positiveCount: 0,
+          negativeCount: 0,
+          neutralCount: config.population.length,
+          viralPaths: [],
+          frameAdoption: Object.fromEntries(config.frames.map(f => [f.id, seedCount])),
+        });
+      }
+      console.log(`🔀 Competitive contagion: ${config.frames.length} framingów, ${seedCount} seed agentów/frame`);
+    }
   }
 
   // Faza init: wyciągnij KnowledgeGraph z seeda (reklama lub scenariusz)
@@ -142,16 +195,37 @@ export class SimulationOrchestrator {
       platform: this.platform,
       activeAgentRatio: this.activeAgentRatio,
       seedType: this.state.seedType,
+      frames: this.frames.length > 0 ? this.frames : undefined,
+      agentFrames: this.frames.length > 0 ? this.agentFrames : undefined,
       onProgress,
     });
 
     this.state.rounds.push(round);
     this.state.currentRound = roundNumber;
+    this.state.agentFrames = Object.fromEntries(this.agentFrames);
     this.state.agentMemory = this.memoryStore.serialize();
     this.state.agentMemoryCompacted = this.memoryStore.serializeCompacted();
 
     // Zaktualizuj trajectory
     this.trajectory.recordRound(round, this.agentBeliefs);
+
+    // Frame stats per runda
+    if (this.frames.length > 0 && round.frameAdoption) {
+      const totalAgents = this.state.population.length;
+      const frameShare: Record<string, number> = {};
+      for (const [fid, count] of Object.entries(round.frameAdoption)) {
+        frameShare[fid] = totalAgents > 0 ? count / totalAgents : 0;
+      }
+      const stats: FrameRoundStats = {
+        roundNumber,
+        frameAdoption: round.frameAdoption,
+        frameShare,
+        byAgeGroup: this.computeFrameSegment("age"),
+        byPolitical: this.computeFrameSegment("political"),
+      };
+      if (!this.state.frameStats) this.state.frameStats = [];
+      this.state.frameStats.push(stats);
+    }
 
     // Memory compaction w tle (nie blokuje rundy)
     this.memoryStore.compactAll(this.state.population).catch((err) =>
@@ -194,6 +268,37 @@ export class SimulationOrchestrator {
       this.state.errorMessage = (err as Error).message;
       throw err;
     }
+  }
+
+  // Oblicza adopcję framingów per segment demograficzny
+  private computeFrameSegment(dim: "age" | "political"): import("./schema.js").FrameSegmentStats[] {
+    type Bucket = Record<string, Record<string, number>>; // segment → frameId → count
+    const buckets: Bucket = {};
+
+    for (const persona of this.state.population) {
+      const frameId = this.agentFrames.get(persona.id);
+      if (!frameId) continue;
+
+      let segment: string;
+      if (dim === "age") {
+        const age = persona.demographic?.age ?? 0;
+        segment = age < 30 ? "18–29" : age < 45 ? "30–44" : age < 60 ? "45–59" : "60+";
+      } else {
+        segment = (persona.political?.affiliation as string) ?? "nieokreślony";
+      }
+
+      if (!buckets[segment]) buckets[segment] = {};
+      buckets[segment][frameId] = (buckets[segment][frameId] ?? 0) + 1;
+    }
+
+    return Object.entries(buckets).map(([segment, frameCounts]) => {
+      const total = Object.values(frameCounts).reduce((a, b) => a + b, 0);
+      const frameShares: Record<string, number> = {};
+      for (const [fid, count] of Object.entries(frameCounts)) {
+        frameShares[fid] = total > 0 ? count / total : 0;
+      }
+      return { segment, frameShares };
+    });
   }
 
   // Sklonuj symulację do nowego orchestratora (fork dla "what if")
@@ -321,17 +426,20 @@ Rekomendacje: ${this.state.insights?.recommendations?.join("; ") ?? "brak"}`;
     for (const [id, connections] of this.socialGraph.entries()) {
       socialGraphData[id] = [...connections];
     }
+    const agentFramesData = Object.fromEntries(this.agentFrames);
     return JSON.stringify({
       state: this.state,
       platform: this.platform,
       activeAgentRatio: this.activeAgentRatio,
       agentBeliefsData,
       socialGraphData,
+      framesData: this.frames,
+      agentFramesData,
     });
   }
 
   static deserialize(json: string): SimulationOrchestrator {
-    const { state, platform, activeAgentRatio, agentBeliefsData, socialGraphData } = JSON.parse(json);
+    const { state, platform, activeAgentRatio, agentBeliefsData, socialGraphData, framesData, agentFramesData } = JSON.parse(json);
     const orc = new SimulationOrchestrator({
       studyName: state.studyName,
       seedType: state.seedType ?? "ad",
@@ -359,6 +467,10 @@ Rekomendacje: ${this.state.insights?.recommendations?.join("; ") ?? "brak"}`;
       for (const [id, connections] of Object.entries(socialGraphData)) {
         orc.socialGraph.set(id, new Set(connections as string[]));
       }
+    }
+    if (framesData) orc.frames = framesData;
+    if (agentFramesData) {
+      orc.agentFrames = new Map(Object.entries(agentFramesData) as [string, string][]);
     }
     return orc;
   }
