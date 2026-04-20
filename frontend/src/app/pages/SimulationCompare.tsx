@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router';
-import { ArrowLeft, ExternalLink, Loader2, BarChart3, FlaskConical, AlertTriangle, CheckCircle2, HelpCircle } from 'lucide-react';
-import { getSimulation, getBayesianAB, type BayesianABResult, type DimensionResult } from '../utils/api';
+import { ArrowLeft, ExternalLink, Loader2, BarChart3, FlaskConical, AlertTriangle, CheckCircle2, HelpCircle, Trophy } from 'lucide-react';
+import { getSimulation, getBayesianAB, getNWayRanking, type BayesianABResult, type DimensionResult, type PlackettLuceResult, type PLDimensionResult } from '../utils/api';
 
 // ─── Typy lokalne ─────────────────────────────────────────────────────────────
 
@@ -468,6 +468,259 @@ function BayesianSection({ idA, idB, statusA, statusB }: {
   );
 }
 
+// ─── Stałe dla N-way ─────────────────────────────────────────────────────────
+
+const CREATIVE_COLORS = ['#6366f1', '#f59e0b', '#10b981', '#ef4444', '#8b5cf6'];
+const CREATIVE_LETTERS = ['A', 'B', 'C', 'D', 'E'];
+
+// ─── PLBar — proporcjonalny pasek dla N kreacji ───────────────────────────────
+
+function PLBar({ probabilities, colors }: { probabilities: number[]; colors: string[] }) {
+  return (
+    <div className="flex h-5 rounded-full overflow-hidden w-full">
+      {probabilities.map((p, i) => (
+        <div
+          key={i}
+          className="h-full transition-all"
+          style={{ width: `${Math.round(p * 100)}%`, background: colors[i] }}
+          title={`${CREATIVE_LETTERS[i]}: ${Math.round(p * 100)}%`}
+        />
+      ))}
+    </div>
+  );
+}
+
+function plEntropyBadge(entropy: number, needsTest: boolean) {
+  if (needsTest) return <span className="text-xs px-2 py-0.5 rounded-full bg-yellow-900/30 border border-yellow-700/40 text-yellow-400 font-semibold">Test live</span>;
+  if (entropy < 0.5) return <span className="text-xs px-2 py-0.5 rounded-full bg-green-900/30 border border-green-700/40 text-green-400 font-semibold">Pewny</span>;
+  return <span className="text-xs px-2 py-0.5 rounded-full bg-orange-900/30 border border-orange-700/40 text-orange-400 font-semibold">Umiarkowany</span>;
+}
+
+// ─── PLDimensionTable ─────────────────────────────────────────────────────────
+
+function PLDimensionTable({ dim, colors, labels }: { dim: PLDimensionResult; colors: string[]; labels: string[] }) {
+  return (
+    <div className="bg-[#18181b] border border-[#27272a] rounded-xl overflow-hidden">
+      <div className="px-4 py-2.5 border-b border-[#27272a] bg-[#0f0f12]">
+        <span className="text-xs font-semibold text-[#a1a1aa] uppercase tracking-widest">{dim.label}</span>
+      </div>
+      <div className="divide-y divide-[#27272a]">
+        {dim.segments.map((seg) => (
+          <div key={seg.key} className="px-4 py-3 flex items-center gap-3">
+            <div className="w-36 flex-shrink-0">
+              <div className="text-sm text-white font-medium leading-tight">{seg.label}</div>
+              <div className="text-xs text-[#52525b] mt-0.5">n={seg.n.toLocaleString('pl-PL')}</div>
+            </div>
+            <div className="flex-1 min-w-0 space-y-1">
+              <PLBar probabilities={seg.probabilities} colors={colors} />
+              <div className="flex gap-3 text-xs text-[#71717a] flex-wrap">
+                {seg.probabilities.map((p, i) => (
+                  <span key={i} style={{ color: colors[i] }}>
+                    {labels[i]} {Math.round(p * 100)}%
+                  </span>
+                ))}
+              </div>
+            </div>
+            <div className="w-28 flex-shrink-0 text-right space-y-1">
+              {plEntropyBadge(seg.entropy, seg.needsTest)}
+              <div className="text-xs text-[#52525b]">H={seg.entropy.toFixed(2)}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ─── PLResultSection ──────────────────────────────────────────────────────────
+
+function PLResultSection({ ids, statuses }: { ids: string[]; statuses: (string | undefined)[] }) {
+  const [result, setResult] = useState<PlackettLuceResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const allReady = statuses.every((s) => s === 'completed' || s === 'complete');
+
+  useEffect(() => {
+    if (!allReady) return;
+    setLoading(true);
+    getNWayRanking(ids)
+      .then((r) => { setResult(r); setLoading(false); })
+      .catch((e) => { setError(e.message ?? 'Błąd'); setLoading(false); });
+  }, [ids.join(','), allReady]);
+
+  if (!allReady) {
+    return (
+      <div className="mt-8 bg-[#18181b] border border-[#27272a] rounded-xl p-6 flex items-center gap-3 text-[#71717a] text-sm">
+        <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" />
+        Analiza Plackett-Luce dostępna po zakończeniu wszystkich symulacji…
+      </div>
+    );
+  }
+
+  if (loading) {
+    return (
+      <div className="mt-8 bg-[#18181b] border border-[#27272a] rounded-xl p-6 flex items-center gap-3 text-[#a1a1aa] text-sm">
+        <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" />
+        Obliczam ranking Plackett-Luce + ranking porównawczy (Signal 2)…
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="mt-8 bg-red-900/10 border border-red-800/30 rounded-xl p-4 text-red-400 text-sm">
+        Błąd analizy: {error}
+      </div>
+    );
+  }
+
+  if (!result) return null;
+
+  const colors = CREATIVE_COLORS.slice(0, result.creativeCount);
+  const labels = result.creativeLabels;
+  const sortedByProb = [...result.globalProbabilities]
+    .map((p, i) => ({ p, i }))
+    .sort((a, b) => b.p - a.p);
+
+  const winnerIdx = result.globalWinner;
+  const winnerLabel = labels[winnerIdx];
+  const winnerColor = colors[winnerIdx];
+
+  const confidenceLabel = {
+    high: 'Wysoka pewność',
+    moderate: 'Umiarkowana pewność',
+    low: 'Niska pewność — rekomenduj test live',
+  }[result.confidenceLevel];
+
+  const confidenceIcon = result.confidenceLevel === 'high'
+    ? <CheckCircle2 className="w-4 h-4 text-green-400" />
+    : result.confidenceLevel === 'moderate'
+    ? <AlertTriangle className="w-4 h-4 text-yellow-400" />
+    : <HelpCircle className="w-4 h-4 text-orange-400" />;
+
+  return (
+    <div className="mt-8 space-y-6">
+      {/* Nagłówek */}
+      <div className="flex items-center gap-3">
+        <FlaskConical className="w-5 h-5 text-[#6366f1]" />
+        <h2 className="text-lg font-semibold text-white">Ranking Plackett-Luce</h2>
+        <span className="text-xs text-[#52525b] ml-1">P(kreacja = najlepsza | evidence)</span>
+      </div>
+
+      {/* Global ranking */}
+      <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-6">
+        <div className="flex items-start justify-between mb-5">
+          <div>
+            <div className="text-xs text-[#71717a] uppercase tracking-widest mb-1">Zwycięzca globalny</div>
+            <div className="text-2xl font-bold flex items-center gap-2" style={{ color: winnerColor }}>
+              <Trophy className="w-5 h-5" />
+              {winnerLabel}
+            </div>
+            <div className="flex items-center gap-1.5 mt-1">
+              {confidenceIcon}
+              <span className="text-sm text-[#a1a1aa]">{confidenceLabel}</span>
+            </div>
+          </div>
+          <div className="text-right">
+            <div className="text-xs text-[#52525b] mb-1">Margin (1.–2.)</div>
+            <div className="text-xl font-bold text-white">{Math.round(result.globalMargin * 100)} pp</div>
+            <div className="text-xs text-[#52525b]">n={result.totalPersonas.toLocaleString('pl-PL')} person</div>
+          </div>
+        </div>
+
+        {/* Pasek globalny */}
+        <div className="space-y-3">
+          <PLBar probabilities={result.globalProbabilities} colors={colors} />
+          <div className="flex flex-wrap gap-4 text-sm font-semibold">
+            {result.globalProbabilities.map((p, i) => (
+              <span key={i} style={{ color: colors[i] }}>
+                {labels[i]} — {Math.round(p * 100)}%
+              </span>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-4 text-xs text-[#52525b] border-t border-[#27272a] pt-3">
+          Średnia geometryczna posteriorów per segment. Algorytm MM (Hunter 2004). Próg testu live: margin &lt; 15%.
+        </div>
+      </div>
+
+      {/* Ranking porządkowy */}
+      <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-5">
+        <div className="text-xs text-[#71717a] uppercase tracking-widest mb-3">Ranking globalny</div>
+        <div className="space-y-2">
+          {sortedByProb.map(({ p, i }, rank) => (
+            <div key={i} className="flex items-center gap-3">
+              <span className="text-sm font-bold text-[#52525b] w-5 text-center">{rank + 1}.</span>
+              <div
+                className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                style={{ background: colors[i] }}
+              />
+              <span className="text-sm text-white font-medium flex-1">{labels[i]}</span>
+              <div className="flex items-center gap-2">
+                <div className="w-32 h-2 bg-[#38383f] rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full"
+                    style={{ width: `${Math.round(p * 100)}%`, background: colors[i] }}
+                  />
+                </div>
+                <span className="text-sm font-semibold text-white w-10 text-right">{Math.round(p * 100)}%</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Signal 2: pierwsze wybory */}
+      <div className="bg-[#1f1f25] border border-[#38383f] rounded-xl p-5">
+        <div className="text-xs text-[#71717a] uppercase tracking-widest mb-3">
+          Signal 2 — Pierwsze wybory (ranking porównawczy)
+        </div>
+        <div className="flex flex-wrap gap-4">
+          {result.rankingSignal.firstChoiceCounts.map((count, i) => (
+            <div key={i} className="flex items-center gap-2">
+              <div className="w-2.5 h-2.5 rounded-full" style={{ background: colors[i] }} />
+              <span className="text-sm text-[#a1a1aa]">{labels[i]}</span>
+              <span className="text-sm font-bold text-white">{count}</span>
+              <span className="text-xs text-[#52525b]">
+                ({Math.round((count / result.rankingSignal.totalRanked) * 100)}%)
+              </span>
+            </div>
+          ))}
+        </div>
+        <div className="text-xs text-[#52525b] mt-2">
+          n={result.rankingSignal.totalRanked.toLocaleString('pl-PL')} rankingów
+        </div>
+      </div>
+
+      {/* Heatmapa per wymiar */}
+      <div>
+        <h3 className="text-sm font-semibold text-[#a1a1aa] uppercase tracking-widest mb-4">
+          Posterior per segment demograficzny
+        </h3>
+        <div className="space-y-4">
+          {result.dimensions.map((dim) => (
+            <PLDimensionTable key={dim.dimension} dim={dim} colors={colors} labels={labels} />
+          ))}
+        </div>
+      </div>
+
+      {/* Legenda */}
+      <div className="flex flex-wrap gap-4 text-xs text-[#52525b] pt-2 border-t border-[#27272a]">
+        {labels.map((label, i) => (
+          <span key={i}>
+            <span className="inline-block w-3 h-3 rounded-sm mr-1" style={{ background: colors[i] }} />
+            {label}
+          </span>
+        ))}
+        <span>H = entropia Shannona znorm. (0 = pewny, 1 = max. niepewność)</span>
+        <span>Test live = margin &lt; 15 pp</span>
+      </div>
+    </div>
+  );
+}
+
 // ─── Główny komponent ─────────────────────────────────────────────────────────
 
 export function SimulationCompare() {
@@ -557,6 +810,92 @@ export function SimulationCompare() {
           statusA={dataA?.status}
           statusB={dataB?.status}
         />
+      )}
+    </div>
+  );
+}
+
+// ─── SimulationCompareMulti — ranking N≥3 kreacji (Plackett-Luce) ─────────────
+
+function mapStateMulti(raw: any, id: string): SimData {
+  return {
+    id,
+    studyName: raw.studyName ?? raw.config?.studyName ?? id,
+    status: raw.status,
+    finalOpinionDistribution: getOpinionDist(raw) ?? undefined,
+    reportAgentSynthesis: raw.reportAgentSynthesis ?? raw.report?.synthesis,
+    recommendations: raw.recommendations ?? raw.report?.recommendations,
+  };
+}
+
+export function SimulationCompareMulti() {
+  const { ids: idsParam } = useParams<{ ids: string }>();
+  const navigate = useNavigate();
+  const ids = idsParam?.split(',').filter(Boolean) ?? [];
+
+  const [simDataList, setSimDataList] = useState<Array<SimData | null>>(ids.map(() => null));
+  const [loadingList, setLoadingList] = useState<boolean[]>(ids.map(() => true));
+  const [errorList, setErrorList] = useState<Array<string | null>>(ids.map(() => null));
+
+  useEffect(() => {
+    ids.forEach((id, i) => {
+      getSimulation(id)
+        .then((raw) => {
+          setSimDataList((prev) => { const n = [...prev]; n[i] = mapStateMulti(raw, id); return n; });
+          setLoadingList((prev) => { const n = [...prev]; n[i] = false; return n; });
+        })
+        .catch((err) => {
+          setErrorList((prev) => { const n = [...prev]; n[i] = err.message ?? 'Błąd'; return n; });
+          setLoadingList((prev) => { const n = [...prev]; n[i] = false; return n; });
+        });
+    });
+  }, [idsParam]);
+
+  const allStatuses = simDataList.map((d) => d?.status);
+  const N = ids.length;
+
+  return (
+    <div className="max-w-7xl mx-auto">
+      {/* Header */}
+      <div className="mb-8">
+        <button
+          type="button"
+          onClick={() => navigate('/simulations')}
+          className="flex items-center gap-2 text-[#c0c0cc] hover:text-white text-sm mb-4 transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Powrót do listy
+        </button>
+        <div className="flex items-center gap-3 mb-2">
+          <BarChart3 className="w-7 h-7 text-[#6366f1]" />
+          <h1 className="text-2xl font-bold text-white">Ranking {N} kreacji</h1>
+        </div>
+        <p className="text-[#c0c0cc] text-sm">
+          Plackett-Luce MLE — P(kreacja = najlepsza | segment demograficzny)
+        </p>
+      </div>
+
+      {/* Grid wariantów */}
+      <div
+        className="grid gap-4"
+        style={{ gridTemplateColumns: `repeat(${Math.min(N, 3)}, 1fr)` }}
+      >
+        {ids.map((id, i) => (
+          <SimColumn
+            key={id}
+            label={`Wariant ${CREATIVE_LETTERS[i]}`}
+            accentColor={CREATIVE_COLORS[i]}
+            data={simDataList[i]}
+            loading={loadingList[i]}
+            error={errorList[i]}
+            onOpen={() => navigate(`/simulation/${id}`)}
+          />
+        ))}
+      </div>
+
+      {/* Analiza Plackett-Luce */}
+      {N >= 3 && (
+        <PLResultSection ids={ids} statuses={allStatuses} />
       )}
     </div>
   );

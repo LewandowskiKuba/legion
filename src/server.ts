@@ -13,6 +13,8 @@ import { runSpreadSimulation } from "./engine/spread.js";
 import type { StudyReport } from "./reports/aggregator.js";
 import { computeBayesianAB, computeBayesianDualSignal } from "./reports/bayesian.js";
 import { runPairRanking } from "./engine/ranker.js";
+import { runMultiRanking } from "./engine/multiRanker.js";
+import { computePlackettLuce } from "./reports/plackettLuce.js";
 import { generatePDF } from "./reports/pdf.js";
 import type { AdMaterial, Persona, BotResponse } from "./personas/schema.js";
 import { simulationStore } from "./simulation/stateStore.js";
@@ -570,6 +572,54 @@ Napisz analizę po polsku. Wyjaśnij przyczyny wyników (np. niska świadomość
         );
         json(res, result);
       }
+    } catch (err: any) {
+      json(res, { error: String(err.message ?? err) }, 500);
+    }
+    return;
+  }
+
+  // ── API: Analiza Plackett-Luce dla N≥3 kreacji ───────────────────────────
+  if (url.pathname === "/api/simulation/n-way-ranking" && req.method === "GET") {
+    const idsParam = url.searchParams.get("ids");
+    if (!idsParam) { json(res, { error: "Wymagany parametr: ids (id symulacji oddzielone przecinkami)" }, 400); return; }
+
+    const ids = idsParam.split(",").map((s) => s.trim()).filter(Boolean);
+    if (ids.length < 3 || ids.length > 5) {
+      json(res, { error: "Wymagane 3–5 identyfikatorów symulacji" }, 400); return;
+    }
+
+    const orcs = ids.map((id) => simulationStore.get(id));
+    for (let i = 0; i < ids.length; i++) {
+      if (!orcs[i]) { json(res, { error: `Symulacja ${ids[i]} nie istnieje` }, 404); return; }
+    }
+
+    const states = orcs.map((orc) => (orc as any).getState());
+
+    for (let i = 0; i < ids.length; i++) {
+      if (states[i].status === "initializing") {
+        json(res, { error: `Symulacja ${ids[i]} jeszcze się inicjalizuje` }, 202); return;
+      }
+    }
+
+    try {
+      const ads = states.map((s: any) => s.ad) as (AdMaterial | undefined)[];
+      if (!ads.every((ad) => ad)) {
+        json(res, { error: "Wszystkie symulacje muszą zawierać kreacje reklamowe" }, 400); return;
+      }
+
+      const population = states[0].population;
+      const multiRankingResult = await runMultiRanking(population, ads as AdMaterial[]);
+      const opinionMaps = states.map((s: any) => s.agentOpinions as Record<string, number>);
+
+      const creativeLabels = states.map((s: any, i: number) => {
+        const name: string | undefined = s.studyName ?? s.config?.studyName;
+        if (!name) return `Wariant ${String.fromCharCode(65 + i)}`;
+        const parts = name.split(" – ");
+        return parts.length > 1 ? parts[parts.length - 1] : name;
+      });
+
+      const result = computePlackettLuce(population, opinionMaps, multiRankingResult, creativeLabels);
+      json(res, result);
     } catch (err: any) {
       json(res, { error: String(err.message ?? err) }, 500);
     }
